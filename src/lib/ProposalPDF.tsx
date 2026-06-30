@@ -1,6 +1,7 @@
 import {
   Document, Page, Text, View, Image, StyleSheet, Font,
 } from "@react-pdf/renderer";
+import { createElement } from "react";
 
 // Use built-in PDF fonts — no network dependency
 
@@ -273,4 +274,8 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
       </Page>
     </Document>
   );
+}
+
+export function buildProposalDocument(data: ProposalData) {
+  return createElement(ProposalPDF, { data });
 }
