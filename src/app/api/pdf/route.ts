@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { renderToBuffer } from "@react-pdf/renderer";
-import { createElement } from "react";
+import { renderToBuffer, DocumentProps } from "@react-pdf/renderer";
+import { createElement, JSXElementConstructor, ReactElement } from "react";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { ProposalPDF } from "@/lib/ProposalPDF";
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const logoBase64 = readFileSync(logoPath).toString("base64");
 
   const buffer = await renderToBuffer(
-    createElement(ProposalPDF, { data: { ...data, logoBase64 } })
+    createElement(ProposalPDF, { data: { ...data, logoBase64 } }) as ReactElement<DocumentProps, JSXElementConstructor<DocumentProps>>
   );
 
   const clientName = (data.client_name || "proposal").replace(/[^a-z0-9]/gi, "-").toLowerCase();
