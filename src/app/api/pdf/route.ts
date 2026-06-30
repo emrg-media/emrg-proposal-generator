@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const clientName = (data.client_name || "proposal").replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${clientName}-proposal.pdf"`,
