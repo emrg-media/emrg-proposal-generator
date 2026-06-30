@@ -12,7 +12,7 @@ Schema:
   "client_name": "string — company or client name",
   "budget_low": "string — lower bound of client budget as a dollar amount, e.g. '$50,000'. Empty if not mentioned.",
   "budget_high": "string — upper bound of client budget, e.g. '$75,000'. Empty if not mentioned.",
-  "service_fee": "string — EMRG service fee if mentioned, e.g. '$12,000'. Empty if not mentioned.",
+  "service_fee": "string — EMRG service fee if mentioned. Extract exactly as stated: a dollar amount like '$12,000' OR a percentage like '20%' or '18-22%'. Never compute or convert — if the transcript says '20%', return '20%', not a dollar figure. Empty if not mentioned at all.",
   "events": [
     {
       "date": "string — event date in a human-readable format like 'June 15, 2026' or 'MM/DD/YY'. Empty if not mentioned.",
