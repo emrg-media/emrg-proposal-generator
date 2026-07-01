@@ -250,7 +250,7 @@ export default function NewProposalPage() {
       if (data.client_name) setClient((p) => ({ ...p, client_name: data.client_name }));
       if (data.budget_low) setClient((p) => ({ ...p, budget_low: formatCurrency(data.budget_low) }));
       if (data.budget_high) setClient((p) => ({ ...p, budget_high: formatCurrency(data.budget_high) }));
-      if (data.service_fee) setClient((p) => ({ ...p, service_fee: formatCurrency(data.service_fee) }));
+      if (data.service_fee) setClient((p) => ({ ...p, service_fee: data.service_fee.includes("%") ? data.service_fee : formatCurrency(data.service_fee) }));
 
       if (Array.isArray(data.events) && data.events.length > 0) {
         setEvents(data.events.map((ev: { date?: string; eventTypes?: string[]; guestCount?: string }) => ({
