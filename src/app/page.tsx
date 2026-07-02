@@ -128,8 +128,8 @@ function EventTypeSelect({
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)}
-        className="w-full text-left border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white flex items-center justify-between gap-2 transition-colors"
-        style={{ color: selected.length ? "#1c1917" : "#c0b8ae" }}>
+        className="w-full text-left border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white flex items-center justify-between gap-2 transition-colors"
+        style={{ color: selected.length ? "#111111" : "#9ca3af" }}>
         <span className="truncate">
           {selected.length === 0 ? "Select event type(s)..." : selected.join(", ")}
         </span>
@@ -144,7 +144,7 @@ function EventTypeSelect({
               <label key={t} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-stone-50">
                 <input type="checkbox" checked={selected.includes(t)} onChange={() => toggle(t)}
                   className="h-4 w-4 flex-shrink-0 rounded border-stone-300" />
-                <span className="text-sm text-stone-700">{t}</span>
+                <span className="text-[16px] text-stone-900">{t}</span>
               </label>
             ))}
           </div>
@@ -333,14 +333,14 @@ export default function NewProposalPage() {
 
             {/* Smart Import */}
             <div className="mb-8 rounded-lg border border-dashed border-stone-200 bg-stone-50 p-5">
-              <p className="text-[9px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#c0b8ae" }}>
+              <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#111111" }}>
                 Smart Import
               </p>
               <textarea
                 value={importNotes}
                 onChange={(e) => setImportNotes(e.target.value)}
                 placeholder="Paste discovery call notes or a transcript to auto-fill the form."
-                className="w-full h-20 text-xs resize-none bg-transparent outline-none leading-relaxed text-stone-700 placeholder-stone-300"
+                className="w-full h-20 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400"
               />
               {importError && (
                 <p className="text-[10px] mt-1" style={{ color: "var(--emrg-red)" }}>{importError}</p>
@@ -367,14 +367,14 @@ export default function NewProposalPage() {
                   <input type="text" value={client.budget_low}
                     onChange={handleCurrencyChange("budget_low")} onBlur={handleCurrencyBlur("budget_low")}
                     placeholder="$50,000"
-                    className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+                    className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                 </div>
                 <div>
                   <FieldLabel>Budget (high)</FieldLabel>
                   <input type="text" value={client.budget_high}
                     onChange={handleCurrencyChange("budget_high")} onBlur={handleCurrencyBlur("budget_high")}
                     placeholder="$75,000"
-                    className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+                    className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                 </div>
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function NewProposalPage() {
                 <input type="text" value={client.service_fee}
                   onChange={handleCurrencyChange("service_fee")} onBlur={handleCurrencyBlur("service_fee")}
                   placeholder="$12,000"
-                  className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+                  className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
               </div>
             </div>
 
@@ -394,7 +394,7 @@ export default function NewProposalPage() {
                   style={{ borderColor: "#ede9e3" }}>
                   {/* Row label + remove */}
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-bold tracking-[0.2em] uppercase" style={{ color: "#c0b8ae" }}>
+                    <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "#111111" }}>
                       Event {idx + 1}
                     </span>
                     {events.length > 1 && (
@@ -409,7 +409,7 @@ export default function NewProposalPage() {
                     <input type="text" value={ev.date}
                       onChange={(e) => updateEvent(ev.id, { date: e.target.value })}
                       placeholder="e.g. June 15, 2026 or 06/15/26"
-                      className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+                      className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                   </div>
 
                   <div>
@@ -425,9 +425,9 @@ export default function NewProposalPage() {
                       onChange={(e) => handleGuestChange(ev.id, e.target.value)}
                       onBlur={(e) => handleGuestBlur(ev.id, e.target.value)}
                       placeholder="e.g. 250 or 100-150"
-                      className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+                      className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                     {ev.guestCountFormatted && (
-                      <p className="text-[10px] mt-1 ml-0.5" style={{ color: "#a8a29e" }}>
+                      <p className="text-[12px] mt-1 ml-0.5" style={{ color: "#111111" }}>
                         Will show as: <strong>{ev.guestCountFormatted}</strong>
                       </p>
                     )}
@@ -437,7 +437,7 @@ export default function NewProposalPage() {
             </div>
 
             <button onClick={addEvent}
-              className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider mb-9 transition-opacity hover:opacity-70"
+              className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider mb-9 transition-opacity hover:opacity-70"
               style={{ color: "var(--emrg-red)" }}>
               <span className="text-base leading-none">+</span> Add another event date
             </button>
@@ -464,9 +464,9 @@ export default function NewProposalPage() {
               <div className="space-y-1.5 mb-3">
                 {customServices.map((label, i) => (
                   <div key={i} className="flex items-center gap-2 group py-0.5">
-                    <span className="flex-1 text-sm text-stone-700">{label}</span>
+                    <span className="flex-1 text-[16px] text-stone-900">{label}</span>
                     <button onClick={() => removeCustomService(i)}
-                      className="text-[9px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[11px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ color: "var(--emrg-red)" }}>Remove</button>
                   </div>
                 ))}
@@ -477,16 +477,16 @@ export default function NewProposalPage() {
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomService()}
                 placeholder="Add a custom service..."
-                className="flex-1 border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 outline-none transition-colors" />
+                className="flex-1 border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors" />
               <button onClick={addCustomService}
-                className="px-5 py-2.5 text-white text-sm font-semibold rounded-md hover:opacity-90 transition-opacity"
+                className="px-5 py-2.5 text-white text-[16px] font-semibold rounded-md hover:opacity-90 transition-opacity"
                 style={{ background: "var(--emrg-red)" }}>Add</button>
             </div>
 
             <button
               onClick={handleGeneratePdf}
               disabled={generatingPdf || !hasAnyField}
-              className="w-full py-3.5 text-[11px] font-bold tracking-[0.2em] uppercase rounded-md transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: "var(--emrg-red)", color: "#fff" }}>
               {generatingPdf ? "Generating…" : "Generate PDF"}
             </button>
@@ -495,7 +495,7 @@ export default function NewProposalPage() {
 
         {/* ── RIGHT: Document Preview ── */}
         <div className="w-[56%] overflow-y-auto px-8 py-8" style={{ background: "#e8e4de" }}>
-          <p className="text-[9px] font-bold tracking-[0.25em] uppercase mb-6" style={{ color: "#b8b0a6" }}>
+          <p className="text-[11px] font-bold tracking-[0.25em] uppercase mb-6" style={{ color: "#111111" }}>
             Document Preview
           </p>
 
@@ -519,13 +519,13 @@ export default function NewProposalPage() {
                 </div>
 
                 {/* Intro paragraphs */}
-                <p className="text-[12.5px] leading-7 text-stone-800 mb-4">
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
                   EMRG Media agrees to act as the event planner to coordinate the upcoming event for{" "}
                   <span className="font-semibold">{client.client_name || "_______________"}</span>.{" "}
                   EMRG Media will facilitate all related event planning needs and as outlined below.
                 </p>
 
-                <p className="text-[12.5px] leading-7 text-stone-800 mb-4">
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
                   The parties have discussed a general event overview including an estimated working event budget of{" "}
                   {client.budget_low || client.budget_high ? (
                     <>
@@ -537,14 +537,14 @@ export default function NewProposalPage() {
                   EMRG Media agrees to work within the parameters of the proposed budget.
                 </p>
 
-                <p className="text-[12.5px] leading-7 text-stone-800 mb-6">
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-6">
                   EMRG Media, LLC will be paid an event management and planning fee of{" "}
                   <span className="font-semibold">{client.service_fee || "$________"}</span>{" "}
                   for the services outlined below in: Event Planner, Event Management and Production Responsibilities.
                 </p>
 
                 {/* Client table */}
-                <table className="w-full border-collapse mb-0 text-[12.5px]">
+                <table className="w-full border-collapse mb-0 text-[14.5px]">
                   <tbody>
                     <tr>
                       <td className="border border-stone-400 px-3 py-1.5 font-semibold bg-stone-50 w-28">Client:</td>
@@ -556,7 +556,7 @@ export default function NewProposalPage() {
                 </table>
 
                 {/* Event details table — adapts for single vs multi-event */}
-                <table className="w-full border-collapse mb-6 text-[12.5px]">
+                <table className="w-full border-collapse mb-6 text-[14.5px]">
                   <thead>
                     <tr>
                       <th className="border border-stone-400 px-3 py-1.5 text-left font-semibold bg-stone-50 w-[30%]">
@@ -627,13 +627,13 @@ export default function NewProposalPage() {
                 </table>
 
                 {/* Responsibilities */}
-                <p className="text-[12.5px] font-bold text-stone-900 mb-3">
+                <p className="text-[14.5px] font-bold text-stone-900 mb-3">
                   EMRG Media Event Planner, Event Management and Production Responsibilities:
                 </p>
                 <div className="mb-5 space-y-1">
                   {selectedServices.length > 0 ? (
                     selectedServices.map((s, i) => (
-                      <p key={i} className="text-[12.5px] text-stone-800 leading-snug">
+                      <p key={i} className="text-[14.5px] text-stone-900 leading-snug">
                         <span className="mr-3">·</span>{s}
                       </p>
                     ))
@@ -643,19 +643,19 @@ export default function NewProposalPage() {
                 </div>
 
                 {/* Service fee */}
-                <p className="text-[12.5px] font-bold text-stone-900 mb-6">
+                <p className="text-[14.5px] font-bold text-stone-900 mb-6">
                   EMRG Media Service Fee: {client.service_fee || "$__________"}
                 </p>
 
                 {/* Assistance clause */}
-                <p className="text-[11.5px] text-stone-600 italic mb-6 leading-6">
+                <p className="text-[13.5px] text-stone-800 italic mb-6 leading-6">
                   ** Above is the General Event Scope. Should{" "}
                   <span className="font-semibold not-italic">{client.client_name || "_______________"}</span>{" "}
                   require additional assistance, parties can determine the rate for such services provided.
                 </p>
 
                 {/* Signing section */}
-                <p className="text-[12.5px] text-stone-800 mb-5 leading-7">
+                <p className="text-[14.5px] text-stone-900 mb-5 leading-7">
                   By signing below I,{" "}
                   <span className="inline-block border-b border-stone-400 w-48 align-bottom" />,{" "}
                   am agreeing to hire EMRG Media LLC to handle the above event scope and event planning
@@ -667,7 +667,7 @@ export default function NewProposalPage() {
                 </p>
 
                 {/* Signature blocks */}
-                <div className="text-[11.5px] text-stone-700 space-y-2 opacity-50 mb-8">
+                <div className="text-[13.5px] text-stone-900 space-y-2 mb-8">
                   <p>Company: <span className="inline-block border-b border-stone-400 w-64 align-bottom" /></p>
                   <div className="flex gap-8">
                     <p>Name: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
@@ -685,7 +685,7 @@ export default function NewProposalPage() {
 
                 {/* Address footer */}
                 <div className="border-t border-stone-200 pt-4 text-center">
-                  <p className="text-[11px] text-stone-500" style={{ fontFamily: "Georgia, serif" }}>
+                  <p className="text-[13px] text-stone-800" style={{ fontFamily: "Georgia, serif" }}>
                     {EMRG_ADDRESS}
                   </p>
                 </div>
@@ -706,14 +706,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 mb-4">
       <div style={{ width: 2, height: 11, background: "var(--emrg-red)", borderRadius: 2 }} />
-      <h2 className="text-[9px] font-bold tracking-[0.22em] uppercase" style={{ color: "#a8a29e" }}>{children}</h2>
+      <h2 className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "#111111" }}>{children}</h2>
     </div>
   );
 }
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-[9px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#a8a29e" }}>
+    <label className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#111111" }}>
       {children}
       {required && <span style={{ color: "var(--emrg-red)" }} className="ml-0.5"> *</span>}
     </label>
@@ -729,7 +729,7 @@ function TextField({ label, name, value, onChange, placeholder, required }: {
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
       <input type="text" name={name} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-sm bg-white text-stone-800 placeholder-stone-300 transition-colors" />
+        className="w-full border border-stone-200 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
     </div>
   );
 }
@@ -739,8 +739,7 @@ function CheckRow({ label, checked, onChange }: { label: string; checked: boolea
     <label className="flex items-start gap-3 cursor-pointer">
       <input type="checkbox" checked={checked} onChange={onChange}
         className="mt-0.5 h-[15px] w-[15px] flex-shrink-0 rounded border-stone-300" />
-      <span className="text-sm leading-snug transition-colors"
-        style={{ color: checked ? "#292524" : "#c4b9ae" }}>{label}</span>
+      <span className="text-[16px] leading-snug transition-colors" style={{ color: "#111111" }}>{label}</span>
     </label>
   );
 }
