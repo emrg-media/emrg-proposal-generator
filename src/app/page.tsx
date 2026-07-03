@@ -340,7 +340,7 @@ export default function NewProposalPage() {
                 value={importNotes}
                 onChange={(e) => setImportNotes(e.target.value)}
                 placeholder="Paste discovery call notes or a transcript to auto-fill the form."
-                className="w-full h-20 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400"
+                className="w-full h-36 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400"
               />
               {importError && (
                 <p className="text-[10px] mt-1" style={{ color: "var(--emrg-red)" }}>{importError}</p>
