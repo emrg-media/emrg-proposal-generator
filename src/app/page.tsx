@@ -128,7 +128,7 @@ function EventTypeSelect({
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)}
-        className="w-full text-left border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white flex items-center justify-between gap-2 transition-colors"
+        className="w-full text-left border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white flex items-center justify-between gap-2 transition-colors"
         style={{ color: selected.length ? "#111111" : "#9ca3af" }}>
         <span className="truncate">
           {selected.length === 0 ? "Select event type(s)..." : selected.join(", ")}
@@ -332,7 +332,7 @@ export default function NewProposalPage() {
           <div className="px-9 pt-8 pb-14">
 
             {/* Smart Import */}
-            <div className="mb-8 rounded-lg border border-dashed border-stone-200 bg-stone-50 p-5">
+            <div className="mb-8 rounded-lg border-2 border-dashed border-stone-400 bg-stone-50 p-5">
               <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#111111" }}>
                 Smart Import
               </p>
@@ -367,14 +367,14 @@ export default function NewProposalPage() {
                   <input type="text" value={client.budget_low}
                     onChange={handleCurrencyChange("budget_low")} onBlur={handleCurrencyBlur("budget_low")}
                     placeholder="$50,000"
-                    className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                 </div>
                 <div>
                   <FieldLabel>Budget (high)</FieldLabel>
                   <input type="text" value={client.budget_high}
                     onChange={handleCurrencyChange("budget_high")} onBlur={handleCurrencyBlur("budget_high")}
                     placeholder="$75,000"
-                    className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                 </div>
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function NewProposalPage() {
                 <input type="text" value={client.service_fee}
                   onChange={handleCurrencyChange("service_fee")} onBlur={handleCurrencyBlur("service_fee")}
                   placeholder="$12,000"
-                  className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                  className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
               </div>
             </div>
 
@@ -409,7 +409,7 @@ export default function NewProposalPage() {
                     <input type="text" value={ev.date}
                       onChange={(e) => updateEvent(ev.id, { date: e.target.value })}
                       placeholder="e.g. June 15, 2026 or 06/15/26"
-                      className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                   </div>
 
                   <div>
@@ -425,7 +425,7 @@ export default function NewProposalPage() {
                       onChange={(e) => handleGuestChange(ev.id, e.target.value)}
                       onBlur={(e) => handleGuestBlur(ev.id, e.target.value)}
                       placeholder="e.g. 250 or 100-150"
-                      className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
                     {ev.guestCountFormatted && (
                       <p className="text-[12px] mt-1 ml-0.5" style={{ color: "#111111" }}>
                         Will show as: <strong>{ev.guestCountFormatted}</strong>
@@ -477,7 +477,7 @@ export default function NewProposalPage() {
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomService()}
                 placeholder="Add a custom service..."
-                className="flex-1 border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors" />
+                className="flex-1 border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors" />
               <button onClick={addCustomService}
                 className="px-5 py-2.5 text-white text-[16px] font-semibold rounded-md hover:opacity-90 transition-opacity"
                 style={{ background: "var(--emrg-red)" }}>Add</button>
@@ -729,7 +729,7 @@ function TextField({ label, name, value, onChange, placeholder, required }: {
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
       <input type="text" name={name} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full border-2 border-stone-300 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+        className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
     </div>
   );
 }
