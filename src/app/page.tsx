@@ -295,6 +295,9 @@ export default function NewProposalPage() {
       const data = await res.json();
 
       if (data.client_name) setClient((p) => ({ ...p, client_name: data.client_name }));
+      if (data.signer_name) setClient((p) => ({ ...p, signer_name: data.signer_name }));
+      if (data.signer_title) setClient((p) => ({ ...p, signer_title: data.signer_title }));
+      if (data.client_email) setClient((p) => ({ ...p, client_email: data.client_email }));
       if (data.budget_low) setClient((p) => ({ ...p, budget_low: formatCurrency(data.budget_low) }));
       if (data.budget_high) setClient((p) => ({ ...p, budget_high: formatCurrency(data.budget_high) }));
       if (data.service_fee) setClient((p) => ({ ...p, service_fee: data.service_fee.includes("%") ? data.service_fee : formatCurrency(data.service_fee) }));
