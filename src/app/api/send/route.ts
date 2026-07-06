@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import nodemailer from "nodemailer";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
+import { logProposal, entryFromProposal } from "@/lib/logProposal";
 
 // Email template (copy supplied by Mario) — merge fields filled from the form.
 
@@ -57,9 +58,11 @@ export async function POST(req: NextRequest) {
   const eventLabel = eventTypes.join(" / ") || "event";
   const dateOrdinal = formatDateOrdinal(events?.[0]?.date ?? "");
 
-  const subject = `${client_name || "Your Event"} ${eventLabel !== "event" ? eventLabel : ""} | Proposal from EMRG Media`.replace(/\s+/g, " ").trim();
+  // The UI can pass a reviewed/edited subject + body; otherwise fall back to the default template
+  const defaultSubject = `${client_name || "Your Event"} ${eventLabel !== "event" ? eventLabel : ""} | Proposal from EMRG Media`.replace(/\s+/g, " ").trim();
+  const subject: string = (data.subject ?? "").trim() || defaultSubject;
 
-  const bodyText = [
+  const defaultBody = [
     `Hi ${firstName},`,
     ``,
     `Great speaking with you. Attached is our proposal and agreement for ${client_name ? `${client_name}'s` : "your"} ${eventLabel !== "event" ? eventLabel.toLowerCase() : "event"}${dateOrdinal ? ` on ${dateOrdinal}` : ""}.`,
@@ -72,6 +75,8 @@ export async function POST(req: NextRequest) {
     `Mario Stewart | Founder and CEO, EMRG Media`,
     `212.254.3700 | www.emrgmedia.com`,
   ].join("\n");
+
+  const bodyText: string = (data.body ?? "").trim() || defaultBody;
 
   const bodyHtml = bodyText
     .split("\n")
@@ -91,11 +96,14 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: SMTP_FROM || SMTP_USER,
       to: client_email,
+      // Every outgoing proposal lands in EMRG's inbox as a record
+      bcc: process.env.SMTP_BCC || "events@emrgmedia.com",
       subject,
       text: bodyText,
       html: bodyHtml,
       attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
     });
+    logProposal(entryFromProposal("sent", data));
     return NextResponse.json({ ok: true, sentAt: new Date().toISOString() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Send failed";

@@ -11,6 +11,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
     "@react-pdf/renderer": "^4.5.1",
+    "googleapis": "^173.0.0",
     "next": "^16.3.0-canary.68",
     "nodemailer": "^9.0.3",
     "react": "19.2.4",

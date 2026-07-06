@@ -3,9 +3,13 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
+import { logProposal, entryFromProposal } from "@/lib/logProposal";
 
 export async function POST(req: NextRequest) {
   const data = await req.json();
+
+  // Fire-and-forget: log the generation without delaying the download
+  logProposal(entryFromProposal("generated", data));
 
   const logoPath = join(process.cwd(), "public", "emrg-logo.png");
   const logoBase64 = readFileSync(logoPath).toString("base64");

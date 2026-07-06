@@ -220,6 +220,9 @@ export default function NewProposalPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [sentAt, setSentAt] = useState("");
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
 
   // ── Client field handlers ─────────────────────────────────────────────────
 
@@ -347,6 +350,44 @@ export default function NewProposalPage() {
 
   // ── Send to client ───────────────────────────────────────────────────────
 
+  function buildEmailDefaults() {
+    const nameWords = client.signer_name.trim().split(/\s+/).filter(Boolean);
+    const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
+    const firstName = nameWords.length > 0
+      ? (isHonorific(nameWords[0]) && nameWords.length > 2 ? nameWords[1]
+        : isHonorific(nameWords[0]) ? nameWords.join(" ") : nameWords[0])
+      : "there";
+    const eventTypes = [...new Set(events.flatMap((e) => e.eventTypes))];
+    const eventLabel = eventTypes.join(" / ");
+    const parsed = events[0]?.date ? parseDate(events[0].date) : null;
+    const dateOrdinal = parsed
+      ? `${MONTHS[parsed.month]} ${parsed.day}${[11,12,13].includes(parsed.day % 100) ? "th" : parsed.day % 10 === 1 ? "st" : parsed.day % 10 === 2 ? "nd" : parsed.day % 10 === 3 ? "rd" : "th"}`
+      : "";
+    const subject = `${client.client_name || "Your Event"} ${eventLabel} | Proposal from EMRG Media`.replace(/\s+/g, " ").trim();
+    const body = [
+      `Hi ${firstName},`,
+      ``,
+      `Great speaking with you. Attached is our proposal and agreement for ${client.client_name ? `${client.client_name}'s` : "your"} ${eventLabel ? eventLabel.toLowerCase() : "event"}${dateOrdinal ? ` on ${dateOrdinal}` : ""}.`,
+      ``,
+      `Everything we discussed is reflected in the scope. Review at your convenience, and I'm happy to jump on a call with any questions.`,
+      ``,
+      `Talk soon,`,
+      `Mario`,
+      ``,
+      `Mario Stewart | Founder and CEO, EMRG Media`,
+      `212.254.3700 | www.emrgmedia.com`,
+    ].join("\n");
+    return { subject, body };
+  }
+
+  function openEmailPreview() {
+    const d = buildEmailDefaults();
+    setEmailSubject(d.subject);
+    setEmailBody(d.body);
+    setSendError("");
+    setEmailModalOpen(true);
+  }
+
   async function handleSendToClient() {
     if (sending) return;
     setSending(true);
@@ -356,10 +397,11 @@ export default function NewProposalPage() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, events, selectedServices }),
+        body: JSON.stringify({ ...client, events, selectedServices, subject: emailSubject, body: emailBody }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? "Send failed");
+      setEmailModalOpen(false);
       setSentAt(new Date().toLocaleString("en-US", {
         month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
       }));
@@ -598,11 +640,11 @@ export default function NewProposalPage() {
                 </p>
               ) : (
                 <button
-                  onClick={handleSendToClient}
+                  onClick={openEmailPreview}
                   disabled={sending || !hasAnyField || budgetInvalid}
                   className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md border-2 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ borderColor: "var(--emrg-black)", color: "var(--emrg-black)", background: "#fff" }}>
-                  {sending ? "Sending…" : "Send to Client"}
+                  Send to Client
                 </button>
               )}
               {sendError && (
@@ -828,6 +870,56 @@ export default function NewProposalPage() {
         </div>
 
       </div>
+
+      {/* ── Email preview modal ── */}
+      {emailModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+          style={{ background: "rgba(20,18,16,0.55)" }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setEmailModalOpen(false); }}>
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "#111111" }}>
+                  Review email before sending
+                </p>
+                <p className="text-[13px] text-stone-500 mt-0.5">
+                  To: <span className="font-semibold text-stone-800">{client.client_email}</span>
+                  <span className="ml-3 text-stone-400">BCC: events@emrgmedia.com · Proposal PDF attached</span>
+                </p>
+              </div>
+              <button onClick={() => setEmailModalOpen(false)}
+                className="text-stone-400 hover:text-stone-700 text-xl leading-none px-1" aria-label="Close">×</button>
+            </div>
+            <div className="px-7 py-5 space-y-4 overflow-y-auto">
+              <div>
+                <FieldLabel>Subject</FieldLabel>
+                <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)}
+                  className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[15px] bg-white text-stone-900" />
+              </div>
+              <div>
+                <FieldLabel>Message</FieldLabel>
+                <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)}
+                  rows={12}
+                  className="w-full border-2 border-stone-400 rounded-md px-4 py-3 text-[15px] leading-relaxed bg-white text-stone-900 resize-y" />
+              </div>
+              {sendError && (
+                <p className="text-[13px] font-semibold" style={{ color: "var(--emrg-red)" }}>{sendError}</p>
+              )}
+            </div>
+            <div className="px-7 py-4 border-t border-stone-200 flex justify-end gap-3">
+              <button onClick={() => setEmailModalOpen(false)}
+                className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-stone-300 text-stone-600">
+                Cancel
+              </button>
+              <button onClick={handleSendToClient} disabled={sending || !emailSubject.trim() || !emailBody.trim()}
+                className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
+                style={{ background: "var(--emrg-red)" }}>
+                {sending ? "Sending…" : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
