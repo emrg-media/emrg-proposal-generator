@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfBuffer = await renderToBuffer(buildProposalDocument({ ...data, logoBase64 }) as any);
 
-  const firstName = (signer_name || "").trim().split(/\s+/)[0] || "there";
+  const nameWords = (signer_name || "").trim().split(/\s+/).filter(Boolean);
+  const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
+  const firstName = nameWords.length > 0
+    ? (isHonorific(nameWords[0]) && nameWords.length > 2 ? nameWords[1] : isHonorific(nameWords[0]) ? nameWords.join(" ") : nameWords[0])
+    : "there";
   const eventTypes: string[] = [...new Set((events ?? []).flatMap((e: { eventTypes?: string[] }) => e.eventTypes ?? []))] as string[];
   const eventLabel = eventTypes.join(" / ") || "event";
   const dateOrdinal = formatDateOrdinal(events?.[0]?.date ?? "");

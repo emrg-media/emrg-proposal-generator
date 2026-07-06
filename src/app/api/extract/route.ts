@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
 
 const SYSTEM = `You are an assistant that extracts structured proposal data from discovery call notes or transcripts.
+Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} — resolve relative dates ("next year", "this December", "in Q2") against it, and never produce a date in the past.
 Return ONLY valid JSON matching the schema below. If a field is not mentioned, use an empty string for strings or an empty array for arrays.
 Never invent data that isn't in the notes.
 
@@ -19,7 +20,7 @@ Schema:
   "events": [
     {
       "date": "string — event date in a human-readable format like 'June 15, 2026' or 'MM/DD/YY'. Empty if not mentioned.",
-      "eventTypes": ["array of strings — one or more matching event types, copied EXACTLY (same capitalization) from this list when applicable: Corporate Event, Holiday Party, Conference, Client Summit, Bar Mitzvah, Bat Mitzvah, Fundraiser, Charity Gala, Product Launch, Experiential Marketing Event, Corporate Retreat, Engagement Party, Wedding, Networking Event, Awards Gala, Investor Event, Executive Retreat, Trade Show, Employee Appreciation Event, Sales Meeting, Annual Meeting, Board Meeting, Team Building Activity, Training Seminar, Grand Opening / Ribbon Cutting, Pop-Up Event, Celebrity Event, Anniversary Party, Birthday Party, Sweet 16, Walk / Run Fundraiser. Only use a custom Title Case label if nothing in the list fits. Never return the same type twice."],
+      "eventTypes": ["array of strings — one or more matching event types, copied EXACTLY (same capitalization) from this list when applicable: Corporate Event, Holiday Party, Conference, Client Summit, Bar Mitzvah, Bat Mitzvah, Fundraiser, Charity Gala, Product Launch, Experiential Marketing Event, Corporate Retreat, Engagement Party, Wedding, Networking Event, Awards Gala, Investor Event, Executive Retreat, Trade Show, Employee Appreciation Event, Sales Meeting, Annual Meeting, Board Meeting, Team Building Activity, Training Seminar, Grand Opening / Ribbon Cutting, Pop-Up Event, Celebrity Event, Anniversary Party, Birthday Party, Sweet 16, Walk / Run Fundraiser. Only map to a list entry when it is genuinely the same kind of event — do NOT substitute culturally distinct celebrations (e.g. a Quinceañera is NOT a Sweet 16; return 'Quinceañera'). Use a custom Title Case label when nothing fits. Never return the same type twice."],
       "guestCount": "string — estimated guest count or range, digits only like '250' or '100-150'. Empty if not mentioned."
     }
   ]

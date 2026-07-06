@@ -137,7 +137,12 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
 
   const firstEvent = events[0];
   const eventTypeLabel = allEventTypes.join(" / ") || "event";
-  const signerFirstName = (signer_name || "").trim().split(/\s+/)[0] || "";
+  // Greeting name: skip honorifics ("Dr. Lisa Park" → "Lisa"), keep "Dr. Park" style intact if only two words
+  const nameWords = (signer_name || "").trim().split(/\s+/).filter(Boolean);
+  const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
+  const signerFirstName = nameWords.length > 0
+    ? (isHonorific(nameWords[0]) && nameWords.length > 2 ? nameWords[1] : isHonorific(nameWords[0]) ? nameWords.join(" ") : nameWords[0])
+    : "";
   const guestLabel = firstEvent?.guestCount
     ? (firstEvent.guestCountFormatted || formatGuestCount(firstEvent.guestCount)).replace(/\s*ppl$/, "")
     : "";
