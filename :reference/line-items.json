@@ -1,0 +1,71 @@
+{
+  "_comment": "EMRG Event Scope services + field map. Core services render checked by default; add-ons unchecked. Users can also add custom services. Only checked services render in the document's responsibilities list.",
+  "core_services": [
+    { "id": "project_management", "label": "Project Management", "default": true },
+    { "id": "event_calls", "label": "Event Calls, Pre and Post Event", "default": true },
+    { "id": "venue_sourcing", "label": "Venue Sourcing", "default": true },
+    { "id": "venue_management", "label": "Venue Management", "default": true },
+    { "id": "event_team_liaison", "label": "Event Team Liaison", "default": true },
+    { "id": "overall_negotiations", "label": "Overall Negotiations to Facilitate Event Needs", "default": true },
+    { "id": "budget_management", "label": "Budget Management", "default": true },
+    { "id": "event_registration", "label": "Event Registration", "default": true },
+    { "id": "guest_check_in", "label": "Guest Check-In", "default": true },
+    { "id": "contract_negotiation", "label": "Contract Negotiation", "default": true },
+    { "id": "logistics_coordination", "label": "Logistics Coordination", "default": true },
+    { "id": "onsite_event_liaisons", "label": "Onsite Event Liaisons", "default": true },
+    { "id": "oversee_staffing", "label": "Oversee All Staffing Needs", "default": true },
+    { "id": "room_set_up", "label": "Room Set Up", "default": true },
+    { "id": "rentals_decor", "label": "Rentals and Decor", "default": true },
+    { "id": "day_of_setup_breakdown", "label": "Day of Set Up and Breakdown", "default": true },
+    { "id": "facilitating_deadlines", "label": "Facilitating Deadlines", "default": true },
+    { "id": "timeline_ros", "label": "Event Timeline and ROS (Run of Show)", "default": true },
+    { "id": "creating_beo", "label": "Creating BEO (Banquet Event Order)", "default": true },
+    { "id": "event_planning_facilitation", "label": "Event Planning Facilitation", "default": true },
+    { "id": "av_team", "label": "Work with A/V Team for all Tech, Sound and A/V Needs", "default": true },
+    { "id": "venue_needs_logistics", "label": "Liaisoning All Venue Needs and Logistics", "default": true },
+    { "id": "decor_elements", "label": "Decor Elements (Floral, Decor, Creative Concepts, Impactful Moments, Entertainment, etc.)", "default": true },
+    { "id": "menu_development", "label": "Menu Development and Creation, Food and Beverage Needs", "default": true }
+  ],
+  "addon_services": [
+    { "id": "speaker_management", "label": "Speaker Management and Coordination", "default": false },
+    { "id": "sponsor_exhibitor", "label": "Sponsor and Exhibitor Management", "default": false },
+    { "id": "entertainment_booking", "label": "Entertainment Booking and Talent Management", "default": false },
+    { "id": "transportation", "label": "Transportation and Guest Travel Coordination", "default": false },
+    { "id": "permit_insurance", "label": "Permit and Insurance Coordination", "default": false },
+    { "id": "signage_branding", "label": "Signage, Branding and Environmental Graphics", "default": false },
+    { "id": "health_safety_risk", "label": "Health, Safety and Risk Management", "default": false },
+    { "id": "post_event_reporting", "label": "Post-Event Reporting and Debrief", "default": false },
+    { "id": "gift_swag_vip", "label": "Gift, Swag and VIP Amenity Coordination", "default": false }
+  ],
+  "allow_custom_services": true,
+  "form_fields": [
+    { "id": "client_name", "label": "Client / Company Name", "source": "client", "type": "text", "required": true },
+    { "id": "event_type", "label": "Event Type", "source": "client", "type": "text", "required": true },
+    { "id": "event_date", "label": "Preferred Date", "source": "client", "type": "text", "required": true },
+    { "id": "guest_count", "label": "Estimated Guest Count", "source": "client", "type": "text", "required": true },
+    { "id": "budget_low", "label": "Working Budget (low)", "source": "client", "type": "text", "required": false },
+    { "id": "budget_high", "label": "Working Budget (high)", "source": "client", "type": "text", "required": false },
+    { "id": "service_fee", "label": "EMRG Service Fee", "source": "emrg", "type": "text", "required": true }
+  ],
+  "document_field_map": {
+    "client_name": ["intro_event_for", "client_cell", "additional_assistance_clause"],
+    "event_type": ["event_type_cell", "signing_clause_event"],
+    "event_date": ["preferred_date_cell"],
+    "guest_count": ["guest_count_cell"],
+    "budget_low": ["working_budget_low"],
+    "budget_high": ["working_budget_high"],
+    "service_fee": ["intro_fee", "service_fee_line"],
+    "selected_services": ["responsibilities_list"]
+  },
+  "leave_blank": [
+    "signing_clause_name",
+    "client_company",
+    "client_name_sig",
+    "client_signature",
+    "client_date",
+    "planning_agency",
+    "emrg_name_sig",
+    "emrg_signature",
+    "emrg_date"
+  ]
+}

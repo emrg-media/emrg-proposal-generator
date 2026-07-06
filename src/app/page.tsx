@@ -39,6 +39,9 @@ interface EventEntry {
 
 interface ClientFields {
   client_name: string;
+  signer_name: string;
+  signer_title: string;
+  client_email: string;
   budget_low: string;
   budget_high: string;
   service_fee: string;
@@ -69,18 +72,42 @@ function formatGuestCount(raw: string): string {
 
 function parseDate(raw: string): { month: number; day: number; year: number } | null {
   if (!raw.trim()) return null;
-  const normalised = raw.trim().replace(/\//g, "-");
-  const mdyMatch = normalised.match(/^(\d{1,2})[- .](\d{1,2})[- .](\d{2,4})$/);
+  const trimmed = raw.trim();
+  const currentYear = new Date().getFullYear();
+  const normalised = trimmed.replace(/\//g, "-");
+  const mdyMatch = normalised.match(/^(\d{1,2})[- .](\d{1,2})(?:[- .](\d{2,4}))?$/);
   if (mdyMatch) {
     const [, a, b, y] = mdyMatch;
-    const year = y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
+    const year = !y ? currentYear : y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
     const month = parseInt(a) - 1;
     const day = parseInt(b);
     if (month >= 0 && month <= 11 && day >= 1 && day <= 31) return { month, day, year };
   }
-  const d = new Date(raw);
-  if (!isNaN(d.getTime())) return { month: d.getMonth(), day: d.getDate(), year: d.getFullYear() };
+  // Month-name formats: "December 10", "December 10, 2026", "Dec 10 26", "10 December"
+  const nameMatch = trimmed.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:[,\s]+(\d{2,4}))?$/) ||
+    trimmed.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([A-Za-z]+)\.?(?:[,\s]+(\d{2,4}))?$/);
+  if (nameMatch) {
+    const monthStr = /^\d/.test(nameMatch[1]) ? nameMatch[2] : nameMatch[1];
+    const dayStr = /^\d/.test(nameMatch[1]) ? nameMatch[1] : nameMatch[2];
+    const y = nameMatch[3];
+    const month = MONTHS.findIndex((m) => m.toLowerCase().startsWith(monthStr.toLowerCase().slice(0, 3)));
+    const day = parseInt(dayStr);
+    // No year given → default to the current year, never let JS guess
+    const year = !y ? currentYear : y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
+    if (month >= 0 && day >= 1 && day <= 31) return { month, day, year };
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    // JS parses year-less dates into garbage years (e.g. 2001) — override with current year
+    const year = /\b(19|20)\d{2}\b/.test(trimmed) ? d.getFullYear() : currentYear;
+    return { month: d.getMonth(), day: d.getDate(), year };
+  }
   return null;
+}
+
+function currencyToNumber(v: string): number | null {
+  const digits = v.replace(/[^\d]/g, "");
+  return digits ? parseInt(digits, 10) : null;
 }
 
 function formatDateLong(raw: string): string {
@@ -103,7 +130,10 @@ function buildInitialServices(): ServiceState {
   return s;
 }
 
-const initialClient: ClientFields = { client_name: "", budget_low: "", budget_high: "", service_fee: "" };
+const initialClient: ClientFields = {
+  client_name: "", signer_name: "", signer_title: "", client_email: "",
+  budget_low: "", budget_high: "", service_fee: "",
+};
 
 // ── Event Type multi-select (reusable) ───────────────────────────────────────
 
@@ -173,6 +203,9 @@ export default function NewProposalPage() {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [sentAt, setSentAt] = useState("");
 
   // ── Client field handlers ─────────────────────────────────────────────────
 
@@ -295,6 +328,31 @@ export default function NewProposalPage() {
     }
   }
 
+  // ── Send to client ───────────────────────────────────────────────────────
+
+  async function handleSendToClient() {
+    if (sending) return;
+    setSending(true);
+    setSendError("");
+    setSentAt("");
+    try {
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...client, events, selectedServices }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "Send failed");
+      setSentAt(new Date().toLocaleString("en-US", {
+        month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+      }));
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Could not send email.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   // ── Derived values ────────────────────────────────────────────────────────
 
   const selectedServices = [
@@ -309,6 +367,11 @@ export default function NewProposalPage() {
     selectedServices.length > 0;
 
   const multipleEvents = events.length > 1;
+
+  const budgetLowNum = currencyToNumber(client.budget_low);
+  const budgetHighNum = currencyToNumber(client.budget_high);
+  const budgetInvalid =
+    budgetLowNum !== null && budgetHighNum !== null && budgetLowNum > budgetHighNum;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -362,6 +425,14 @@ export default function NewProposalPage() {
               <TextField label="Client / Company Name" name="client_name" value={client.client_name}
                 onChange={handleClientText} required />
               <div className="grid grid-cols-2 gap-3">
+                <TextField label="Signer Name" name="signer_name" value={client.signer_name}
+                  onChange={handleClientText} placeholder="Jane Smith" required />
+                <TextField label="Signer Title" name="signer_title" value={client.signer_title}
+                  onChange={handleClientText} placeholder="Head of Events" />
+              </div>
+              <TextField label="Client Email" name="client_email" value={client.client_email}
+                onChange={handleClientText} placeholder="jane@company.com" />
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <FieldLabel>Budget (low)</FieldLabel>
                   <input type="text" value={client.budget_low}
@@ -374,9 +445,15 @@ export default function NewProposalPage() {
                   <input type="text" value={client.budget_high}
                     onChange={handleCurrencyChange("budget_high")} onBlur={handleCurrencyBlur("budget_high")}
                     placeholder="$75,000"
-                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors"
+                    style={budgetInvalid ? { borderColor: "var(--emrg-red)" } : undefined} />
                 </div>
               </div>
+              {budgetInvalid && (
+                <p className="text-[13px] font-semibold -mt-2" style={{ color: "var(--emrg-red)" }}>
+                  Low budget is higher than high budget — swap the values before generating.
+                </p>
+              )}
               <div>
                 <FieldLabel required>EMRG Service Fee</FieldLabel>
                 <input type="text" value={client.service_fee}
@@ -483,13 +560,43 @@ export default function NewProposalPage() {
                 style={{ background: "var(--emrg-red)" }}>Add</button>
             </div>
 
+            {budgetInvalid && (
+              <p className="text-[13px] font-semibold mb-2 text-center" style={{ color: "var(--emrg-red)" }}>
+                Fix the budget range before generating.
+              </p>
+            )}
             <button
               onClick={handleGeneratePdf}
-              disabled={generatingPdf || !hasAnyField}
+              disabled={generatingPdf || !hasAnyField || budgetInvalid}
               className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: "var(--emrg-red)", color: "#fff" }}>
               {generatingPdf ? "Generating…" : "Generate PDF"}
             </button>
+
+            {/* Send to client */}
+            <div className="mt-3">
+              {!client.client_email.trim() ? (
+                <p className="text-[12px] text-stone-500 text-center">
+                  Add a client email above to enable sending.
+                </p>
+              ) : (
+                <button
+                  onClick={handleSendToClient}
+                  disabled={sending || !hasAnyField || budgetInvalid}
+                  className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md border-2 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ borderColor: "var(--emrg-black)", color: "var(--emrg-black)", background: "#fff" }}>
+                  {sending ? "Sending…" : "Send to Client"}
+                </button>
+              )}
+              {sendError && (
+                <p className="text-[12px] mt-2 text-center" style={{ color: "var(--emrg-red)" }}>{sendError}</p>
+              )}
+              {sentAt && (
+                <p className="text-[13px] font-semibold mt-2 text-center" style={{ color: "#15803d" }}>
+                  ✓ Sent to {client.client_email} on {sentAt}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -657,7 +764,11 @@ export default function NewProposalPage() {
                 {/* Signing section */}
                 <p className="text-[14.5px] text-stone-900 mb-5 leading-7">
                   By signing below I,{" "}
-                  <span className="inline-block border-b border-stone-400 w-48 align-bottom" />,{" "}
+                  {client.signer_name
+                    ? <span className="font-semibold">
+                        {client.signer_name}{client.signer_title ? `, ${client.signer_title}` : ""}
+                      </span>
+                    : <span className="inline-block border-b border-stone-400 w-48 align-bottom" />},{" "}
                   am agreeing to hire EMRG Media LLC to handle the above event scope and event planning
                   details pertaining to the{" "}
                   {events.flatMap((e) => e.eventTypes).length > 0
@@ -668,9 +779,13 @@ export default function NewProposalPage() {
 
                 {/* Signature blocks */}
                 <div className="text-[13.5px] text-stone-900 space-y-2 mb-8">
-                  <p>Company: <span className="inline-block border-b border-stone-400 w-64 align-bottom" /></p>
+                  <p>Company: {client.client_name
+                    ? <span className="font-medium">{client.client_name}</span>
+                    : <span className="inline-block border-b border-stone-400 w-64 align-bottom" />}</p>
                   <div className="flex gap-8">
-                    <p>Name: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
+                    <p>Name: {client.signer_name
+                      ? <span className="font-medium">{client.signer_name}</span>
+                      : <span className="inline-block border-b border-stone-400 w-36 align-bottom" />}</p>
                     <p>Signature: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
                   </div>
                   <p>Date: <span className="inline-block border-b border-stone-400 w-24 align-bottom" /></p>

@@ -45,6 +45,8 @@ const s = StyleSheet.create({
 
 export interface ProposalData {
   client_name: string;
+  signer_name?: string;
+  signer_title?: string;
   budget_low: string;
   budget_high: string;
   service_fee: string;
@@ -56,27 +58,61 @@ export interface ProposalData {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const EMRG_ADDRESS = "EMRG Media, 60 Sutton Place South, Suite 8LS  New York NY 10022  |  212.254.3700";
 
-function formatDateLong(raw: string): string {
-  if (!raw.trim()) return "";
-  const normalised = raw.trim().replace(/\//g, "-");
-  const mdyMatch = normalised.match(/^(\d{1,2})[- .](\d{1,2})[- .](\d{2,4})$/);
+function parseDateParts(raw: string): { month: number; day: number; year: number } | null {
+  if (!raw.trim()) return null;
+  const trimmed = raw.trim();
+  const currentYear = new Date().getFullYear();
+  const normalised = trimmed.replace(/\//g, "-");
+  const mdyMatch = normalised.match(/^(\d{1,2})[- .](\d{1,2})(?:[- .](\d{2,4}))?$/);
   if (mdyMatch) {
     const [, a, b, y] = mdyMatch;
-    const year = y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
+    const year = !y ? currentYear : y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
     const month = parseInt(a) - 1;
     const day = parseInt(b);
-    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
-      const suffix = [11,12,13].includes(day % 100) ? "th" : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
-      return `${MONTHS[month]} ${day}${suffix}, ${year}`;
-    }
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) return { month, day, year };
   }
-  const d = new Date(raw);
+  const nameMatch = trimmed.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:[,\s]+(\d{2,4}))?$/) ||
+    trimmed.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([A-Za-z]+)\.?(?:[,\s]+(\d{2,4}))?$/);
+  if (nameMatch) {
+    const monthStr = /^\d/.test(nameMatch[1]) ? nameMatch[2] : nameMatch[1];
+    const dayStr = /^\d/.test(nameMatch[1]) ? nameMatch[1] : nameMatch[2];
+    const y = nameMatch[3];
+    const month = MONTHS.findIndex((m) => m.toLowerCase().startsWith(monthStr.toLowerCase().slice(0, 3)));
+    const day = parseInt(dayStr);
+    const year = !y ? currentYear : y.length === 2 ? 2000 + parseInt(y) : parseInt(y);
+    if (month >= 0 && day >= 1 && day <= 31) return { month, day, year };
+  }
+  const d = new Date(trimmed);
   if (!isNaN(d.getTime())) {
-    const day = d.getDate();
-    const suffix = [11,12,13].includes(day % 100) ? "th" : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
-    return `${MONTHS[d.getMonth()]} ${day}${suffix}, ${d.getFullYear()}`;
+    // JS parses year-less dates into garbage years — override with current year
+    const year = /\b(19|20)\d{2}\b/.test(trimmed) ? d.getFullYear() : currentYear;
+    return { month: d.getMonth(), day: d.getDate(), year };
   }
-  return raw;
+  return null;
+}
+
+function ordinal(day: number): string {
+  return [11,12,13].includes(day % 100) ? "th" : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
+}
+
+function formatDateLong(raw: string): string {
+  const p = parseDateParts(raw);
+  if (!p) return raw;
+  return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}, ${p.year}`;
+}
+
+// Cover style: "December 10, 2026" (no ordinal)
+function formatDatePlain(raw: string): string {
+  const p = parseDateParts(raw);
+  if (!p) return raw;
+  return `${MONTHS[p.month]} ${p.day}, ${p.year}`;
+}
+
+// Letter style: "December 10th" (no year)
+function formatDateOrdinalNoYear(raw: string): string {
+  const p = parseDateParts(raw);
+  if (!p) return raw;
+  return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}`;
 }
 
 function formatGuestCount(raw: string): string {
@@ -90,7 +126,7 @@ function formatGuestCount(raw: string): string {
 }
 
 export function ProposalPDF({ data }: { data: ProposalData }) {
-  const { client_name, budget_low, budget_high, service_fee, events, selectedServices, logoBase64 } = data;
+  const { client_name, signer_name, signer_title, budget_low, budget_high, service_fee, events, selectedServices, logoBase64 } = data;
   const multipleEvents = events.length > 1;
   const allEventTypes = [...new Set(events.flatMap((e) => e.eventTypes))];
 
@@ -98,8 +134,64 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
     ? [budget_low, budget_high].filter(Boolean).join(" to ")
     : "$_______ _______";
 
+  const firstEvent = events[0];
+  const eventTypeLabel = allEventTypes.join(" / ") || "event";
+  const signerFirstName = (signer_name || "").trim().split(/\s+/)[0] || "";
+  const guestLabel = firstEvent?.guestCount
+    ? (firstEvent.guestCountFormatted || formatGuestCount(firstEvent.guestCount)).replace(/\s*ppl$/, "")
+    : "";
+
   return (
     <Document>
+
+      {/* ── Page 1: Cover ── */}
+      <Page size="LETTER" style={[s.page, { justifyContent: "center" }]}>
+        <View style={{ alignItems: "center" }}>
+          <Image src={`data:image/png;base64,${logoBase64}`} style={{ width: 220, marginBottom: 48 }} />
+          <Text style={{ fontSize: 12, color: C.gray, marginBottom: 10, letterSpacing: 2 }}>PREPARED FOR</Text>
+          <Text style={{ fontSize: 26, fontFamily: "Times-Bold", marginBottom: 16 }}>
+            {client_name || "_______________"}
+          </Text>
+          <Text style={{ fontSize: 13, color: C.gray }}>
+            {eventTypeLabel !== "event" ? eventTypeLabel : ""}
+            {eventTypeLabel !== "event" && firstEvent?.date ? "  |  " : ""}
+            {firstEvent?.date ? formatDatePlain(firstEvent.date) : ""}
+          </Text>
+          <View style={{ width: 40, height: 2, backgroundColor: C.red, marginTop: 28 }} />
+        </View>
+      </Page>
+
+      {/* ── Page 2: Intro letter ── */}
+      <Page size="LETTER" style={s.page}>
+        <Image src={`data:image/png;base64,${logoBase64}`} style={s.logo} />
+        <View style={{ marginTop: 18 }}>
+          <Text style={s.para}>Dear {signerFirstName || "_________"},</Text>
+          <Text style={s.para}>
+            {"Thank you for the opportunity to plan "}
+            <Text style={s.bold}>{client_name || "your company"}</Text>
+            {"'s upcoming "}
+            {eventTypeLabel !== "event" ? eventTypeLabel.toLowerCase() : "event"}
+            {". For over 25 years, EMRG Media has produced more than 1,100 events for clients including JPMorgan, Netflix, Bloomberg and Condé Nast, and we would be honored to add this celebration to that list."}
+          </Text>
+          <Text style={s.para}>
+            {"Enclosed is our proposed scope of services and agreement for your "}
+            {firstEvent?.date ? <Text style={s.bold}>{formatDateOrdinalNoYear(firstEvent.date)}</Text> : "upcoming"}
+            {" event"}
+            {guestLabel ? ` for ${guestLabel} guests` : ""}
+            {". Our team handles every detail from venue through day of execution, so your team enjoys the night instead of running it."}
+          </Text>
+          <Text style={s.para}>We look forward to creating something exceptional together.</Text>
+          <View style={{ marginTop: 22 }}>
+            <Text style={s.para}>Warm regards,</Text>
+            <Text style={[s.bold, { fontSize: 10.5 }]}>Mario Stewart</Text>
+            <Text style={{ fontSize: 10, color: C.gray }}>Founder and CEO, EMRG Media</Text>
+            <Text style={{ fontSize: 10, color: C.gray }}>212.254.3700</Text>
+          </View>
+        </View>
+        <Text style={[s.footer, { marginTop: "auto" }]}>{EMRG_ADDRESS}</Text>
+      </Page>
+
+      {/* ── Page 3+: Agreement ── */}
       <Page size="LETTER" style={s.page}>
 
         {/* Logo */}
@@ -221,7 +313,9 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
         {/* Signing */}
         <Text style={s.signingPara}>
           {"By signing below I, "}
-          <Text>{"_".repeat(28)}</Text>
+          {signer_name
+            ? <Text style={s.bold}>{signer_name}{signer_title ? `, ${signer_title}` : ""}</Text>
+            : <Text>{"_".repeat(28)}</Text>}
           {", am agreeing to hire EMRG Media LLC to handle the above event scope and event planning details pertaining to the "}
           <Text style={s.bold}>{allEventTypes.length > 0 ? allEventTypes.join(" / ") : "_".repeat(20)}</Text>
           {" event."}
@@ -230,13 +324,13 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
         {/* Signature blocks */}
         <View style={{ opacity: 0.55 }}>
           <View style={s.sigBlock}>
-            <Text style={s.sigLabel}>Company:</Text>
-            <View style={s.sigLine} />
+            <Text style={s.sigLabel}>Company:{client_name ? `  ${client_name}` : ""}</Text>
+            {!client_name && <View style={s.sigLine} />}
           </View>
           <View style={s.sigRow}>
             <View style={s.sigBlock}>
-              <Text style={s.sigLabel}>Name:</Text>
-              <View style={[s.sigLine, { width: 130 }]} />
+              <Text style={s.sigLabel}>Name:{signer_name ? `  ${signer_name}` : ""}</Text>
+              {!signer_name && <View style={[s.sigLine, { width: 130 }]} />}
             </View>
             <View style={s.sigBlock}>
               <Text style={s.sigLabel}>Signature:</Text>
