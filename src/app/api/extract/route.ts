@@ -16,7 +16,7 @@ Schema:
   "events": [
     {
       "date": "string — event date in a human-readable format like 'June 15, 2026' or 'MM/DD/YY'. Empty if not mentioned.",
-      "eventTypes": ["array of strings — one or more of the known event types that match, or a short custom label"],
+      "eventTypes": ["array of strings — one or more matching event types, copied EXACTLY (same capitalization) from this list when applicable: Corporate Event, Holiday Party, Conference, Client Summit, Bar Mitzvah, Bat Mitzvah, Fundraiser, Charity Gala, Product Launch, Experiential Marketing Event, Corporate Retreat, Engagement Party, Wedding, Networking Event, Awards Gala, Investor Event, Executive Retreat, Trade Show, Employee Appreciation Event, Sales Meeting, Annual Meeting, Board Meeting, Team Building Activity, Training Seminar, Grand Opening / Ribbon Cutting, Pop-Up Event, Celebrity Event, Anniversary Party, Birthday Party, Sweet 16, Walk / Run Fundraiser. Only use a custom Title Case label if nothing in the list fits. Never return the same type twice."],
       "guestCount": "string — estimated guest count or range, digits only like '250' or '100-150'. Empty if not mentioned."
     }
   ]

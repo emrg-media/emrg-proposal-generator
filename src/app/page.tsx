@@ -105,6 +105,20 @@ function parseDate(raw: string): { month: number; day: number; year: number } | 
   return null;
 }
 
+// Map free-text event types to the canonical dropdown options (case-insensitive),
+// title-case anything unknown, and dedupe.
+function normalizeEventTypes(types: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of types) {
+    const t = raw.trim();
+    if (!t) continue;
+    const canonical = EVENT_TYPES.find((e) => e.toLowerCase() === t.toLowerCase());
+    const value = canonical ?? t.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1));
+    if (!out.some((x) => x.toLowerCase() === value.toLowerCase())) out.push(value);
+  }
+  return out;
+}
+
 function currencyToNumber(v: string): number | null {
   const digits = v.replace(/[^\d]/g, "");
   return digits ? parseInt(digits, 10) : null;
@@ -289,7 +303,7 @@ export default function NewProposalPage() {
         setEvents(data.events.map((ev: { date?: string; eventTypes?: string[]; guestCount?: string }) => ({
           id: crypto.randomUUID(),
           date: ev.date ?? "",
-          eventTypes: Array.isArray(ev.eventTypes) ? ev.eventTypes : [],
+          eventTypes: normalizeEventTypes(Array.isArray(ev.eventTypes) ? ev.eventTypes : []),
           guestCount: ev.guestCount ?? "",
           guestCountFormatted: ev.guestCount ? formatGuestCount(ev.guestCount) : "",
         })));
