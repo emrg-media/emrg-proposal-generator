@@ -124,13 +124,37 @@ function currencyToNumber(v: string): number | null {
   return digits ? parseInt(digits, 10) : null;
 }
 
+function dateSuffix(day: number): string {
+  return [11,12,13].includes(day % 100) ? "th"
+    : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
+}
+
 function formatDateLong(raw: string): string {
   const parsed = parseDate(raw);
   if (!parsed) return raw;
   const { month, day, year } = parsed;
-  const suffix = [11,12,13].includes(day % 100) ? "th"
-    : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
-  return `${MONTHS[month]} ${day}${suffix}, ${year}`;
+  return `${MONTHS[month]} ${day}${dateSuffix(day)}, ${year}`;
+}
+
+function formatDatePlain(raw: string): string {
+  const parsed = parseDate(raw);
+  if (!parsed) return raw;
+  return `${MONTHS[parsed.month]} ${parsed.day}, ${parsed.year}`;
+}
+
+function formatDateOrdinalNoYear(raw: string): string {
+  const parsed = parseDate(raw);
+  if (!parsed) return raw;
+  return `${MONTHS[parsed.month]} ${parsed.day}${dateSuffix(parsed.day)}`;
+}
+
+// "Dr. Lisa Park" → "Lisa"; "Jane Smith" → "Jane"
+function greetingName(fullName: string): string {
+  const words = fullName.trim().split(/\s+/).filter(Boolean);
+  const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
+  if (words.length === 0) return "";
+  if (isHonorific(words[0])) return words.length > 2 ? words[1] : words.join(" ");
+  return words[0];
 }
 
 function newEvent(): EventEntry {
@@ -351,18 +375,10 @@ export default function NewProposalPage() {
   // ── Send to client ───────────────────────────────────────────────────────
 
   function buildEmailDefaults() {
-    const nameWords = client.signer_name.trim().split(/\s+/).filter(Boolean);
-    const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
-    const firstName = nameWords.length > 0
-      ? (isHonorific(nameWords[0]) && nameWords.length > 2 ? nameWords[1]
-        : isHonorific(nameWords[0]) ? nameWords.join(" ") : nameWords[0])
-      : "there";
+    const firstName = greetingName(client.signer_name) || "there";
     const eventTypes = [...new Set(events.flatMap((e) => e.eventTypes))];
     const eventLabel = eventTypes.join(" / ");
-    const parsed = events[0]?.date ? parseDate(events[0].date) : null;
-    const dateOrdinal = parsed
-      ? `${MONTHS[parsed.month]} ${parsed.day}${[11,12,13].includes(parsed.day % 100) ? "th" : parsed.day % 10 === 1 ? "st" : parsed.day % 10 === 2 ? "nd" : parsed.day % 10 === 3 ? "rd" : "th"}`
-      : "";
+    const dateOrdinal = events[0]?.date ? formatDateOrdinalNoYear(events[0].date) : "";
     const subject = `${client.client_name || "Your Event"} ${eventLabel} | Proposal from EMRG Media`.replace(/\s+/g, " ").trim();
     const body = [
       `Hi ${firstName},`,
@@ -675,6 +691,68 @@ export default function NewProposalPage() {
               <p className="text-xs" style={{ color: "#c0b8ae" }}>Fill in the form to see the document</p>
             </div>
           ) : (
+            <div className="space-y-6">
+
+              {/* ── Page 1: Cover ── */}
+              <PagePill>Page 1 · Cover</PagePill>
+              <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30 flex flex-col items-center justify-center text-center px-10 py-24"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+                <Image src="/emrg-logo.png" alt="EMRG Media" width={240} height={60} style={{ objectFit: "contain" }} className="mb-12" />
+                <p className="text-[11px] tracking-[0.3em] text-stone-500 mb-3">PREPARED FOR</p>
+                <p className="text-[26px] font-bold text-stone-900 mb-3">
+                  {client.client_name || <span className="text-stone-300">_______________</span>}
+                </p>
+                <p className="text-[13.5px] text-stone-600">
+                  {[...new Set(events.flatMap((e) => e.eventTypes))].join(" / ")}
+                  {events.flatMap((e) => e.eventTypes).length > 0 && events[0]?.date ? "  |  " : ""}
+                  {events[0]?.date ? formatDatePlain(events[0].date) : ""}
+                </p>
+                <div className="mt-10" style={{ width: 40, height: 2, background: "var(--emrg-red)" }} />
+              </div>
+
+              {/* ── Page 2: Intro letter ── */}
+              <PagePill>Page 2 · Cover Letter</PagePill>
+              <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30 px-10 py-8"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+                <div className="flex justify-center mb-8">
+                  <Image src="/emrg-logo.png" alt="EMRG Media" width={200} height={50} style={{ objectFit: "contain" }} />
+                </div>
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                  Dear {greetingName(client.signer_name) || <span className="inline-block border-b border-stone-400 w-24 align-bottom" />},
+                </p>
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                  Thank you for the opportunity to plan{" "}
+                  <span className="font-semibold">{client.client_name || "your company"}</span>&apos;s upcoming{" "}
+                  {[...new Set(events.flatMap((e) => e.eventTypes))].join(" / ").toLowerCase() || "event"}.
+                  {" "}For over 25 years, EMRG Media has produced more than 1,100 events for clients including
+                  JPMorgan, Netflix, Bloomberg and Condé Nast, and we would be honored to add this celebration to that list.
+                </p>
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                  Enclosed is our proposed scope of services and agreement for your{" "}
+                  {events[0]?.date
+                    ? <span className="font-semibold">{formatDateOrdinalNoYear(events[0].date)}</span>
+                    : "upcoming"}{" "}
+                  event
+                  {events[0]?.guestCount
+                    ? ` for ${(events[0].guestCountFormatted || formatGuestCount(events[0].guestCount)).replace(/\s*ppl$/, "")} guests`
+                    : ""}.
+                  {" "}Our team handles every detail from venue through day of execution, so your team enjoys
+                  the night instead of running it.
+                </p>
+                <p className="text-[14.5px] leading-7 text-stone-900 mb-8">
+                  We look forward to creating something exceptional together.
+                </p>
+                <p className="text-[14.5px] leading-6 text-stone-900">Warm regards,</p>
+                <p className="text-[14.5px] leading-6 font-semibold text-stone-900">Mario Stewart</p>
+                <p className="text-[13px] leading-6 text-stone-600">Founder and CEO, EMRG Media</p>
+                <p className="text-[13px] leading-6 text-stone-600">212.254.3700</p>
+                <div className="border-t border-stone-200 pt-4 mt-8 text-center">
+                  <p className="text-[13px] text-stone-800">{EMRG_ADDRESS}</p>
+                </div>
+              </div>
+
+              {/* ── Page 3+: Agreement ── */}
+              <PagePill>Page 3 · Agreement</PagePill>
             <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
               <div className="px-10 py-8">
@@ -866,6 +944,8 @@ export default function NewProposalPage() {
 
               </div>
             </div>
+
+            </div>
           )}
         </div>
 
@@ -925,6 +1005,12 @@ export default function NewProposalPage() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+function PagePill({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500 !mb-2">{children}</p>
+  );
+}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
