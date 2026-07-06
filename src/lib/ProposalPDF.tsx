@@ -32,11 +32,12 @@ const s = StyleSheet.create({
   dot: { width: 14, fontSize: 10.5 },
   bulletText: { flex: 1, fontSize: 10.5, lineHeight: 1.5 },
   // Signing
-  signingPara: { lineHeight: 1.7, marginBottom: 14, fontSize: 10.5 },
-  sigLine: { borderBottomWidth: 0.75, borderColor: C.border, width: 180, marginBottom: 1 },
-  sigLabel: { fontSize: 10, color: C.gray, marginBottom: 6 },
-  sigRow: { flexDirection: "row", gap: 24, marginBottom: 6 },
-  sigBlock: { marginBottom: 8 },
+  signingPara: { lineHeight: 1.7, marginBottom: 16, fontSize: 10.5 },
+  sigRow: { flexDirection: "row", alignItems: "flex-end", gap: 28, marginBottom: 16 },
+  sigItem: { flexDirection: "row", alignItems: "flex-end" },
+  sigLabel: { fontSize: 10.5, color: C.black },
+  sigLine: { borderBottomWidth: 0.75, borderColor: C.border, height: 14, marginLeft: 6 },
+  sigValue: { fontSize: 10.5, marginLeft: 6 },
   // Footer
   footer: { borderTopWidth: 0.75, borderColor: "#e7e5e4", paddingTop: 10, marginTop: 6, textAlign: "center", fontSize: 9, color: C.lightGray },
   // Spacer
@@ -310,55 +311,66 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
           {" require additional assistance, parties can determine the rate for such services provided."}
         </Text>
 
-        {/* Signing */}
-        <Text style={s.signingPara}>
-          {"By signing below I, "}
-          {signer_name
-            ? <Text style={s.bold}>{signer_name}{signer_title ? `, ${signer_title}` : ""}</Text>
-            : <Text>{"_".repeat(28)}</Text>}
-          {", am agreeing to hire EMRG Media LLC to handle the above event scope and event planning details pertaining to the "}
-          <Text style={s.bold}>{allEventTypes.length > 0 ? allEventTypes.join(" / ") : "_".repeat(20)}</Text>
-          {" event."}
-        </Text>
+        {/* Signing — kept together: if it doesn't fit, the whole section moves to the next page */}
+        <View wrap={false}>
+          <Text style={s.signingPara}>
+            {"By signing below I, "}
+            {signer_name
+              ? <Text style={s.bold}>{signer_name}{signer_title ? `, ${signer_title}` : ""}</Text>
+              : <Text>{"_".repeat(28)}</Text>}
+            {", am agreeing to hire EMRG Media LLC to handle the above event scope and event planning details pertaining to the "}
+            <Text style={s.bold}>{allEventTypes.length > 0 ? allEventTypes.join(" / ") : "_".repeat(20)}</Text>
+            {" event."}
+          </Text>
 
-        {/* Signature blocks */}
-        <View style={{ opacity: 0.55 }}>
-          <View style={s.sigBlock}>
-            <Text style={s.sigLabel}>Company:{client_name ? `  ${client_name}` : ""}</Text>
-            {!client_name && <View style={s.sigLine} />}
-          </View>
+          {/* Client signature block */}
           <View style={s.sigRow}>
-            <View style={s.sigBlock}>
-              <Text style={s.sigLabel}>Name:{signer_name ? `  ${signer_name}` : ""}</Text>
-              {!signer_name && <View style={[s.sigLine, { width: 130 }]} />}
-            </View>
-            <View style={s.sigBlock}>
-              <Text style={s.sigLabel}>Signature:</Text>
-              <View style={[s.sigLine, { width: 130 }]} />
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Company:</Text>
+              {client_name
+                ? <Text style={s.sigValue}>{client_name}</Text>
+                : <View style={[s.sigLine, { width: 220 }]} />}
             </View>
           </View>
-          <View style={[s.sigBlock, { marginBottom: 16 }]}>
-            <Text style={s.sigLabel}>Date:</Text>
-            <View style={[s.sigLine, { width: 90 }]} />
-          </View>
-
-          <View style={s.sigBlock}>
-            <Text style={s.sigLabel}>Planning Agency:</Text>
-            <View style={[s.sigLine, { width: 200 }]} />
-          </View>
           <View style={s.sigRow}>
-            <View style={s.sigBlock}>
+            <View style={s.sigItem}>
               <Text style={s.sigLabel}>Name:</Text>
-              <View style={[s.sigLine, { width: 130 }]} />
+              {signer_name
+                ? <Text style={s.sigValue}>{signer_name}</Text>
+                : <View style={[s.sigLine, { width: 150 }]} />}
             </View>
-            <View style={s.sigBlock}>
+            <View style={s.sigItem}>
               <Text style={s.sigLabel}>Signature:</Text>
-              <View style={[s.sigLine, { width: 130 }]} />
+              <View style={[s.sigLine, { width: 150 }]} />
+            </View>
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Date:</Text>
+              <View style={[s.sigLine, { width: 90 }]} />
             </View>
           </View>
-          <View style={s.sigBlock}>
-            <Text style={s.sigLabel}>Date:</Text>
-            <View style={[s.sigLine, { width: 90 }]} />
+
+          <View style={{ height: 10 }} />
+
+          {/* EMRG signature block */}
+          <View style={s.sigRow}>
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Planning Agency:</Text>
+              <Text style={s.sigValue}>EMRG Media, LLC</Text>
+            </View>
+          </View>
+          <View style={s.sigRow}>
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Name:</Text>
+              <View style={[s.sigLine, { width: 150 }]} />
+            </View>
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Signature:</Text>
+              <View style={[s.sigLine, { width: 150 }]} />
+            </View>
+            <View style={s.sigItem}>
+              <Text style={s.sigLabel}>Date:</Text>
+              <View style={[s.sigLine, { width: 90 }]} />
+            </View>
           </View>
         </View>
 
