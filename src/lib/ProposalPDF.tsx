@@ -59,8 +59,8 @@ export interface ProposalData {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const EMRG_ADDRESS = "EMRG Media, 60 Sutton Place South, Suite 8LS  New York NY 10022  |  212.254.3700";
 
-function parseDateParts(raw: string): { month: number; day: number; year: number } | null {
-  if (!raw.trim()) return null;
+function parseDateParts(raw: string | undefined | null): { month: number; day: number; year: number } | null {
+  if (!raw || !raw.trim()) return null;
   const trimmed = raw.trim();
   const currentYear = new Date().getFullYear();
   const normalised = trimmed.replace(/\//g, "-");
@@ -96,23 +96,23 @@ function ordinal(day: number): string {
   return [11,12,13].includes(day % 100) ? "th" : day % 10 === 1 ? "st" : day % 10 === 2 ? "nd" : day % 10 === 3 ? "rd" : "th";
 }
 
-function formatDateLong(raw: string): string {
+function formatDateLong(raw: string | undefined): string {
   const p = parseDateParts(raw);
-  if (!p) return raw;
+  if (!p) return raw ?? "";
   return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}, ${p.year}`;
 }
 
 // Cover style: "December 10, 2026" (no ordinal)
-function formatDatePlain(raw: string): string {
+function formatDatePlain(raw: string | undefined): string {
   const p = parseDateParts(raw);
-  if (!p) return raw;
+  if (!p) return raw ?? "";
   return `${MONTHS[p.month]} ${p.day}, ${p.year}`;
 }
 
 // Letter style: "December 10th" (no year)
-function formatDateOrdinalNoYear(raw: string): string {
+function formatDateOrdinalNoYear(raw: string | undefined): string {
   const p = parseDateParts(raw);
-  if (!p) return raw;
+  if (!p) return raw ?? "";
   return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}`;
 }
 

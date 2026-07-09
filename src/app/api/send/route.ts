@@ -29,7 +29,8 @@ function formatDateOrdinal(raw: string): string {
 
 export async function POST(req: NextRequest) {
   const data = await req.json();
-  const { client_name, client_email, signer_name, events } = data;
+  const { client_name, signer_name, events } = data;
+  const client_email = typeof data.client_email === "string" ? data.client_email.trim() : "";
 
   if (!client_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client_email)) {
     return NextResponse.json({ error: "Valid client email required." }, { status: 400 });
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
 
   // The UI can pass a reviewed/edited subject + body; otherwise fall back to the default template
   const defaultSubject = `${client_name || "Your Event"} ${eventLabel !== "event" ? eventLabel : ""} | Proposal from EMRG Media`.replace(/\s+/g, " ").trim();
-  const subject: string = (data.subject ?? "").trim() || defaultSubject;
+  // Strip CR/LF from the (possibly user-edited) subject — prevents header injection
+  const subject: string = (data.subject ?? "").replace(/[\r\n]+/g, " ").trim() || defaultSubject;
 
   const defaultBody = [
     `Hi ${firstName},`,
@@ -78,9 +80,13 @@ export async function POST(req: NextRequest) {
 
   const bodyText: string = (data.body ?? "").trim() || defaultBody;
 
+  // Escape HTML so names/edited text can't inject markup into the email
+  const escapeHtml = (t: string) =>
+    t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
   const bodyHtml = bodyText
     .split("\n")
-    .map((line) => (line ? `<p style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#111">${line}</p>` : `<br/>`))
+    .map((line: string) => (line ? `<p style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#111">${escapeHtml(line)}</p>` : `<br/>`))
     .join("");
 
   const transporter = nodemailer.createTransport({
