@@ -109,7 +109,8 @@ export async function POST(req: NextRequest) {
       html: bodyHtml,
       attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
     });
-    logProposal("sent", data);
+    // Await: Vercel freezes the function after the response, killing un-awaited work
+    await logProposal("sent", data);
     return NextResponse.json({ ok: true, sentAt: new Date().toISOString() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Send failed";
