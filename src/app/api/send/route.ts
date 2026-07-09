@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import nodemailer from "nodemailer";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
-import { logProposal, entryFromProposal } from "@/lib/logProposal";
+import { logProposal } from "@/lib/logProposal";
 
 // Email template (copy supplied by Mario) — merge fields filled from the form.
 
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       html: bodyHtml,
       attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
     });
-    logProposal(entryFromProposal("sent", data));
+    logProposal("sent", data);
     return NextResponse.json({ ok: true, sentAt: new Date().toISOString() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Send failed";

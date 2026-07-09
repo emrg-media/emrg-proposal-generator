@@ -42,6 +42,8 @@ interface ClientFields {
   signer_name: string;
   signer_title: string;
   client_email: string;
+  venue: string;
+  prepared_by: string;
   budget_low: string;
   budget_high: string;
   service_fee: string;
@@ -170,8 +172,17 @@ function buildInitialServices(): ServiceState {
 
 const initialClient: ClientFields = {
   client_name: "", signer_name: "", signer_title: "", client_email: "",
+  venue: "", prepared_by: "",
   budget_low: "", budget_high: "", service_fee: "",
 };
+
+// One ID per proposal (form session) — generate and send log to the same sheet row
+function newProposalId(): string {
+  const d = new Date();
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `EMRG-${ymd}-${rand}`;
+}
 
 // ── Event Type multi-select (reusable) ───────────────────────────────────────
 
@@ -244,6 +255,7 @@ export default function NewProposalPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [sentAt, setSentAt] = useState("");
+  const [proposalId] = useState(newProposalId);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -325,6 +337,7 @@ export default function NewProposalPage() {
       if (data.signer_name) setClient((p) => ({ ...p, signer_name: data.signer_name }));
       if (data.signer_title) setClient((p) => ({ ...p, signer_title: data.signer_title }));
       if (data.client_email) setClient((p) => ({ ...p, client_email: data.client_email }));
+      if (data.venue) setClient((p) => ({ ...p, venue: data.venue }));
       if (data.budget_low) setClient((p) => ({ ...p, budget_low: formatCurrency(data.budget_low) }));
       if (data.budget_high) setClient((p) => ({ ...p, budget_high: formatCurrency(data.budget_high) }));
       if (data.service_fee) setClient((p) => ({ ...p, service_fee: data.service_fee.includes("%") ? data.service_fee : formatCurrency(data.service_fee) }));
@@ -355,7 +368,7 @@ export default function NewProposalPage() {
       const res = await fetch("/api/pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, events, selectedServices }),
+        body: JSON.stringify({ ...client, proposal_id: proposalId, events, selectedServices }),
       });
       if (!res.ok) throw new Error("PDF generation failed");
       const blob = await res.blob();
@@ -413,7 +426,7 @@ export default function NewProposalPage() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, events, selectedServices, subject: emailSubject, body: emailBody }),
+        body: JSON.stringify({ ...client, proposal_id: proposalId, events, selectedServices, subject: emailSubject, body: emailBody }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? "Send failed");
@@ -507,6 +520,12 @@ export default function NewProposalPage() {
               </div>
               <TextField label="Client Email" name="client_email" value={client.client_email}
                 onChange={handleClientText} placeholder="jane@company.com" />
+              <div className="grid grid-cols-2 gap-3">
+                <TextField label="Venue" name="venue" value={client.venue}
+                  onChange={handleClientText} placeholder="TBD or venue name" />
+                <TextField label="Prepared By" name="prepared_by" value={client.prepared_by}
+                  onChange={handleClientText} placeholder="Your name" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <FieldLabel>Budget (low)</FieldLabel>
