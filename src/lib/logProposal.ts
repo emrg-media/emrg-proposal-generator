@@ -62,21 +62,27 @@ function nowET(): string {
   return new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
 }
 
+// Neutralize spreadsheet formula injection: a leading = + or @ would execute
+// as a formula under USER_ENTERED input. Prefix with ' so Sheets stores text.
+function safeCell(v: string): string {
+  return /^[=+@]/.test(v) ? `'${v}` : v;
+}
+
 function buildRow(p: ProposalPayload, status: string, sentAt: string): string[] {
   const events = p.events ?? [];
   return [
     p.proposal_id ?? "",
     nowET(),
-    p.prepared_by ?? "",
-    p.signer_name ?? "",
-    p.client_name ?? "",
-    p.client_email ?? "",
-    [...new Set(events.flatMap((e) => e.eventTypes ?? []))].join(", "),
-    events.map((e) => e.date ?? "").filter(Boolean).join(", "),
-    events.map((e) => e.guestCount ?? "").filter(Boolean).join(", "),
-    p.venue ?? "",
-    [p.budget_low, p.budget_high].filter(Boolean).join(" – "),
-    p.service_fee ?? "",
+    safeCell(p.prepared_by ?? ""),
+    safeCell(p.signer_name ?? ""),
+    safeCell(p.client_name ?? ""),
+    safeCell(p.client_email ?? ""),
+    safeCell([...new Set(events.flatMap((e) => e.eventTypes ?? []))].join(", ")),
+    safeCell(events.map((e) => e.date ?? "").filter(Boolean).join(", ")),
+    safeCell(events.map((e) => e.guestCount ?? "").filter(Boolean).join(", ")),
+    safeCell(p.venue ?? ""),
+    safeCell([p.budget_low, p.budget_high].filter(Boolean).join(" – ")),
+    safeCell(p.service_fee ?? ""),
     status,
     sentAt,
   ];
