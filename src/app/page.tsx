@@ -473,7 +473,12 @@ export default function NewProposalPage() {
           <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
           <span className="text-[9px] tracking-[0.22em] text-white/25 uppercase ml-2 self-center">Events &amp; Marketing</span>
         </div>
-        <div className="ml-auto text-[9px] tracking-[0.22em] uppercase text-white/25">New Proposal</div>
+        <div className="ml-auto flex items-center gap-6">
+          <a href="/dashboard" className="text-[11px] tracking-[0.18em] uppercase text-white/60 hover:text-white transition-colors">
+            Dashboard
+          </a>
+          <span className="text-[9px] tracking-[0.22em] uppercase text-white/25">New Proposal</span>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 69px)" }}>
