@@ -467,18 +467,21 @@ export default function NewProposalPage() {
     <div className="min-h-screen flex flex-col">
       <div style={{ height: 4, background: "var(--emrg-red)" }} />
 
-      <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center">
+      <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center relative">
         <div className="flex items-baseline gap-2">
           <span className="text-xl font-bold tracking-tight">EMRG</span>
           <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
-          <span className="text-[9px] tracking-[0.22em] text-white/25 uppercase ml-2 self-center">Events &amp; Marketing</span>
         </div>
-        <div className="ml-auto flex items-center gap-6">
-          <a href="/dashboard" className="text-[11px] tracking-[0.18em] uppercase text-white/60 hover:text-white transition-colors">
+        <nav className="ml-auto lg:ml-0 lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10">
+          <a href="/" className="text-[11px] tracking-[0.22em] uppercase pb-0.5"
+            style={{ color: "#fff", borderBottom: "1px solid var(--emrg-red)" }}>
+            New Proposal
+          </a>
+          <a href="/dashboard" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5"
+            style={{ color: "rgba(255,255,255,0.45)" }}>
             Dashboard
           </a>
-          <span className="text-[9px] tracking-[0.22em] uppercase text-white/25">New Proposal</span>
-        </div>
+        </nav>
       </header>
 
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 69px)" }}>

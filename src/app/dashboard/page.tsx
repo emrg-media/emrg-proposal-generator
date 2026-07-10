@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 // One-screen dashboard per Mario's spec: eight numbers + the full table.
-// Status is editable inline; estimated fees (percentages / ranges) count toward
-// the pipeline using averages, flagged with an info tooltip until confirmed.
+// Status editable inline, pencil opens a full row editor, estimated fees
+// (percentages / ranges) count toward the pipeline using averages until confirmed.
 
 interface Proposal {
   id: string; proposalDate: string; preparedBy: string; client: string;
@@ -16,11 +16,9 @@ interface Proposal {
 const PENDING_STATUSES = ["generated", "sent", "viewed", "negotiating"];
 const STATUS_OPTIONS = ["Generated", "Sent", "Viewed", "Negotiating", "Signed", "Lost"];
 
+const AMBER = "#92600a";
+
 // ── Fee math ─────────────────────────────────────────────────────────────────
-// Exact:      "$12,500"            → 12500
-// $ range:    "$12,000 – $15,000"  → average, estimated
-// Percent:    "15%"                → 15% × budget average, estimated
-// Pct range:  "18-22%"             → average pct × budget average, estimated
 
 function moneyValues(text: string): number[] {
   return [...text.matchAll(/\$?\s*([\d][\d,]*(?:\.\d+)?)\s*([kK])?/g)]
@@ -44,7 +42,7 @@ function computeFee(fee: string, budget: string): { value: number | null; estima
     return {
       value: Math.round((pct / 100) * budgetAvg),
       estimated: true,
-      basis: `${pcts.length > 1 ? `avg ${pct}%` : `${pct}%`} of ${pcts.length > 1 ? "" : ""}avg budget $${Math.round(budgetAvg).toLocaleString()}`,
+      basis: `${pct}% of avg budget $${Math.round(budgetAvg).toLocaleString()}`,
     };
   }
 
@@ -71,9 +69,11 @@ function startOfWeek(d: Date): Date {
 export default function DashboardPage() {
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
   const [savingId, setSavingId] = useState("");
   const [confirmingId, setConfirmingId] = useState("");
   const [confirmValue, setConfirmValue] = useState("");
+  const [editing, setEditing] = useState<Proposal | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/proposals")
@@ -88,21 +88,29 @@ export default function DashboardPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function updateProposal(id: string, patch: { status?: string; fee?: string }) {
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 4000);
+  }
+
+  async function updateProposal(id: string, fields: Partial<Proposal>): Promise<boolean> {
     setSavingId(id);
     try {
       const res = await fetch("/api/proposals/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...patch }),
+        body: JSON.stringify({ id, fields }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Update failed");
       }
-      setProposals((prev) => prev?.map((p) => p.id === id ? { ...p, ...patch } as Proposal : p) ?? null);
+      setProposals((prev) => prev?.map((p) => p.id === id ? { ...p, ...fields } : p) ?? null);
+      return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      showToast(e instanceof Error ? e.message : "Update failed");
+      load(); // re-sync with the sheet so stale rows disappear
+      return false;
     } finally {
       setSavingId("");
     }
@@ -116,8 +124,8 @@ export default function DashboardPage() {
   async function confirmFee(id: string) {
     const digits = confirmValue.replace(/[^\d]/g, "");
     if (!digits) return;
-    await updateProposal(id, { fee: "$" + parseInt(digits, 10).toLocaleString("en-US") });
-    setConfirmingId("");
+    const ok = await updateProposal(id, { fee: "$" + parseInt(digits, 10).toLocaleString("en-US") });
+    if (ok) setConfirmingId("");
   }
 
   const now = new Date();
@@ -176,18 +184,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <div style={{ height: 4, background: "var(--emrg-red)" }} />
-      <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold tracking-tight">EMRG</span>
-          <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
-        </div>
-        <div className="ml-auto flex items-center gap-6">
-          <a href="/" className="text-[11px] tracking-[0.18em] uppercase text-white/60 hover:text-white transition-colors">
-            + New Proposal
-          </a>
-          <span className="text-[9px] tracking-[0.22em] uppercase text-white/25">Dashboard</span>
-        </div>
-      </header>
+      <SiteHeader active="dashboard" />
 
       <div className="px-10 py-8 max-w-[1400px] mx-auto">
         {error && (
@@ -217,17 +214,17 @@ export default function DashboardPage() {
 
             {/* Full table — everything visible */}
             <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
-              <table className="w-full text-[13px]" style={{ minWidth: 1150 }}>
+              <table className="w-full text-[13px]" style={{ minWidth: 1200 }}>
                 <thead>
                   <tr style={{ background: "var(--emrg-black)" }} className="text-white">
-                    {["Proposal ID","Date","Prepared By","Client","Company","Event","Event Date(s)","Guests","Venue","Fee","Status","Sent At","Follow-up","Notes"].map((h) => (
-                      <th key={h} className="text-left align-middle font-semibold px-3 py-2.5 text-[10.5px] tracking-[0.08em] uppercase whitespace-nowrap">{h}</th>
+                    {["Proposal ID","Date","Prepared By","Client","Company","Event","Event Date(s)","Guests","Venue","Fee","Status","Sent At","Follow-up","Notes",""].map((h, i) => (
+                      <th key={i} className="text-left align-middle font-semibold px-3 py-2.5 text-[10.5px] tracking-[0.08em] uppercase whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {parsed.length === 0 && (
-                    <tr><td colSpan={14} className="px-4 py-8 text-center text-stone-400">No proposals yet — generate one to see it here.</td></tr>
+                    <tr><td colSpan={15} className="px-4 py-8 text-center text-stone-400">No proposals yet — generate one to see it here.</td></tr>
                   )}
                   {[...parsed].reverse().map((p) => {
                     const overdue = p.followUpDate && !isNaN(p.followUpDate.getTime()) &&
@@ -253,10 +250,10 @@ export default function DashboardPage() {
                               <input autoFocus value={confirmValue}
                                 onChange={(e) => setConfirmValue(e.target.value.replace(/[^\d]/g, ""))}
                                 onKeyDown={(e) => { if (e.key === "Enter") confirmFee(p.id); if (e.key === "Escape") setConfirmingId(""); }}
-                                className="w-24 border-2 border-stone-400 rounded px-2 py-1 text-[12.5px]" placeholder="12500" />
+                                className="w-24 border-2 border-stone-300 rounded px-2 py-1 text-[12.5px]" placeholder="12500" />
                               <button onClick={() => confirmFee(p.id)}
                                 className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded text-white"
-                                style={{ background: "var(--emrg-red)" }}>Confirm</button>
+                                style={{ background: "var(--emrg-black)" }}>Save</button>
                               <button onClick={() => setConfirmingId("")} className="text-stone-400 text-[12px] px-1">✕</button>
                             </span>
                           ) : (
@@ -265,12 +262,12 @@ export default function DashboardPage() {
                               <InfoDot text={`Estimated — pending confirmation. ${p.feeCalc.basis ? `Based on ${p.feeCalc.basis} (quoted: ${p.fee}).` : `Quoted: ${p.fee}.`} Click Confirm to lock in the real number.`} />
                               <button onClick={() => openConfirm(p, p.feeCalc.value)}
                                 className="text-[10px] font-bold uppercase tracking-wide underline decoration-dotted"
-                                style={{ color: "var(--emrg-red)" }}>Confirm</button>
+                                style={{ color: AMBER }}>Confirm</button>
                             </span>
                           )}
                         </td>
 
-                        {/* Status: inline editable */}
+                        {/* Status: inline editable, chip hugs the text */}
                         <td className="px-3 py-2.5 align-middle">
                           <StatusSelect status={p.status} disabled={savingId === p.id}
                             onChange={(s) => updateProposal(p.id, { status: s })} />
@@ -280,7 +277,17 @@ export default function DashboardPage() {
                         <td className="px-3 py-2.5 align-middle whitespace-nowrap font-medium" style={overdue ? { color: "var(--emrg-red)" } : undefined}>
                           {p.followUp}{overdue ? " ⚠" : ""}
                         </td>
-                        <td className="px-3 py-2.5 align-middle max-w-[220px] truncate text-stone-600" title={p.notes}>{p.notes}</td>
+                        <td className="px-3 py-2.5 align-middle max-w-[200px] truncate text-stone-600" title={p.notes}>{p.notes}</td>
+
+                        {/* Pencil: edit everything */}
+                        <td className="px-3 py-2.5 align-middle">
+                          <button onClick={() => setEditing(p)} aria-label={`Edit ${p.id}`}
+                            className="text-stone-400 hover:text-stone-800 transition-colors p-1">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                              <path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 2.3l-8.3 8.3-3 .7.7-3 8.3-8.3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -288,22 +295,65 @@ export default function DashboardPage() {
               </table>
             </div>
             <p className="text-[11.5px] text-stone-400 mt-3">
-              Status and fee edits save straight to the tracker sheet. ≈ marks an estimated fee (average) — confirm it to lock in the real number.
+              Edits save straight to the tracker sheet. ≈ marks an estimated fee (average) — confirm it to lock in the real number.
             </p>
           </>
         )}
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-lg text-white text-[13px] shadow-xl"
+          style={{ background: "#1c1917" }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editing && (
+        <EditModal proposal={editing} saving={savingId === editing.id}
+          onClose={() => setEditing(null)}
+          onSave={async (fields) => {
+            const ok = await updateProposal(editing.id, fields);
+            if (ok) setEditing(null);
+          }} />
+      )}
     </div>
   );
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+export function SiteHeader({ active }: { active: "new" | "dashboard" }) {
+  return (
+    <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center relative">
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-bold tracking-tight">EMRG</span>
+        <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
+      </div>
+      <nav className="ml-auto lg:ml-0 lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10">
+        <a href="/" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5"
+          style={active === "new"
+            ? { color: "#fff", borderBottom: "1px solid var(--emrg-red)" }
+            : { color: "rgba(255,255,255,0.45)" }}>
+          New Proposal
+        </a>
+        <a href="/dashboard" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5"
+          style={active === "dashboard"
+            ? { color: "#fff", borderBottom: "1px solid var(--emrg-red)" }
+            : { color: "rgba(255,255,255,0.45)" }}>
+          Dashboard
+        </a>
+      </nav>
+    </header>
+  );
+}
+
 function InfoDot({ text }: { text: string }) {
   return (
     <span className="relative inline-flex group cursor-help">
       <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full text-[10px] font-bold border"
-        style={{ color: "var(--emrg-red)", borderColor: "var(--emrg-red)" }}>i</span>
+        style={{ color: AMBER, borderColor: AMBER }}>i</span>
       <span className="pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-60 rounded-md px-3 py-2 text-[11.5px] leading-snug font-normal normal-case tracking-normal text-white shadow-lg"
         style={{ background: "#1c1917" }}>
         {text}
@@ -312,21 +362,121 @@ function InfoDot({ text }: { text: string }) {
   );
 }
 
+const STATUS_STYLES: Record<string, { background: string; color: string }> = {
+  generated: { background: "#f5f5f4", color: "#57534e" },
+  sent: { background: "#111111", color: "#ffffff" },
+  viewed: { background: "#dbeafe", color: "#1d4ed8" },
+  negotiating: { background: "#fdf0d5", color: "#92600a" },
+  signed: { background: "#dcf2dc", color: "#15803d" },
+  lost: { background: "#e7e5e4", color: "#78716c" },
+};
+
+// Chip that hugs its text, with an invisible select layered on top for editing
 function StatusSelect({ status, disabled, onChange }: { status: string; disabled: boolean; onChange: (s: string) => void }) {
-  const s = status.toLowerCase();
-  const style =
-    s === "signed" ? { background: "#dcf2dc", color: "#15803d" } :
-    s === "lost" ? { background: "#e7e5e4", color: "#78716c" } :
-    s === "sent" ? { background: "#111111", color: "#ffffff" } :
-    s === "negotiating" || s === "viewed" ? { background: "#fdf0d5", color: "#92600a" } :
-    { background: "#f5f5f4", color: "#57534e" };
+  const style = STATUS_STYLES[status.toLowerCase()] ?? STATUS_STYLES.generated;
   return (
-    <select value={STATUS_OPTIONS.find((o) => o.toLowerCase() === s) ?? status} disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide cursor-pointer border-0 appearance-none"
-      style={style}>
-      {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-      {!STATUS_OPTIONS.some((o) => o.toLowerCase() === s) && <option value={status}>{status}</option>}
-    </select>
+    <span className="relative inline-flex">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide whitespace-nowrap"
+        style={style}>
+        {status}
+        <svg width="7" height="5" viewBox="0 0 8 5" fill="none"><path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+      </span>
+      <select value={STATUS_OPTIONS.find((o) => o.toLowerCase() === status.toLowerCase()) ?? status}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+        aria-label="Change status">
+        {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+        {!STATUS_OPTIONS.some((o) => o.toLowerCase() === status.toLowerCase()) && <option value={status}>{status}</option>}
+      </select>
+    </span>
+  );
+}
+
+const EDIT_FIELDS: Array<{ key: keyof Proposal; label: string; wide?: boolean }> = [
+  { key: "client", label: "Client" },
+  { key: "company", label: "Company" },
+  { key: "email", label: "Client Email", wide: true },
+  { key: "event", label: "Event" },
+  { key: "eventDates", label: "Event Date(s)" },
+  { key: "guests", label: "Guest Count" },
+  { key: "venue", label: "Venue" },
+  { key: "budget", label: "Budget" },
+  { key: "fee", label: "Fee" },
+  { key: "preparedBy", label: "Prepared By" },
+  { key: "followUp", label: "Next Follow-up" },
+  { key: "notes", label: "Notes", wide: true },
+];
+
+function EditModal({ proposal, saving, onClose, onSave }: {
+  proposal: Proposal; saving: boolean;
+  onClose: () => void; onSave: (fields: Partial<Proposal>) => void;
+}) {
+  const [form, setForm] = useState<Partial<Proposal>>(() => {
+    const f: Partial<Proposal> = {};
+    for (const { key } of EDIT_FIELDS) f[key] = proposal[key];
+    f.status = proposal.status;
+    return f;
+  });
+
+  function set(key: keyof Proposal, value: string) {
+    setForm((p) => ({ ...p, [key]: value }));
+  }
+
+  function changedFields(): Partial<Proposal> {
+    const out: Partial<Proposal> = {};
+    for (const key of Object.keys(form) as Array<keyof Proposal>) {
+      if (form[key] !== proposal[key]) out[key] = form[key];
+    }
+    return out;
+  }
+
+  const changes = changedFields();
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6"
+      style={{ background: "rgba(20,18,16,0.55)" }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "#111111" }}>
+              Edit Proposal
+            </p>
+            <p className="text-[12px] text-stone-500 mt-0.5 font-mono">{proposal.id}</p>
+          </div>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-700 text-xl leading-none px-1" aria-label="Close">×</button>
+        </div>
+        <div className="px-7 py-5 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            {EDIT_FIELDS.map(({ key, label, wide }) => (
+              <div key={key} className={wide ? "col-span-2" : ""}>
+                <label className="block text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: "#111111" }}>{label}</label>
+                <input type="text" value={(form[key] as string) ?? ""} onChange={(e) => set(key, e.target.value)}
+                  className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white text-stone-900" />
+              </div>
+            ))}
+            <div>
+              <label className="block text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: "#111111" }}>Status</label>
+              <select value={form.status} onChange={(e) => set("status", e.target.value)}
+                className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white text-stone-900">
+                {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="px-7 py-4 border-t border-stone-200 flex justify-end gap-3">
+          <button onClick={onClose}
+            className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-stone-300 text-stone-600">
+            Cancel
+          </button>
+          <button onClick={() => onSave(changes)} disabled={saving || Object.keys(changes).length === 0}
+            className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
+            style={{ background: "var(--emrg-red)" }}>
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

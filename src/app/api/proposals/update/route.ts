@@ -1,24 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 
-// Dashboard edits: update Status (M) and/or Fee (L) for one proposal row by ID.
+// Dashboard edits: update any editable columns for one proposal row by ID.
+// Accepts { id, fields: { preparedBy, client, company, email, event, eventDates,
+// guests, venue, budget, fee, status, followUp, notes } } — all optional.
+// Also accepts legacy { id, status, fee } shape.
 
 const STATUS_OPTIONS = ["Generated", "Sent", "Viewed", "Negotiating", "Signed", "Lost"];
 
+// field → sheet column (A=ID and B=Proposal Date and N=Sent At are system-owned)
+const COLUMN_MAP: Record<string, string> = {
+  preparedBy: "C",
+  client: "D",
+  company: "E",
+  email: "F",
+  event: "G",
+  eventDates: "H",
+  guests: "I",
+  venue: "J",
+  budget: "K",
+  fee: "L",
+  status: "M",
+  followUp: "O",
+  notes: "P",
+};
+
+function safeCell(v: string): string {
+  return /^[=+@]/.test(v) ? `'${v}` : v;
+}
+
 export async function POST(req: NextRequest) {
-  const { id, status, fee } = await req.json();
+  const body = await req.json();
+  const id = body.id;
+  const fields: Record<string, unknown> = { ...(body.fields ?? {}) };
+  if (body.status !== undefined) fields.status = body.status;
+  if (body.fee !== undefined) fields.fee = body.fee;
 
   if (!id || typeof id !== "string") {
     return NextResponse.json({ error: "Proposal id required." }, { status: 400 });
   }
-  if (status !== undefined && !STATUS_OPTIONS.includes(status)) {
-    return NextResponse.json({ error: "Invalid status." }, { status: 400 });
-  }
-  if (fee !== undefined && (typeof fee !== "string" || fee.length > 40)) {
-    return NextResponse.json({ error: "Invalid fee." }, { status: 400 });
-  }
-  if (status === undefined && fee === undefined) {
+
+  const entries = Object.entries(fields).filter(([k]) => COLUMN_MAP[k]);
+  if (entries.length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+  }
+  for (const [k, v] of entries) {
+    if (typeof v !== "string" || v.length > 500) {
+      return NextResponse.json({ error: `Invalid value for ${k}.` }, { status: 400 });
+    }
+  }
+  if (fields.status !== undefined && !STATUS_OPTIONS.includes(fields.status as string)) {
+    return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
 
   const keyB64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -42,22 +74,17 @@ export async function POST(req: NextRequest) {
       if (rows[i][0] === id) { rowIndex = i + 1; break; }
     }
     if (rowIndex === -1) {
-      return NextResponse.json({ error: "Proposal not found." }, { status: 404 });
+      return NextResponse.json({ error: "Proposal not found — it may have been removed. Refresh the dashboard." }, { status: 404 });
     }
 
-    const updates: Array<{ range: string; values: string[][] }> = [];
-    if (fee !== undefined) {
-      // Neutralize formula injection on manual fee input
-      const safeFee = /^[=+@]/.test(fee) ? `'${fee}` : fee;
-      updates.push({ range: `Proposals!L${rowIndex}`, values: [[safeFee]] });
-    }
-    if (status !== undefined) {
-      updates.push({ range: `Proposals!M${rowIndex}`, values: [[status]] });
-    }
+    const data = entries.map(([k, v]) => ({
+      range: `Proposals!${COLUMN_MAP[k]}${rowIndex}`,
+      values: [[k === "status" ? (v as string) : safeCell(v as string)]],
+    }));
 
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: sheetId,
-      requestBody: { valueInputOption: "USER_ENTERED", data: updates },
+      requestBody: { valueInputOption: "USER_ENTERED", data },
     });
 
     return NextResponse.json({ ok: true });
