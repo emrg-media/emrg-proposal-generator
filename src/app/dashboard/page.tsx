@@ -34,7 +34,11 @@ function computeFee(fee: string, budget: string): { value: number | null; estima
   const f = (fee || "").trim();
   if (!f) return { value: null, estimated: false, basis: "No fee entered" };
 
-  const pcts = [...f.matchAll(/([\d.]+)\s*%/g)].map((m) => parseFloat(m[1]));
+  // "18-22%" is a range even though only the second number carries the % sign
+  const pctRange = f.match(/([\d.]+)\s*[-–—]\s*([\d.]+)\s*%/);
+  const pcts = pctRange
+    ? [parseFloat(pctRange[1]), parseFloat(pctRange[2])]
+    : [...f.matchAll(/([\d.]+)\s*%/g)].map((m) => parseFloat(m[1]));
   if (pcts.length > 0) {
     const pct = average(pcts)!;
     const budgetAvg = average(moneyValues(budget || ""));
