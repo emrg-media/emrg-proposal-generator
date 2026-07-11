@@ -170,6 +170,8 @@ export default function DashboardPage() {
   const pendingEstimated = pending.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
   const pendingNeedsBudget = pending.filter((p) => p.feeCalc.needsBudget).length;
   const closedEstimated = won.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
+  // Every fee showing a Confirm button, across all statuses (matches the table)
+  const totalPendingConfirm = parsed.filter((p) => p.feeCalc.estimated).length;
 
   const dueToday = parsed.filter((p) =>
     p.followUpDate && !isNaN(p.followUpDate.getTime()) &&
@@ -179,7 +181,7 @@ export default function DashboardPage() {
 
   const pipelineInfo = (() => {
     const parts: string[] = [];
-    if (pendingEstimated > 0) parts.push(`Includes ${pendingEstimated} estimated ${pendingEstimated > 1 ? "fees" : "fee"} counted at ${pendingEstimated > 1 ? "their averages" : "its average"}, pending confirmation. Confirm ${pendingEstimated > 1 ? "them" : "it"} in the Fee column below.`);
+    if (pendingEstimated > 0) parts.push(`${pendingEstimated} of these pending ${pendingEstimated > 1 ? "fees are estimates" : "fee is an estimate"}, shown at ${pendingEstimated > 1 ? "their averages" : "its average"}.`);
     if (pendingNeedsBudget > 0) parts.push(`${pendingNeedsBudget} pending ${pendingNeedsBudget > 1 ? "proposals have" : "proposal has"} a percentage fee with no budget yet, so ${pendingNeedsBudget > 1 ? "they are" : "it is"} not counted. Add a budget to include ${pendingNeedsBudget > 1 ? "them" : "it"}.`);
     return parts.length ? parts.join(" ") : undefined;
   })();
@@ -193,7 +195,7 @@ export default function DashboardPage() {
     { label: "Revenue Pipeline", value: fmtMoney(pipeline), info: pipelineInfo },
     {
       label: "Revenue Closed", value: fmtMoney(closed), accent: "green",
-      info: closedEstimated > 0 ? `Includes ${closedEstimated} estimated ${closedEstimated > 1 ? "fees" : "fee"} pending confirmation. Confirm ${closedEstimated > 1 ? "them" : "it"} in the Fee column below.` : undefined,
+      info: closedEstimated > 0 ? `${closedEstimated} of these won ${closedEstimated > 1 ? "fees are estimates" : "fee is an estimate"}, shown at ${closedEstimated > 1 ? "their averages" : "its average"}.` : undefined,
     },
     { label: "Follow-ups Due Today", value: String(dueToday.length), accent: dueToday.length > 0 ? "red" : undefined },
   ];
@@ -228,6 +230,20 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            {/* Single accurate total of everything awaiting confirmation */}
+            {totalPendingConfirm > 0 && (
+              <div className="flex items-center gap-2.5 mb-3 px-4 py-2.5 rounded-lg border"
+                style={{ background: "#fdf6e9", borderColor: "#e7d3a6" }}>
+                <span className="inline-flex items-center justify-center w-[17px] h-[17px] rounded-full text-[11px] font-bold border flex-shrink-0"
+                  style={{ color: AMBER, borderColor: AMBER }}>i</span>
+                <p className="text-[12.5px]" style={{ color: "#7a5309" }}>
+                  <span className="font-bold">{totalPendingConfirm}</span>{" "}
+                  {totalPendingConfirm > 1 ? "fees are estimates" : "fee is an estimate"} (averages) pending confirmation.
+                  {" "}Confirm {totalPendingConfirm > 1 ? "them" : "it"} in the Fee column to lock in the final {totalPendingConfirm > 1 ? "numbers" : "number"}.
+                </p>
+              </div>
+            )}
 
             {/* Full table — everything visible */}
             <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
