@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       if (rows[i][0] === id) { rowIndex = i + 1; break; }
     }
     if (rowIndex === -1) {
-      return NextResponse.json({ error: "Proposal not found — it may have been removed. Refresh the dashboard." }, { status: 404 });
+      return NextResponse.json({ error: "Proposal not found. It may have been removed, so refresh the dashboard." }, { status: 404 });
     }
 
     const data = entries.map(([k, v]) => ({
