@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 // One-screen dashboard per Mario's spec: eight numbers + the full table.
-// Status editable inline, pencil opens a full row editor, estimated fees
-// (percentages / ranges) count toward the pipeline using averages until confirmed.
+// Status editable inline, pencil opens a full row editor, and every fee is
+// resolved to a dollar figure. Percentage fees are multiplied by the event
+// budget (both bounds averaged); ranges use their average. Averaged figures
+// are flagged as estimates pending confirmation.
 
 interface Proposal {
   id: string; proposalDate: string; preparedBy: string; client: string;
@@ -30,30 +32,41 @@ function average(nums: number[]): number | null {
   return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
 
-function computeFee(fee: string, budget: string): { value: number | null; estimated: boolean; basis: string } {
-  const f = (fee || "").trim();
-  if (!f) return { value: null, estimated: false, basis: "No fee entered" };
+interface FeeCalc {
+  value: number | null;   // resolved dollar figure that counts toward totals
+  estimated: boolean;      // derived from an average, pending confirmation
+  needsBudget: boolean;    // percentage fee with no budget on file
+  basis: string;           // plain-language explanation for the tooltip
+}
 
-  // "18-22%" is a range even though only the second number carries the % sign
-  const pctRange = f.match(/([\d.]+)\s*[-–—]\s*([\d.]+)\s*%/);
-  const pcts = pctRange
-    ? [parseFloat(pctRange[1]), parseFloat(pctRange[2])]
-    : [...f.matchAll(/([\d.]+)\s*%/g)].map((m) => parseFloat(m[1]));
-  if (pcts.length > 0) {
-    const pct = average(pcts)!;
-    const budgetAvg = average(moneyValues(budget || ""));
-    if (!budgetAvg) return { value: null, estimated: true, basis: `${f} of budget — no budget on file to estimate from` };
-    return {
-      value: Math.round((pct / 100) * budgetAvg),
-      estimated: true,
-      basis: `${pct}% of avg budget $${Math.round(budgetAvg).toLocaleString()}`,
-    };
+function computeFee(fee: string, budget: string): FeeCalc {
+  const f = (fee || "").trim();
+  if (!f) return { value: null, estimated: false, needsBudget: false, basis: "No fee entered yet." };
+
+  // Percentage fee → always convert to dollars using the event budget.
+  // A range like "18-22%" has only the last number touching the %, so pull
+  // every number in the fee string (capped at 100) as the percent bound(s).
+  if (f.includes("%")) {
+    const pctNums = [...f.matchAll(/([\d.]+)/g)].map((m) => parseFloat(m[1])).filter((n) => n > 0 && n <= 100);
+    if (pctNums.length === 0) return { value: null, estimated: false, needsBudget: false, basis: "This fee could not be read as a number." };
+    const pct = average(pctNums)!;
+    const budgets = moneyValues(budget || "");
+    if (budgets.length === 0) {
+      return { value: null, estimated: true, needsBudget: true, basis: `This is a ${f} fee, but there is no event budget on file to calculate it from.` };
+    }
+    // pct of each budget bound, averaged (identical to pct of the average budget)
+    const value = Math.round((pct / 100) * average(budgets)!);
+    const basis = budgets.length > 1
+      ? `${pct}% of the low budget (${fmtMoney((pct / 100) * budgets[0])}) and the high budget (${fmtMoney((pct / 100) * budgets[budgets.length - 1])}), averaged.`
+      : `${pct}% of the ${fmtMoney(budgets[0])} budget.`;
+    return { value, estimated: true, needsBudget: false, basis };
   }
 
+  // Dollar fee(s).
   const amounts = moneyValues(f);
-  if (amounts.length === 0) return { value: null, estimated: false, basis: "Unreadable fee" };
-  if (amounts.length === 1) return { value: Math.round(amounts[0]), estimated: false, basis: "" };
-  return { value: Math.round(average(amounts)!), estimated: true, basis: `average of ${f}` };
+  if (amounts.length === 0) return { value: null, estimated: false, needsBudget: false, basis: "This fee could not be read as a number." };
+  if (amounts.length === 1) return { value: Math.round(amounts[0]), estimated: false, needsBudget: false, basis: "" };
+  return { value: Math.round(average(amounts)!), estimated: true, needsBudget: false, basis: "The average of the quoted fee range." };
 }
 
 function fmtMoney(n: number): string {
@@ -153,9 +166,10 @@ export default function DashboardPage() {
 
   const pipeline = pending.reduce((s, p) => s + (p.feeCalc.value ?? 0), 0);
   const closed = won.reduce((s, p) => s + (p.feeCalc.value ?? 0), 0);
-  const pipelineEstimates = pending.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
-  const closedEstimates = won.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
-  const uncountable = pending.filter((p) => p.fee && p.feeCalc.value === null).length;
+
+  const pendingEstimated = pending.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
+  const pendingNeedsBudget = pending.filter((p) => p.feeCalc.needsBudget).length;
+  const closedEstimated = won.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
 
   const dueToday = parsed.filter((p) =>
     p.followUpDate && !isNaN(p.followUpDate.getTime()) &&
@@ -163,24 +177,23 @@ export default function DashboardPage() {
     PENDING_STATUSES.includes(p.statusLower)
   );
 
+  const pipelineInfo = (() => {
+    const parts: string[] = [];
+    if (pendingEstimated > 0) parts.push(`Includes ${pendingEstimated} estimated ${pendingEstimated > 1 ? "fees" : "fee"} counted at ${pendingEstimated > 1 ? "their averages" : "its average"}, pending confirmation. Confirm ${pendingEstimated > 1 ? "them" : "it"} in the Fee column below.`);
+    if (pendingNeedsBudget > 0) parts.push(`${pendingNeedsBudget} pending ${pendingNeedsBudget > 1 ? "proposals have" : "proposal has"} a percentage fee with no budget yet, so ${pendingNeedsBudget > 1 ? "they are" : "it is"} not counted. Add a budget to include ${pendingNeedsBudget > 1 ? "them" : "it"}.`);
+    return parts.length ? parts.join(" ") : undefined;
+  })();
+
   const stats: Array<{ label: string; value: string; accent?: "red" | "green"; info?: string }> = [
     { label: "Proposals This Week", value: String(thisWeek) },
     { label: "Proposals This Month", value: String(thisMonth) },
     { label: "Pending", value: String(pending.length) },
     { label: "Won", value: String(won.length), accent: "green" },
     { label: "Lost", value: String(lost.length) },
-    {
-      label: "Revenue Pipeline", value: fmtMoney(pipeline),
-      info: pipelineEstimates > 0 || uncountable > 0
-        ? [
-            pipelineEstimates > 0 ? `Includes ${pipelineEstimates} estimated fee${pipelineEstimates > 1 ? "s" : ""} (averages) pending confirmation — confirm them in the Fee column below.` : "",
-            uncountable > 0 ? `${uncountable} proposal${uncountable > 1 ? "s" : ""} couldn't be estimated (percentage fee with no budget).` : "",
-          ].filter(Boolean).join(" ")
-        : undefined,
-    },
+    { label: "Revenue Pipeline", value: fmtMoney(pipeline), info: pipelineInfo },
     {
       label: "Revenue Closed", value: fmtMoney(closed), accent: "green",
-      info: closedEstimates > 0 ? `Includes ${closedEstimates} estimated fee${closedEstimates > 1 ? "s" : ""} pending confirmation.` : undefined,
+      info: closedEstimated > 0 ? `Includes ${closedEstimated} estimated ${closedEstimated > 1 ? "fees" : "fee"} pending confirmation. Confirm ${closedEstimated > 1 ? "them" : "it"} in the Fee column below.` : undefined,
     },
     { label: "Follow-ups Due Today", value: String(dueToday.length), accent: dueToday.length > 0 ? "red" : undefined },
   ];
@@ -228,7 +241,7 @@ export default function DashboardPage() {
                 </thead>
                 <tbody>
                   {parsed.length === 0 && (
-                    <tr><td colSpan={15} className="px-4 py-8 text-center text-stone-400">No proposals yet — generate one to see it here.</td></tr>
+                    <tr><td colSpan={15} className="px-4 py-8 text-center text-stone-400">No proposals yet. Generate one to see it here.</td></tr>
                   )}
                   {[...parsed].reverse().map((p) => {
                     const overdue = p.followUpDate && !isNaN(p.followUpDate.getTime()) &&
@@ -245,11 +258,9 @@ export default function DashboardPage() {
                         <td className="px-3 py-2.5 align-middle whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums" }}>{p.guests}</td>
                         <td className="px-3 py-2.5 align-middle">{p.venue}</td>
 
-                        {/* Fee: exact, or estimate + info + confirm */}
+                        {/* Fee: exact dollar, computed estimate, or needs-budget */}
                         <td className="px-3 py-2.5 align-middle whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums" }}>
-                          {!p.feeCalc.estimated ? (
-                            <span className="font-semibold">{p.fee}</span>
-                          ) : confirmingId === p.id ? (
+                          {confirmingId === p.id ? (
                             <span className="inline-flex items-center gap-1.5">
                               <input autoFocus value={confirmValue}
                                 onChange={(e) => setConfirmValue(e.target.value.replace(/[^\d]/g, ""))}
@@ -260,10 +271,20 @@ export default function DashboardPage() {
                                 style={{ background: "var(--emrg-black)" }}>Save</button>
                               <button onClick={() => setConfirmingId("")} className="text-stone-400 text-[12px] px-1">✕</button>
                             </span>
+                          ) : p.feeCalc.needsBudget ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="text-stone-400 italic">Needs budget</span>
+                              <InfoDot text={`${p.feeCalc.basis} Add a budget with the pencil, or enter the fee directly with Confirm.`} />
+                              <button onClick={() => openConfirm(p, null)}
+                                className="text-[10px] font-bold uppercase tracking-wide underline decoration-dotted"
+                                style={{ color: AMBER }}>Confirm</button>
+                            </span>
+                          ) : !p.feeCalc.estimated ? (
+                            <span className="font-semibold">{p.feeCalc.value !== null ? fmtMoney(p.feeCalc.value) : p.fee}</span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5">
-                              <span className="font-semibold">{p.feeCalc.value !== null ? `≈ ${fmtMoney(p.feeCalc.value)}` : p.fee}</span>
-                              <InfoDot text={`Estimated — pending confirmation. ${p.feeCalc.basis ? `Based on ${p.feeCalc.basis} (quoted: ${p.fee}).` : `Quoted: ${p.fee}.`} Click Confirm to lock in the real number.`} />
+                              <span className="font-semibold">≈ {fmtMoney(p.feeCalc.value!)}</span>
+                              <InfoDot text={`Estimated and pending confirmation. ${p.feeCalc.basis} Quoted as ${p.fee}. Click Confirm to lock in the final number.`} />
                               <button onClick={() => openConfirm(p, p.feeCalc.value)}
                                 className="text-[10px] font-bold uppercase tracking-wide underline decoration-dotted"
                                 style={{ color: AMBER }}>Confirm</button>
@@ -299,7 +320,7 @@ export default function DashboardPage() {
               </table>
             </div>
             <p className="text-[11.5px] text-stone-400 mt-3">
-              Edits save straight to the tracker sheet. ≈ marks an estimated fee (average) — confirm it to lock in the real number.
+              Edits save straight to the tracker sheet. The ≈ symbol marks an estimated fee (an average). Confirm it to lock in the final number.
             </p>
           </>
         )}
@@ -358,7 +379,7 @@ function InfoDot({ text }: { text: string }) {
     <span className="relative inline-flex group cursor-help">
       <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full text-[10px] font-bold border"
         style={{ color: AMBER, borderColor: AMBER }}>i</span>
-      <span className="pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-60 rounded-md px-3 py-2 text-[11.5px] leading-snug font-normal normal-case tracking-normal text-white shadow-lg"
+      <span className="pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 rounded-md px-3 py-2 text-[11.5px] leading-snug font-normal normal-case tracking-normal text-white shadow-lg"
         style={{ background: "#1c1917" }}>
         {text}
       </span>

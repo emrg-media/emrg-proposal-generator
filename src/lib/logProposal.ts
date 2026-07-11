@@ -81,7 +81,7 @@ function buildRow(p: ProposalPayload, status: string, sentAt: string): string[] 
     safeCell(events.map((e) => e.date ?? "").filter(Boolean).join(", ")),
     safeCell(events.map((e) => e.guestCount ?? "").filter(Boolean).join(", ")),
     safeCell(p.venue ?? ""),
-    safeCell([p.budget_low, p.budget_high].filter(Boolean).join(" – ")),
+    safeCell([p.budget_low, p.budget_high].filter(Boolean).join(" to ")),
     safeCell(p.service_fee ?? ""),
     status,
     sentAt,
