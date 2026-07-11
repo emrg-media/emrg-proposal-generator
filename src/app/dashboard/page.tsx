@@ -73,6 +73,13 @@ function fmtMoney(n: number): string {
   return "$" + Math.round(n).toLocaleString("en-US");
 }
 
+// Short fee label for board cards
+function feeLabel(fc: FeeCalc, rawFee: string): string {
+  if (fc.needsBudget) return "Fee TBD";
+  if (fc.value === null) return rawFee || "No fee";
+  return (fc.estimated ? "≈ " : "") + fmtMoney(fc.value);
+}
+
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
   const day = (x.getDay() + 6) % 7; // Monday-start
@@ -91,6 +98,9 @@ export default function DashboardPage() {
   const [confirmingId, setConfirmingId] = useState("");
   const [confirmValue, setConfirmValue] = useState("");
   const [editing, setEditing] = useState<Proposal | null>(null);
+  const [view, setView] = useState<"table" | "board">("table");
+  const [dragId, setDragId] = useState("");
+  const [dragOverStatus, setDragOverStatus] = useState("");
 
   const load = useCallback(() => {
     fetch("/api/proposals")
@@ -127,6 +137,29 @@ export default function DashboardPage() {
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Update failed");
       load(); // re-sync with the sheet so stale rows disappear
+      return false;
+    } finally {
+      setSavingId("");
+    }
+  }
+
+  async function deleteProposal(id: string): Promise<boolean> {
+    setSavingId(id);
+    try {
+      const res = await fetch("/api/proposals/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Delete failed");
+      }
+      setProposals((prev) => prev?.filter((p) => p.id !== id) ?? null);
+      showToast("Proposal deleted.");
+      return true;
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Delete failed");
       return false;
     } finally {
       setSavingId("");
@@ -215,6 +248,19 @@ export default function DashboardPage() {
               ))}
             </div>
 
+            {/* View toggle */}
+            <div className="flex items-center gap-1 mb-4 bg-white border border-stone-200 rounded-lg p-1 w-fit">
+              {(["table", "board"] as const).map((v) => (
+                <button key={v} onClick={() => setView(v)}
+                  className="px-4 py-1.5 text-[11px] font-bold tracking-[0.14em] uppercase rounded-md transition-colors"
+                  style={view === v
+                    ? { background: "var(--emrg-black)", color: "#fff" }
+                    : { background: "transparent", color: "#78716c" }}>
+                  {v === "table" ? "Table" : "Board"}
+                </button>
+              ))}
+            </div>
+
             {/* Single accurate total of everything awaiting confirmation */}
             {totalPendingConfirm > 0 && (
               <div className="flex items-center gap-2.5 mb-3 px-4 py-2.5 rounded-lg border"
@@ -229,7 +275,28 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* Board view */}
+            {view === "board" && (
+              <BoardView
+                proposals={parsed}
+                dragId={dragId} dragOverStatus={dragOverStatus}
+                onDragStart={setDragId}
+                onDragOverStatus={setDragOverStatus}
+                onDrop={(status) => {
+                  const id = dragId;
+                  setDragOverStatus("");
+                  setDragId("");
+                  const p = parsed.find((x) => x.id === id);
+                  if (p && p.status.toLowerCase() !== status.toLowerCase()) updateProposal(id, { status });
+                }}
+                onEdit={setEditing}
+                savingId={savingId}
+              />
+            )}
+
             {/* Full table — everything visible */}
+            {view === "table" && (
+            <>
             <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
               <table className="w-full text-[13px]" style={{ minWidth: 1200 }}>
                 <thead>
@@ -322,6 +389,14 @@ export default function DashboardPage() {
             <p className="text-[11.5px] text-stone-400 mt-3">
               Edits save straight to the tracker sheet. The ≈ symbol marks an estimated fee (an average). Confirm it to lock in the final number.
             </p>
+            </>
+            )}
+
+            {view === "board" && (
+              <p className="text-[11.5px] text-stone-400 mt-3">
+                Drag a card between columns to change its stage. The change saves straight to the tracker sheet.
+              </p>
+            )}
           </>
         )}
       </div>
@@ -340,6 +415,10 @@ export default function DashboardPage() {
           onClose={() => setEditing(null)}
           onSave={async (fields) => {
             const ok = await updateProposal(editing.id, fields);
+            if (ok) setEditing(null);
+          }}
+          onDelete={async () => {
+            const ok = await deleteProposal(editing.id);
             if (ok) setEditing(null);
           }} />
       )}
@@ -418,6 +497,61 @@ function StatusSelect({ status, disabled, onChange }: { status: string; disabled
   );
 }
 
+function BoardView({ proposals, dragOverStatus, onDragStart, onDragOverStatus, onDrop, onEdit, savingId }: {
+  proposals: Array<Proposal & { feeCalc: FeeCalc }>;
+  dragId: string; dragOverStatus: string;
+  onDragStart: (id: string) => void;
+  onDragOverStatus: (status: string) => void;
+  onDrop: (status: string) => void;
+  onEdit: (p: Proposal) => void;
+  savingId: string;
+}) {
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-3">
+      {STATUS_OPTIONS.map((status) => {
+        const items = proposals.filter((p) => p.status.toLowerCase() === status.toLowerCase());
+        const dot = STATUS_STYLES[status.toLowerCase()] ?? STATUS_STYLES.generated;
+        const active = dragOverStatus === status;
+        return (
+          <div key={status}
+            onDragOver={(e) => { e.preventDefault(); if (dragOverStatus !== status) onDragOverStatus(status); }}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) onDragOverStatus(""); }}
+            onDrop={(e) => { e.preventDefault(); onDrop(status); }}
+            className="flex-shrink-0 w-72 rounded-lg border transition-colors"
+            style={{ background: active ? "#efece6" : "#faf9f7", borderColor: active ? "var(--emrg-red)" : "#e7e5e4" }}>
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-stone-200">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot.color === "#ffffff" ? "#111111" : dot.color }} />
+              <span className="text-[12px] font-bold uppercase tracking-wide text-stone-700">{status}</span>
+              <span className="ml-auto text-[11px] font-bold text-stone-400" style={{ fontVariantNumeric: "tabular-nums" }}>{items.length}</span>
+            </div>
+            <div className="p-2 space-y-2 min-h-[90px]">
+              {items.map((p) => (
+                <div key={p.id} draggable
+                  onDragStart={() => onDragStart(p.id)}
+                  onDragEnd={() => onDragOverStatus("")}
+                  className="bg-white border border-stone-200 rounded-md px-3 py-2.5 shadow-sm cursor-grab active:cursor-grabbing group"
+                  style={{ opacity: savingId === p.id ? 0.5 : 1 }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[13px] font-bold text-stone-900 leading-tight">{p.company || p.client || "Untitled"}</p>
+                    <button onClick={() => onEdit(p)} aria-label={`Edit ${p.id}`}
+                      className="text-stone-300 hover:text-stone-700 opacity-0 group-hover:opacity-100 transition flex-shrink-0 -mr-0.5">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 2.3l-8.3 8.3-3 .7.7-3 8.3-8.3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                    </button>
+                  </div>
+                  {p.client && p.client !== p.company && <p className="text-[11.5px] text-stone-500 mt-0.5">{p.client}</p>}
+                  {p.event && <p className="text-[11px] text-stone-400 mt-0.5 leading-tight">{p.event}</p>}
+                  <p className="text-[13px] font-semibold text-stone-800 mt-1.5" style={{ fontVariantNumeric: "tabular-nums" }}>{feeLabel(p.feeCalc, p.fee)}</p>
+                </div>
+              ))}
+              {items.length === 0 && <p className="text-[11px] text-stone-300 text-center py-5">Drop here</p>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const EDIT_FIELDS: Array<{ key: keyof Proposal; label: string; wide?: boolean }> = [
   { key: "client", label: "Client" },
   { key: "company", label: "Company" },
@@ -433,9 +567,9 @@ const EDIT_FIELDS: Array<{ key: keyof Proposal; label: string; wide?: boolean }>
   { key: "notes", label: "Notes", wide: true },
 ];
 
-function EditModal({ proposal, saving, onClose, onSave }: {
+function EditModal({ proposal, saving, onClose, onSave, onDelete }: {
   proposal: Proposal; saving: boolean;
-  onClose: () => void; onSave: (fields: Partial<Proposal>) => void;
+  onClose: () => void; onSave: (fields: Partial<Proposal>) => void; onDelete: () => void;
 }) {
   const [form, setForm] = useState<Partial<Proposal>>(() => {
     const f: Partial<Proposal> = {};
@@ -443,6 +577,7 @@ function EditModal({ proposal, saving, onClose, onSave }: {
     f.status = proposal.status;
     return f;
   });
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function set(key: keyof Proposal, value: string) {
     setForm((p) => ({ ...p, [key]: value }));
@@ -490,16 +625,34 @@ function EditModal({ proposal, saving, onClose, onSave }: {
             </div>
           </div>
         </div>
-        <div className="px-7 py-4 border-t border-stone-200 flex justify-end gap-3">
-          <button onClick={onClose}
-            className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-stone-300 text-stone-600">
-            Cancel
-          </button>
-          <button onClick={() => onSave(changes)} disabled={saving || Object.keys(changes).length === 0}
-            className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
-            style={{ background: "var(--emrg-red)" }}>
-            {saving ? "Saving…" : "Save Changes"}
-          </button>
+        <div className="px-7 py-4 border-t border-stone-200 flex items-center gap-3">
+          {confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] text-stone-500">Delete this proposal?</span>
+              <button onClick={onDelete} disabled={saving}
+                className="px-3 py-2 text-[12px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
+                style={{ background: "var(--emrg-red)" }}>
+                {saving ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button onClick={() => setConfirmDelete(false)} className="text-[12px] text-stone-500 underline">Keep</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)}
+              className="text-[12px] font-bold tracking-wider uppercase text-stone-400 hover:text-[color:var(--emrg-red)] transition-colors">
+              Delete
+            </button>
+          )}
+          <div className="ml-auto flex gap-3">
+            <button onClick={onClose}
+              className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-stone-300 text-stone-600">
+              Cancel
+            </button>
+            <button onClick={() => onSave(changes)} disabled={saving || Object.keys(changes).length === 0}
+              className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
+              style={{ background: "var(--emrg-red)" }}>
+              {saving ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
