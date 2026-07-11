@@ -21,7 +21,7 @@ export async function GET() {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Proposals!A2:P",
+      range: "Proposals!A2:Q",
     });
 
     const proposals = (res.data.values ?? [])
@@ -43,6 +43,7 @@ export async function GET() {
         sentAt: r[13] ?? "",
         followUp: r[14] ?? "",
         notes: r[15] ?? "",
+        sort: r[16] ?? "",
       }));
 
     return NextResponse.json({ proposals });

@@ -13,6 +13,19 @@ interface Proposal {
   company: string; email: string; event: string; eventDates: string;
   guests: string; venue: string; budget: string; fee: string;
   status: string; sentAt: string; followUp: string; notes: string;
+  sort?: string;
+}
+
+// Order a column's cards: explicit Sort value first, unranked keep sheet order (stable sort)
+function orderColumn(all: Proposal[], status: string): Proposal[] {
+  return all
+    .filter((p) => p.status.toLowerCase() === status.toLowerCase())
+    .slice()
+    .sort((a, b) => {
+      const sa = a.sort && !isNaN(parseFloat(a.sort)) ? parseFloat(a.sort) : Infinity;
+      const sb = b.sort && !isNaN(parseFloat(b.sort)) ? parseFloat(b.sort) : Infinity;
+      return sa - sb;
+    });
 }
 
 const PENDING_STATUSES = ["generated", "sent", "viewed", "negotiating"];
@@ -101,6 +114,8 @@ export default function DashboardPage() {
   const [view, setView] = useState<"table" | "board">("table");
   const [dragId, setDragId] = useState("");
   const [dragOverStatus, setDragOverStatus] = useState("");
+  const [dragOverId, setDragOverId] = useState("");
+  const [dragOverPos, setDragOverPos] = useState<"before" | "after">("after");
 
   const load = useCallback(() => {
     fetch("/api/proposals")
@@ -121,6 +136,9 @@ export default function DashboardPage() {
   }
 
   async function updateProposal(id: string, fields: Partial<Proposal>): Promise<boolean> {
+    const snapshot = proposals;
+    // Optimistic: reflect the change instantly, revert if the write fails
+    setProposals((prev) => prev?.map((p) => p.id === id ? { ...p, ...fields } : p) ?? null);
     setSavingId(id);
     try {
       const res = await fetch("/api/proposals/update", {
@@ -132,15 +150,52 @@ export default function DashboardPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Update failed");
       }
-      setProposals((prev) => prev?.map((p) => p.id === id ? { ...p, ...fields } : p) ?? null);
       return true;
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Update failed");
-      load(); // re-sync with the sheet so stale rows disappear
+      setProposals(snapshot); // revert
       return false;
     } finally {
       setSavingId("");
     }
+  }
+
+  // Board drag-and-drop: optimistic reorder within/into a column, persisted in one request
+  function handleBoardDrop(targetStatus: string) {
+    const id = dragId;
+    const overId = dragOverId;
+    const pos = dragOverPos;
+    setDragId(""); setDragOverStatus(""); setDragOverId("");
+    if (!id) return;
+    const all = proposals ?? [];
+    const moved = all.find((p) => p.id === id);
+    if (!moved) return;
+    const statusChanged = moved.status.toLowerCase() !== targetStatus.toLowerCase();
+
+    const col = orderColumn(all, targetStatus).filter((p) => p.id !== id);
+    let idx = col.length;
+    if (overId && overId !== id) {
+      const oi = col.findIndex((p) => p.id === overId);
+      if (oi !== -1) idx = pos === "before" ? oi : oi + 1;
+    }
+    col.splice(idx, 0, moved);
+    const orderedIds = col.map((p) => p.id);
+    if (!statusChanged && orderedIds.every((oid, i) => orderColumn(all, targetStatus)[i]?.id === oid)) return; // no change
+
+    const snapshot = proposals;
+    setProposals((prev) => prev?.map((p) => {
+      const ni = orderedIds.indexOf(p.id);
+      if (ni !== -1) return { ...p, sort: String(ni), status: p.id === id ? targetStatus : p.status };
+      return p;
+    }) ?? null);
+
+    fetch("/api/proposals/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds, movedId: statusChanged ? id : undefined, newStatus: statusChanged ? targetStatus : undefined }),
+    })
+      .then(async (res) => { if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error ?? "Reorder failed"); } })
+      .catch((e) => { showToast(e instanceof Error ? e.message : "Reorder failed"); setProposals(snapshot); });
   }
 
   async function deleteProposal(id: string): Promise<boolean> {
@@ -279,16 +334,12 @@ export default function DashboardPage() {
             {view === "board" && (
               <BoardView
                 proposals={parsed}
-                dragId={dragId} dragOverStatus={dragOverStatus}
+                dragId={dragId} dragOverStatus={dragOverStatus} dragOverId={dragOverId} dragOverPos={dragOverPos}
                 onDragStart={setDragId}
-                onDragOverStatus={setDragOverStatus}
-                onDrop={(status) => {
-                  const id = dragId;
-                  setDragOverStatus("");
-                  setDragId("");
-                  const p = parsed.find((x) => x.id === id);
-                  if (p && p.status.toLowerCase() !== status.toLowerCase()) updateProposal(id, { status });
-                }}
+                onOverColumn={(status) => { setDragOverStatus(status); setDragOverId(""); }}
+                onOverCard={(status, id, p) => { setDragOverStatus(status); setDragOverId(id); setDragOverPos(p); }}
+                onDrop={handleBoardDrop}
+                onDragEnd={() => { setDragId(""); setDragOverStatus(""); setDragOverId(""); }}
                 onEdit={setEditing}
                 savingId={savingId}
               />
@@ -497,52 +548,67 @@ function StatusSelect({ status, disabled, onChange }: { status: string; disabled
   );
 }
 
-function BoardView({ proposals, dragOverStatus, onDragStart, onDragOverStatus, onDrop, onEdit, savingId }: {
+function BoardView({ proposals, dragId, dragOverStatus, dragOverId, dragOverPos, onDragStart, onOverColumn, onOverCard, onDrop, onDragEnd, onEdit, savingId }: {
   proposals: Array<Proposal & { feeCalc: FeeCalc }>;
-  dragId: string; dragOverStatus: string;
+  dragId: string; dragOverStatus: string; dragOverId: string; dragOverPos: "before" | "after";
   onDragStart: (id: string) => void;
-  onDragOverStatus: (status: string) => void;
+  onOverColumn: (status: string) => void;
+  onOverCard: (status: string, id: string, pos: "before" | "after") => void;
   onDrop: (status: string) => void;
+  onDragEnd: () => void;
   onEdit: (p: Proposal) => void;
   savingId: string;
 }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-3">
       {STATUS_OPTIONS.map((status) => {
-        const items = proposals.filter((p) => p.status.toLowerCase() === status.toLowerCase());
+        const items = orderColumn(proposals, status) as Array<Proposal & { feeCalc: FeeCalc }>;
         const dot = STATUS_STYLES[status.toLowerCase()] ?? STATUS_STYLES.generated;
         const active = dragOverStatus === status;
         return (
           <div key={status}
-            onDragOver={(e) => { e.preventDefault(); if (dragOverStatus !== status) onDragOverStatus(status); }}
-            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) onDragOverStatus(""); }}
+            onDragOver={(e) => { e.preventDefault(); onOverColumn(status); }}
             onDrop={(e) => { e.preventDefault(); onDrop(status); }}
-            className="flex-shrink-0 w-72 rounded-lg border transition-colors"
+            className="flex-shrink-0 w-72 rounded-lg border transition-colors duration-100"
             style={{ background: active ? "#efece6" : "#faf9f7", borderColor: active ? "var(--emrg-red)" : "#e7e5e4" }}>
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-stone-200">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot.color === "#ffffff" ? "#111111" : dot.color }} />
               <span className="text-[12px] font-bold uppercase tracking-wide text-stone-700">{status}</span>
               <span className="ml-auto text-[11px] font-bold text-stone-400" style={{ fontVariantNumeric: "tabular-nums" }}>{items.length}</span>
             </div>
-            <div className="p-2 space-y-2 min-h-[90px]">
-              {items.map((p) => (
-                <div key={p.id} draggable
-                  onDragStart={() => onDragStart(p.id)}
-                  onDragEnd={() => onDragOverStatus("")}
-                  className="bg-white border border-stone-200 rounded-md px-3 py-2.5 shadow-sm cursor-grab active:cursor-grabbing group"
-                  style={{ opacity: savingId === p.id ? 0.5 : 1 }}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[13px] font-bold text-stone-900 leading-tight">{p.company || p.client || "Untitled"}</p>
-                    <button onClick={() => onEdit(p)} aria-label={`Edit ${p.id}`}
-                      className="text-stone-300 hover:text-stone-700 opacity-0 group-hover:opacity-100 transition flex-shrink-0 -mr-0.5">
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 2.3l-8.3 8.3-3 .7.7-3 8.3-8.3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
-                    </button>
+            <div className="p-2 min-h-[90px]">
+              {items.map((p) => {
+                const showBefore = dragId && dragOverId === p.id && dragOverPos === "before" && dragId !== p.id;
+                const showAfter = dragId && dragOverId === p.id && dragOverPos === "after" && dragId !== p.id;
+                return (
+                  <div key={p.id}>
+                    {showBefore && <div className="h-0.5 rounded-full my-1" style={{ background: "var(--emrg-red)" }} />}
+                    <div draggable
+                      onDragStart={() => onDragStart(p.id)}
+                      onDragEnd={onDragEnd}
+                      onDragOver={(e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        const r = e.currentTarget.getBoundingClientRect();
+                        onOverCard(status, p.id, e.clientY - r.top < r.height / 2 ? "before" : "after");
+                      }}
+                      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDrop(status); }}
+                      className="bg-white border border-stone-200 rounded-md px-3 py-2.5 shadow-sm cursor-grab active:cursor-grabbing group my-1"
+                      style={{ opacity: dragId === p.id ? 0.4 : 1 }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[13px] font-bold text-stone-900 leading-tight">{p.company || p.client || "Untitled"}</p>
+                        <button onClick={() => onEdit(p)} aria-label={`Edit ${p.id}`}
+                          className="text-stone-300 hover:text-stone-700 opacity-0 group-hover:opacity-100 transition flex-shrink-0 -mr-0.5">
+                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 2.3l-8.3 8.3-3 .7.7-3 8.3-8.3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                        </button>
+                      </div>
+                      {p.client && p.client !== p.company && <p className="text-[11.5px] text-stone-500 mt-0.5">{p.client}</p>}
+                      {p.event && <p className="text-[11px] text-stone-400 mt-0.5 leading-tight">{p.event}</p>}
+                      <p className="text-[13px] font-semibold text-stone-800 mt-1.5" style={{ fontVariantNumeric: "tabular-nums" }}>{feeLabel(p.feeCalc, p.fee)}</p>
+                    </div>
+                    {showAfter && <div className="h-0.5 rounded-full my-1" style={{ background: "var(--emrg-red)" }} />}
                   </div>
-                  {p.client && p.client !== p.company && <p className="text-[11.5px] text-stone-500 mt-0.5">{p.client}</p>}
-                  {p.event && <p className="text-[11px] text-stone-400 mt-0.5 leading-tight">{p.event}</p>}
-                  <p className="text-[13px] font-semibold text-stone-800 mt-1.5" style={{ fontVariantNumeric: "tabular-nums" }}>{feeLabel(p.feeCalc, p.fee)}</p>
-                </div>
-              ))}
+                );
+              })}
               {items.length === 0 && <p className="text-[11px] text-stone-300 text-center py-5">Drop here</p>}
             </div>
           </div>
