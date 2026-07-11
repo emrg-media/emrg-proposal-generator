@@ -167,10 +167,7 @@ export default function DashboardPage() {
   const pipeline = pending.reduce((s, p) => s + (p.feeCalc.value ?? 0), 0);
   const closed = won.reduce((s, p) => s + (p.feeCalc.value ?? 0), 0);
 
-  const pendingEstimated = pending.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
-  const pendingNeedsBudget = pending.filter((p) => p.feeCalc.needsBudget).length;
-  const closedEstimated = won.filter((p) => p.feeCalc.estimated && p.feeCalc.value !== null).length;
-  // Every fee showing a Confirm button, across all statuses (matches the table)
+  // Single source of truth: every fee showing a Confirm button (matches the table)
   const totalPendingConfirm = parsed.filter((p) => p.feeCalc.estimated).length;
 
   const dueToday = parsed.filter((p) =>
@@ -179,24 +176,14 @@ export default function DashboardPage() {
     PENDING_STATUSES.includes(p.statusLower)
   );
 
-  const pipelineInfo = (() => {
-    const parts: string[] = [];
-    if (pendingEstimated > 0) parts.push(`${pendingEstimated} of these pending ${pendingEstimated > 1 ? "fees are estimates" : "fee is an estimate"}, shown at ${pendingEstimated > 1 ? "their averages" : "its average"}.`);
-    if (pendingNeedsBudget > 0) parts.push(`${pendingNeedsBudget} pending ${pendingNeedsBudget > 1 ? "proposals have" : "proposal has"} a percentage fee with no budget yet, so ${pendingNeedsBudget > 1 ? "they are" : "it is"} not counted. Add a budget to include ${pendingNeedsBudget > 1 ? "them" : "it"}.`);
-    return parts.length ? parts.join(" ") : undefined;
-  })();
-
-  const stats: Array<{ label: string; value: string; accent?: "red" | "green"; info?: string }> = [
+  const stats: Array<{ label: string; value: string; accent?: "red" | "green" }> = [
     { label: "Proposals This Week", value: String(thisWeek) },
     { label: "Proposals This Month", value: String(thisMonth) },
     { label: "Pending", value: String(pending.length) },
     { label: "Won", value: String(won.length), accent: "green" },
     { label: "Lost", value: String(lost.length) },
-    { label: "Revenue Pipeline", value: fmtMoney(pipeline), info: pipelineInfo },
-    {
-      label: "Revenue Closed", value: fmtMoney(closed), accent: "green",
-      info: closedEstimated > 0 ? `${closedEstimated} of these won ${closedEstimated > 1 ? "fees are estimates" : "fee is an estimate"}, shown at ${closedEstimated > 1 ? "their averages" : "its average"}.` : undefined,
-    },
+    { label: "Revenue Pipeline", value: fmtMoney(pipeline) },
+    { label: "Revenue Closed", value: fmtMoney(closed), accent: "green" },
     { label: "Follow-ups Due Today", value: String(dueToday.length), accent: dueToday.length > 0 ? "red" : undefined },
   ];
 
@@ -220,13 +207,10 @@ export default function DashboardPage() {
               {stats.map((s) => (
                 <div key={s.label} className="bg-white border border-stone-200 rounded-lg px-5 py-4">
                   <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-stone-500 mb-1.5">{s.label}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[30px] font-bold leading-none" style={{
-                      color: s.accent === "green" ? "#15803d" : s.accent === "red" ? "var(--emrg-red)" : "#111111",
-                      fontVariantNumeric: "tabular-nums",
-                    }}>{s.value}</p>
-                    {s.info && <InfoDot text={s.info} />}
-                  </div>
+                  <p className="text-[30px] font-bold leading-none" style={{
+                    color: s.accent === "green" ? "#15803d" : s.accent === "red" ? "var(--emrg-red)" : "#111111",
+                    fontVariantNumeric: "tabular-nums",
+                  }}>{s.value}</p>
                 </div>
               ))}
             </div>
