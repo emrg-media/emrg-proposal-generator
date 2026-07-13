@@ -260,6 +260,16 @@ export default function NewProposalPage() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
+  // Remember "Prepared By" per browser so each team member types their name once
+  useEffect(() => {
+    const saved = localStorage.getItem("emrg_prepared_by");
+    if (saved) setClient((p) => ({ ...p, prepared_by: saved }));
+  }, []);
+
+  useEffect(() => {
+    if (client.prepared_by.trim()) localStorage.setItem("emrg_prepared_by", client.prepared_by.trim());
+  }, [client.prepared_by]);
+
   // ── Client field handlers ─────────────────────────────────────────────────
 
   function handleClientText(e: React.ChangeEvent<HTMLInputElement>) {
