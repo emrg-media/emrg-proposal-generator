@@ -472,7 +472,7 @@ export default function NewProposalPage() {
           <span className="text-xl font-bold tracking-tight">EMRG</span>
           <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
         </div>
-        <nav className="ml-auto lg:ml-0 lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10">
+        <nav className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10 ml-auto lg:ml-0">
           <a href="/" className="text-[11px] tracking-[0.22em] uppercase pb-0.5"
             style={{ color: "#fff", borderBottom: "1px solid var(--emrg-red)" }}>
             New Proposal
@@ -482,6 +482,14 @@ export default function NewProposalPage() {
             Dashboard
           </a>
         </nav>
+        <button
+          onClick={async () => {
+            await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ logout: true }) }).catch(() => {});
+            window.location.href = "/login";
+          }}
+          className="ml-6 lg:ml-auto text-[11px] tracking-[0.22em] uppercase text-white/40 hover:text-white/80 transition-colors">
+          Log out
+        </button>
       </header>
 
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 69px)" }}>

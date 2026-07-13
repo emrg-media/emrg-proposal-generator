@@ -130,6 +130,16 @@ export default function DashboardPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Re-sync when the tab regains focus, so team members see each other's changes.
+  // Skip while a drag, edit, or save is mid-flight so we never clobber local work.
+  useEffect(() => {
+    function onFocus() {
+      if (!dragId && !savingId && !editing && !confirmingId) load();
+    }
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [load, dragId, savingId, editing, confirmingId]);
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 4000);
@@ -303,17 +313,26 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            {/* View toggle */}
-            <div className="flex items-center gap-1 mb-4 bg-white border border-stone-200 rounded-lg p-1 w-fit">
-              {(["table", "board"] as const).map((v) => (
-                <button key={v} onClick={() => setView(v)}
-                  className="px-4 py-1.5 text-[11px] font-bold tracking-[0.14em] uppercase rounded-md transition-colors"
-                  style={view === v
-                    ? { background: "var(--emrg-black)", color: "#fff" }
-                    : { background: "transparent", color: "#78716c" }}>
-                  {v === "table" ? "Table" : "Board"}
-                </button>
-              ))}
+            {/* View toggle + refresh */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg p-1 w-fit">
+                {(["table", "board"] as const).map((v) => (
+                  <button key={v} onClick={() => setView(v)}
+                    className="px-4 py-1.5 text-[11px] font-bold tracking-[0.14em] uppercase rounded-md transition-colors"
+                    style={view === v
+                      ? { background: "var(--emrg-black)", color: "#fff" }
+                      : { background: "transparent", color: "#78716c" }}>
+                    {v === "table" ? "Table" : "Board"}
+                  </button>
+                ))}
+              </div>
+              <button onClick={load}
+                className="flex items-center gap-1.5 text-[11px] font-bold tracking-[0.14em] uppercase text-stone-500 hover:text-stone-900 transition-colors">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Refresh
+              </button>
             </div>
 
             {/* Single accurate total of everything awaiting confirmation */}
@@ -479,6 +498,15 @@ export default function DashboardPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+async function logout() {
+  await fetch("/api/auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ logout: true }),
+  }).catch(() => {});
+  window.location.href = "/login";
+}
+
 export function SiteHeader({ active }: { active: "new" | "dashboard" }) {
   return (
     <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center relative">
@@ -486,7 +514,7 @@ export function SiteHeader({ active }: { active: "new" | "dashboard" }) {
         <span className="text-xl font-bold tracking-tight">EMRG</span>
         <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
       </div>
-      <nav className="ml-auto lg:ml-0 lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10">
+      <nav className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10 ml-auto lg:ml-0">
         <a href="/" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5"
           style={active === "new"
             ? { color: "#fff", borderBottom: "1px solid var(--emrg-red)" }
@@ -500,6 +528,10 @@ export function SiteHeader({ active }: { active: "new" | "dashboard" }) {
           Dashboard
         </a>
       </nav>
+      <button onClick={logout}
+        className="ml-6 lg:ml-auto text-[11px] tracking-[0.22em] uppercase text-white/40 hover:text-white/80 transition-colors">
+        Log out
+      </button>
     </header>
   );
 }
