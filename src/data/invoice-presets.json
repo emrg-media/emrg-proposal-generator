@@ -1,0 +1,43 @@
+{
+  "_comment": "PLACEHOLDER packages and prices. To be replaced with Olivia's real preset list. Each preset drops its items into the invoice; perGuest lines multiply by the guest count; taxable applies 8.875 percent.",
+  "presets": [
+    {
+      "id": "open-bar",
+      "name": "Open Bar",
+      "items": [
+        { "description": "Open Bar, per guest", "unitPrice": "85", "perGuest": true, "taxable": true },
+        { "description": "Bartender staffing", "unitPrice": "350", "perGuest": false, "taxable": true }
+      ]
+    },
+    {
+      "id": "open-bar-food",
+      "name": "Open Bar with Food",
+      "items": [
+        { "description": "Open Bar with Food, per guest", "unitPrice": "135", "perGuest": true, "taxable": true },
+        { "description": "Bartender staffing", "unitPrice": "350", "perGuest": false, "taxable": true },
+        { "description": "Chef and server staffing", "unitPrice": "600", "perGuest": false, "taxable": true }
+      ]
+    },
+    {
+      "id": "appetizer-4",
+      "name": "4 Appetizer Package",
+      "items": [
+        { "description": "4 Appetizer Package, per guest", "unitPrice": "42", "perGuest": true, "taxable": true }
+      ]
+    },
+    {
+      "id": "appetizer-6",
+      "name": "6 Appetizer Package",
+      "items": [
+        { "description": "6 Appetizer Package, per guest", "unitPrice": "58", "perGuest": true, "taxable": true }
+      ]
+    },
+    {
+      "id": "dessert-station",
+      "name": "Dessert Station",
+      "items": [
+        { "description": "Dessert Station, per guest", "unitPrice": "28", "perGuest": true, "taxable": true }
+      ]
+    }
+  ]
+}

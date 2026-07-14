@@ -491,6 +491,10 @@ export default function NewProposalPage() {
             style={{ color: "rgba(255,255,255,0.45)" }}>
             Dashboard
           </a>
+          <a href="/invoice" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5"
+            style={{ color: "rgba(255,255,255,0.45)" }}>
+            Invoice
+          </a>
         </nav>
         <button
           onClick={async () => {
