@@ -19,6 +19,9 @@ const s = StyleSheet.create({
   page: { paddingHorizontal: 48, paddingVertical: 44, fontFamily: "Times-Roman", fontSize: 10.5, color: C.black, backgroundColor: "#ffffff" },
   logo: { width: 160, marginHorizontal: "auto", marginBottom: 22 },
   para: { lineHeight: 1.7, marginBottom: 10, fontSize: 10.5 },
+  // Intro letter: matches the EMRG scope document (10.5pt Times, 1.15 line
+  // spacing, justified, one blank line between paragraphs).
+  letterPara: { lineHeight: 1.15, marginBottom: 12, fontSize: 10.5, textAlign: "justify" as const },
   bold: { fontFamily: "Times-Bold" },
   italic: { fontFamily: "Times-Italic" },
   // Table
@@ -102,19 +105,27 @@ function formatDateLong(raw: string | undefined): string {
   return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}, ${p.year}`;
 }
 
-// Cover style: "December 10, 2026" (no ordinal)
-function formatDatePlain(raw: string | undefined): string {
+// Cover + letter style, matching the EMRG scope document: "May 2027"
+function formatMonthYear(raw: string | undefined): string {
   const p = parseDateParts(raw);
   if (!p) return raw ?? "";
-  return `${MONTHS[p.month]} ${p.day}, ${p.year}`;
+  return `${MONTHS[p.month]} ${p.year}`;
 }
 
-// Letter style: "December 10th" (no year)
-function formatDateOrdinalNoYear(raw: string | undefined): string {
+function eventYear(raw: string | undefined): string {
   const p = parseDateParts(raw);
-  if (!p) return raw ?? "";
-  return `${MONTHS[p.month]} ${p.day}${ordinal(p.day)}`;
+  return p ? String(p.year) : "";
 }
+
+// Whoever signs the proposal letter. Change here to re-sign every proposal.
+const LETTER_SIGNER = {
+  signature: "Erica",
+  name: "Erica Maurer",
+  title: "Partner",
+  company: "EMRG Media",
+  office: "O: 212.254.3700",
+  cell: "C: 917.447.3575",
+};
 
 function formatGuestCount(raw: string): string {
   const trimmed = raw.trim();
@@ -143,9 +154,6 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
   const signerFirstName = nameWords.length > 0
     ? (isHonorific(nameWords[0]) && nameWords.length > 2 ? nameWords[1] : isHonorific(nameWords[0]) ? nameWords.join(" ") : nameWords[0])
     : "";
-  const guestLabel = firstEvent?.guestCount
-    ? (firstEvent.guestCountFormatted || formatGuestCount(firstEvent.guestCount)).replace(/\s*ppl$/, "")
-    : "";
 
   return (
     <Document>
@@ -161,7 +169,7 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
           <Text style={{ fontSize: 13, color: C.gray }}>
             {eventTypeLabel !== "event" ? eventTypeLabel : ""}
             {eventTypeLabel !== "event" && firstEvent?.date ? "  |  " : ""}
-            {firstEvent?.date ? formatDatePlain(firstEvent.date) : ""}
+            {firstEvent?.date ? formatMonthYear(firstEvent.date) : ""}
           </Text>
           <View style={{ width: 40, height: 2, backgroundColor: C.red, marginTop: 28 }} />
         </View>
@@ -171,27 +179,28 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
       <Page size="LETTER" style={s.page}>
         <Image src={`data:image/png;base64,${logoBase64}`} style={s.logo} />
         <View style={{ marginTop: 18 }}>
-          <Text style={s.para}>Dear {signerFirstName || "_________"},</Text>
-          <Text style={s.para}>
+          <Text style={s.letterPara}>Dear {signerFirstName || "_________"},</Text>
+          <Text style={s.letterPara}>
             {"Thank you for the opportunity to plan "}
             <Text style={s.bold}>{client_name || "your company"}</Text>
-            {"'s upcoming "}
-            {eventTypeLabel !== "event" ? eventTypeLabel.toLowerCase() : "event"}
-            {". For over 25 years, EMRG Media has produced more than 1,100 events for clients including JPMorgan, Netflix, Bloomberg and Condé Nast, and we would be honored to add this celebration to that list."}
+            {eventYear(firstEvent?.date) ? ` ${eventYear(firstEvent?.date)}` : ""}
+            {eventTypeLabel !== "event" ? ` ${eventTypeLabel}` : " event"}
+            {". For over 25 years, EMRG Media has produced thousands of events for clients such as JPMorgan, Netflix, Bloomberg, Per Scholas, Google, Breast Cancer, Condé Nast along with many other well known companies. We would be honored to add this celebration to that list."}
           </Text>
-          <Text style={s.para}>
-            {"Enclosed is our proposed scope of services and agreement for your "}
-            {firstEvent?.date ? <Text style={s.bold}>{formatDateOrdinalNoYear(firstEvent.date)}</Text> : "upcoming"}
-            {" event"}
-            {guestLabel ? ` for ${guestLabel} guests` : ""}
-            {". Our team handles every detail from venue through day of execution, so your team enjoys the night instead of running it."}
+          <Text style={s.letterPara}>
+            {"Enclosed is our proposed scope of service and agreement for your "}
+            {firstEvent?.date ? <Text style={s.bold}>{formatMonthYear(firstEvent.date)}</Text> : "upcoming"}
+            {" event. Our team handles every detail from venue sourcing through day of execution removing the stress of planning and event management from your team."}
           </Text>
-          <Text style={s.para}>We look forward to creating something exceptional together.</Text>
+          <Text style={s.letterPara}>We look forward to creating something exceptional together.</Text>
           <View style={{ marginTop: 22 }}>
-            <Text style={s.para}>Warm regards,</Text>
-            <Text style={[s.bold, { fontSize: 10.5 }]}>Mario Stewart</Text>
-            <Text style={{ fontSize: 10, color: C.gray }}>Founder and CEO, EMRG Media</Text>
-            <Text style={{ fontSize: 10, color: C.gray }}>212.254.3700</Text>
+            <Text style={s.letterPara}>Thank you,</Text>
+            <Text style={[s.italic, { fontSize: 13, marginBottom: 6 }]}>{LETTER_SIGNER.signature}</Text>
+            <Text style={[s.bold, { fontSize: 10.5 }]}>{LETTER_SIGNER.name}</Text>
+            <Text style={{ fontSize: 10, color: C.gray }}>{LETTER_SIGNER.title}</Text>
+            <Text style={{ fontSize: 10, color: C.gray, marginBottom: 6 }}>{LETTER_SIGNER.company}</Text>
+            <Text style={{ fontSize: 10, color: C.gray }}>{LETTER_SIGNER.office}</Text>
+            <Text style={{ fontSize: 10, color: C.gray }}>{LETTER_SIGNER.cell}</Text>
           </View>
         </View>
         <Text style={[s.footer, { marginTop: "auto" }]}>{EMRG_ADDRESS}</Text>
