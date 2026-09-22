@@ -1,0 +1,70 @@
+import Link from "next/link";
+import type { User } from "@/db/schema";
+import LogoutButton from "./LogoutButton";
+
+// The team's four working screens come first, exactly as the brief lays them
+// out. Data and Exec are reporting surfaces; Exec is admin-only and simply
+// isn't rendered for anyone else.
+
+export type NavKey = "attention" | "pipeline" | "proposals" | "closed" | "data" | "exec" | "invoice" | "admin";
+
+const PRIMARY: Array<{ key: NavKey; href: string; label: string }> = [
+  { key: "attention", href: "/", label: "Needs Attention" },
+  { key: "pipeline", href: "/pipeline", label: "Pipeline" },
+  { key: "proposals", href: "/proposals", label: "Proposals" },
+  { key: "closed", href: "/closed", label: "Won / Lost" },
+  { key: "data", href: "/data", label: "Data" },
+];
+
+export default function SiteHeader({ active, user }: { active: NavKey; user: User }) {
+  const items = [...PRIMARY];
+  if (user.role === "admin") items.push({ key: "exec", href: "/exec", label: "Exec" });
+  items.push({ key: "invoice", href: "/invoice", label: "Invoice" });
+
+  return (
+    <>
+      <div style={{ height: 4, background: "var(--emrg-red)" }} />
+      <header style={{ background: "var(--emrg-black)" }} className="text-white px-5 md:px-8 py-4">
+        <div className="max-w-[1600px] mx-auto flex items-center gap-5">
+          <Link href="/" className="flex items-baseline gap-2 flex-shrink-0">
+            <span className="text-lg font-bold tracking-tight">EMRG</span>
+            <span className="text-lg font-light tracking-[0.18em] text-white/50 hidden sm:inline">MEDIA</span>
+          </Link>
+
+          <nav className="flex items-center gap-5 lg:gap-7 overflow-x-auto flex-1 min-w-0 no-scrollbar">
+            {items.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className="text-[11px] tracking-[0.18em] uppercase pb-0.5 whitespace-nowrap transition-colors"
+                style={active === item.key
+                  ? { color: "#fff", borderBottom: "1px solid var(--emrg-red)" }
+                  : { color: "rgba(255,255,255,0.45)" }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Link
+              href="/new"
+              className="text-[11px] font-bold tracking-[0.16em] uppercase px-3 py-1.5 rounded whitespace-nowrap"
+              style={{ background: "var(--emrg-red)", color: "#fff" }}
+            >
+              + New
+            </Link>
+            <Link
+              href="/admin"
+              className="text-[11px] tracking-[0.12em] uppercase text-white/45 hover:text-white/80 transition-colors hidden md:inline"
+              title={`Signed in as ${user.name}`}
+            >
+              {user.name.split(" ")[0]}
+            </Link>
+            <LogoutButton />
+          </div>
+        </div>
+      </header>
+    </>
+  );
+}

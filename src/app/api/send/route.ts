@@ -4,7 +4,9 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import nodemailer from "nodemailer";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
-import { logProposal } from "@/lib/logProposal";
+import { getSessionUser } from "@/lib/auth";
+import { recordSent } from "@/lib/recordProposal";
+import { getSettings } from "@/lib/settings";
 
 // Email template (copy supplied by Mario) — merge fields filled from the form.
 
@@ -28,6 +30,9 @@ function formatDateOrdinal(raw: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const data = await req.json();
   const { client_name, signer_name, events } = data;
   const client_email = typeof data.client_email === "string" ? data.client_email.trim() : "";
@@ -109,8 +114,10 @@ export async function POST(req: NextRequest) {
       html: bodyHtml,
       attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
     });
-    // Await: Vercel freezes the function after the response, killing un-awaited work
-    await logProposal("sent", data);
+    // Await rather than fire-and-forget: Vercel freezes the function once the
+    // response is returned, which would kill an un-awaited write.
+    const { followupCadenceDays } = await getSettings();
+    await recordSent(data, user, client_email, followupCadenceDays);
     return NextResponse.json({ ok: true, sentAt: new Date().toISOString() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Send failed";

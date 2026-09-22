@@ -1,0 +1,42 @@
+import { requireUser } from "@/lib/auth";
+import { listOpportunities } from "@/lib/opportunities";
+import { getSettings } from "@/lib/settings";
+import { responseStatus } from "@/lib/attention";
+import SiteHeader from "@/components/SiteHeader";
+import PipelineBoard, { type BoardCard } from "./PipelineBoard";
+
+export const dynamic = "force-dynamic";
+
+export default async function PipelinePage() {
+  const user = await requireUser();
+  const [rows, appSettings] = await Promise.all([listOpportunities(), getSettings()]);
+  const now = new Date();
+
+  const cards: BoardCard[] = rows.map((r) => ({
+    id: r.id,
+    company: r.company,
+    contact: [r.firstName, r.lastName].filter(Boolean).join(" "),
+    eventName: r.eventName || r.eventTypes.join(" / "),
+    eventDate: r.eventDate,
+    valueCents: r.proposalValueCents,
+    valueEstimated: r.valueEstimated,
+    feeRaw: r.feeRaw,
+    stage: r.stage,
+    ownerName: r.ownerName,
+    collaboratorNames: r.collaboratorNames,
+    leadAgeMs: now.getTime() - r.leadReceivedAt.getTime(),
+    lastActivityMs: now.getTime() - r.lastActivityAt.getTime(),
+    nextAction: r.nextAction,
+    nextActionOverdue: !!r.nextActionDate && r.nextActionDate < now,
+    followupState: r.followupState,
+    approvalWaiting: r.approvalState === "waiting",
+    responseStatus: responseStatus(r, now, appSettings.responseTargetMinutes),
+  }));
+
+  return (
+    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+      <SiteHeader active="pipeline" user={user} />
+      <PipelineBoard cards={cards} />
+    </div>
+  );
+}

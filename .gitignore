@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Agent skill files installed by `vercel integration add` — tooling, not app code
+.agents/
+.claude/skills/
+skills-lock.json

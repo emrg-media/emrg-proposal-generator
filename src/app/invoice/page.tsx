@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import presetData from "@/data/invoice-presets.json";
 import {
   computeInvoice, fmtMoney, DEFAULT_TAX_RATE,
@@ -316,9 +317,9 @@ function InvoiceHeader() {
         <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
       </div>
       <nav className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10 ml-auto lg:ml-0">
-        <a href="/" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>New Proposal</a>
-        <a href="/dashboard" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Dashboard</a>
-        <a href="/invoice" className="text-[11px] tracking-[0.22em] uppercase pb-0.5" style={{ color: "#fff", borderBottom: "1px solid var(--emrg-red)" }}>Invoice</a>
+        <Link href="/" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Needs Attention</Link>
+        <Link href="/pipeline" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Pipeline</Link>
+        <Link href="/invoice" className="text-[11px] tracking-[0.22em] uppercase pb-0.5" style={{ color: "#fff", borderBottom: "1px solid var(--emrg-red)" }}>Invoice</Link>
       </nav>
       <button onClick={logout} className="ml-6 lg:ml-auto text-[11px] tracking-[0.22em] uppercase text-white/40 hover:text-white/80 transition-colors">Log out</button>
     </header>

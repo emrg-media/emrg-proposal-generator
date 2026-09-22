@@ -6,26 +6,43 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test 'src/**/*.test.ts'",
+    "db:push": "dotenv -e .env.local -- drizzle-kit push",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "db:seed": "dotenv -e .env.local -- tsx --conditions=react-server scripts/seed.ts",
+    "db:demo": "dotenv -e .env.local -- tsx --conditions=react-server scripts/demo-data.ts",
+    "db:import": "dotenv -e .env.local -- tsx --conditions=react-server scripts/import-sheet.ts",
+    "verify:data": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-data-layer.ts",
+    "verify:concurrency": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-concurrency.ts",
+    "check:sheet": "dotenv -e .env.local -- tsx scripts/check-sheet.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
     "@react-pdf/renderer": "^4.5.1",
+    "drizzle-orm": "^0.45.2",
     "googleapis": "^173.0.0",
     "next": "^16.3.0-canary.68",
     "nodemailer": "^9.0.3",
+    "pg": "^8.23.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }
 }

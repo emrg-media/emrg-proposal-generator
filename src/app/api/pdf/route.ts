@@ -3,13 +3,21 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
-import { logProposal } from "@/lib/logProposal";
+import { getSessionUser } from "@/lib/auth";
+import { recordGenerated } from "@/lib/recordProposal";
+
+// Renders the proposal PDF (unchanged) and records the version against the
+// opportunity, so nothing that gets generated is ever lost.
 
 export async function POST(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const data = await req.json();
 
-  // Await: Vercel freezes the function after the response, killing un-awaited work
-  await logProposal("generated", data);
+  // Await rather than fire-and-forget: Vercel freezes the function once the
+  // response is returned, which would kill an un-awaited write.
+  await recordGenerated(data, user);
 
   const logoPath = join(process.cwd(), "public", "emrg-logo.png");
   const logoBase64 = readFileSync(logoPath).toString("base64");

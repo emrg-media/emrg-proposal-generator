@@ -37,3 +37,7 @@ input[type="checkbox"] {
   accent-color: var(--emrg-red);
   cursor: pointer;
 }
+
+/* Horizontal nav scrolls on narrow screens without showing a bar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
