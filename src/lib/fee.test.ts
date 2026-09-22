@@ -84,3 +84,25 @@ test("round-trip: stored budget resolves a percentage fee identically", () => {
   const text = budgetText(parseMoneyToCents("$50,000"), parseMoneyToCents("$100,000"));
   assert.equal(computeFee("20%", text).value, 15000);
 });
+
+// ── Regression: the percentage fee that became $20 ───────────────────────────
+//
+// The generator's currency filter stripped "%" from the service fee field, so a
+// 20% fee on an $80,000 event was stored as the literal number 20 and resolved
+// to $20 — four orders of magnitude out, flowing straight into pipeline value,
+// win/loss totals and the executive dashboard. These lock in the difference.
+
+test("a percentage fee resolves against the budget, not as dollars", () => {
+  const withPercent = computeFee("20%", "$70,000 to $90,000");
+  assert.equal(withPercent.value, 16000, "20% of the $80,000 midpoint");
+  assert.equal(withPercent.estimated, true);
+});
+
+test("the same fee with the % stripped is a completely different number", () => {
+  // This is what the bug produced, and why the % must survive input filtering.
+  assert.equal(computeFee("20", "$70,000 to $90,000").value, 20);
+});
+
+test("a percentage range still resolves against the budget", () => {
+  assert.equal(computeFee("18-22%", "$70,000 to $90,000").value, 16000);
+});

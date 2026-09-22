@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getOpportunity } from "@/lib/opportunities";
 import { fromCents } from "@/lib/fee";
+import { LEAD_SOURCES } from "@/lib/constants";
 import ProposalBuilder, { type ProposalSeed } from "./ProposalBuilder";
 
 // The existing proposal generator, pre-filled from the opportunity. The form,
@@ -54,6 +55,7 @@ export default async function OpportunityProposalPage({
       opportunityCode={o.code}
       seed={seed}
       backHref={`/opportunity/${o.id}`}
+      leadSources={LEAD_SOURCES}
     />
   );
 }

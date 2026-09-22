@@ -128,9 +128,9 @@ export default async function NeedsAttentionPage({
             hint={mineOnly && allGroups.length > 0
               ? `${allGroups.length} opportunit${allGroups.length === 1 ? "y" : "ies"} on the wider team — switch to Everyone to see them.`
               : "Every lead has been answered and every deal has a next action."}
-            action={<Link href="/new"
+            action={<Link href="/proposal"
               className="inline-block text-[11px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white"
-              style={{ background: "var(--emrg-red)" }}>+ New Opportunity</Link>}
+              style={{ background: "var(--emrg-red)" }}>+ New Proposal</Link>}
           />
         ) : (
           <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">

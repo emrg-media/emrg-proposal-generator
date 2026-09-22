@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   // Await rather than fire-and-forget: Vercel freezes the function once the
   // response is returned, which would kill an un-awaited write.
-  await recordGenerated(data, user);
+  const recorded = await recordGenerated(data, user);
 
   const logoPath = join(process.cwd(), "public", "emrg-logo.png");
   const logoBase64 = readFileSync(logoPath).toString("base64");
@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${clientName}-proposal.pdf"`,
+      // Lets the generator link straight to the record it just created.
+      ...(recorded ? {
+        "X-Opportunity-Id": recorded.opportunityId,
+        "X-Proposal-Version": String(recorded.version),
+        "Access-Control-Expose-Headers": "X-Opportunity-Id, X-Proposal-Version",
+      } : {}),
     },
   });
 }

@@ -18,7 +18,8 @@ happened to it, how fast it was answered, and what needs a human right now.
 | `/pipeline` | Everyone | Nine-stage board, drag to move |
 | `/opportunity/[id]` | Everyone | One record: details, owner, timeline, actions |
 | `/opportunity/[id]/proposal` | Everyone | The proposal generator, pre-filled from the record |
-| `/new` | Everyone | Intake — paste a transcript, dictate it, or type it |
+| `/proposal` | Everyone | **The front door.** Fill in the proposal; the opportunity is created for you |
+| `/new` | Everyone | Log a lead you are not quoting yet |
 | `/proposals` | Everyone | Every proposal ever generated, kept permanently |
 | `/closed` | Everyone | Won / Lost with reasons |
 | `/data` | Everyone | Spreadsheet view: search, sort, filter, CSV export |

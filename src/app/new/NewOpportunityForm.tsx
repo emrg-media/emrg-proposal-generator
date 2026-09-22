@@ -125,7 +125,10 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         New opportunity
       </h1>
       <p className="text-[13px] text-stone-500 mb-5">
-        Paste a transcript, dictate it, or type it in. Everything ends up in the same record.
+        For a lead you want on the board before there is a proposal. If you are quoting now,
+        go straight to <a href="/proposal" className="font-semibold underline"
+        style={{ color: "var(--emrg-red)" }}>New Proposal</a> instead &mdash; that creates the
+        opportunity for you.
       </p>
 
       <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg p-1 w-fit mb-5">

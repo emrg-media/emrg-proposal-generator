@@ -6,10 +6,11 @@ import LogoutButton from "./LogoutButton";
 // out. Data and Exec are reporting surfaces; Exec is admin-only and simply
 // isn't rendered for anyone else.
 
-export type NavKey = "attention" | "pipeline" | "proposals" | "closed" | "data" | "exec" | "invoice" | "admin";
+export type NavKey = "newproposal" | "attention" | "pipeline" | "proposals" | "closed" | "data" | "exec" | "invoice" | "admin";
 
 const PRIMARY: Array<{ key: NavKey; href: string; label: string }> = [
   { key: "attention", href: "/", label: "Needs Attention" },
+  { key: "newproposal", href: "/proposal", label: "New Proposal" },
   { key: "pipeline", href: "/pipeline", label: "Pipeline" },
   { key: "proposals", href: "/proposals", label: "Proposals" },
   { key: "closed", href: "/closed", label: "Won / Lost" },
@@ -48,11 +49,11 @@ export default function SiteHeader({ active, user }: { active: NavKey; user: Use
 
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link
-              href="/new"
+              href="/proposal"
               className="text-[11px] font-bold tracking-[0.16em] uppercase px-3 py-1.5 rounded whitespace-nowrap"
               style={{ background: "var(--emrg-red)", color: "#fff" }}
             >
-              + New
+              + Proposal
             </Link>
             <Link
               href="/admin"

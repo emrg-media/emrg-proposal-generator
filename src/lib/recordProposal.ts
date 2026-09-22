@@ -1,9 +1,11 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { opportunities, proposals, type User } from "@/db/schema";
 import { logActivity } from "./activity";
 import { computeFee, toCents, budgetText, parseMoneyToCents } from "./fee";
+import { newOpportunityCode } from "./opportunities";
+import { OPEN_STAGES } from "./constants";
 
 // Writing a proposal into the permanent record (brief §6). Every generated
 // version is kept forever, whatever becomes of the deal, and the snapshot is
@@ -11,7 +13,11 @@ import { computeFee, toCents, budgetText, parseMoneyToCents } from "./fee";
 // reproduced byte-for-byte later.
 
 export interface ProposalPayload {
+  /** Absent when the planner started from the generator rather than a record. */
   opportunity_id?: string;
+  /** When the enquiry actually arrived, so speed-to-lead stays honest. */
+  enquiry_received_at?: string;
+  lead_source?: string;
   client_name?: string;
   signer_name?: string;
   signer_title?: string;
@@ -27,10 +33,98 @@ export interface ProposalPayload {
   body?: string;
 }
 
-/** Record a generated version. Returns the version number, or null if unlinked. */
-export async function recordGenerated(payload: ProposalPayload, actor: User): Promise<number | null> {
-  const opportunityId = payload.opportunity_id;
-  if (!opportunityId) return null;
+/**
+ * The proposal generator is the team's real front door: a client calls, a
+ * planner fills the form, the proposal goes out. That IS the lead entering the
+ * funnel, so generating a proposal must not require someone to have created a
+ * record first — this finds the matching opportunity or opens one.
+ *
+ * Matching is by contact email against a still-open opportunity, so a second
+ * or third version lands on the same deal instead of forking a duplicate.
+ * Without an email there is nothing safe to match on, so a new record is made.
+ */
+export async function findOrCreateOpportunity(
+  payload: ProposalPayload, actor: User,
+): Promise<string> {
+  const db = getDb();
+  const email = (payload.client_email ?? "").trim().toLowerCase();
+
+  if (email) {
+    const [existing] = await db.select({ id: opportunities.id })
+      .from(opportunities)
+      .where(and(
+        sql`lower(${opportunities.email}) = ${email}`,
+        inArray(opportunities.stage, OPEN_STAGES),
+      ))
+      .orderBy(desc(opportunities.lastActivityAt))
+      .limit(1);
+    if (existing) return existing.id;
+  }
+
+  const nameParts = (payload.signer_name ?? "").trim().split(/\s+/).filter(Boolean);
+  const eventTypes = [...new Set((payload.events ?? []).flatMap((e) => e.eventTypes ?? []))];
+  const firstEvent = payload.events?.[0];
+
+  // A phone enquiry answered on Tuesday and quoted on Wednesday must not look
+  // like a one-second response, so the planner can say when it actually came in.
+  const enquiredAt = payload.enquiry_received_at
+    ? new Date(payload.enquiry_received_at)
+    : new Date();
+  const leadReceivedAt = isNaN(enquiredAt.getTime()) ? new Date() : enquiredAt;
+
+  const feeRaw = payload.service_fee ?? "";
+  const budgetLowCents = parseMoneyToCents(payload.budget_low ?? "");
+  const budgetHighCents = parseMoneyToCents(payload.budget_high ?? "");
+  const resolved = computeFee(feeRaw, budgetText(budgetLowCents, budgetHighCents));
+
+  return db.transaction(async (tx) => {
+    const [opp] = await tx.insert(opportunities).values({
+      code: newOpportunityCode(),
+      company: payload.client_name ?? "",
+      firstName: nameParts[0] ?? "",
+      lastName: nameParts.slice(1).join(" "),
+      title: payload.signer_title ?? "",
+      email: payload.client_email ?? "",
+      leadSource: payload.lead_source || "Proposal Generator",
+      leadReceivedAt,
+      rawIntake: { via: "proposal-generator" },
+      eventName: [payload.client_name, eventTypes[0]].filter(Boolean).join(" "),
+      eventTypes,
+      eventDate: firstEvent?.date ?? "",
+      guestCount: firstEvent?.guestCount ?? "",
+      venue: payload.venue ?? "",
+      requestedServices: payload.selectedServices ?? [],
+      feeRaw,
+      budgetLowCents, budgetHighCents,
+      proposalValueCents: toCents(resolved.value),
+      valueEstimated: resolved.estimated,
+      ownerId: actor.id,
+      createdById: actor.id,
+      lastTouchedById: actor.id,
+      stage: "proposal_needed",
+      lastActivityAt: leadReceivedAt,
+    }).returning();
+
+    await logActivity({
+      opportunityId: opp.id,
+      type: "lead_received",
+      actorId: null,
+      body: payload.lead_source
+        ? `Lead received via ${payload.lead_source}`
+        : "Lead received — entered through the proposal generator",
+      meta: { via: "proposal-generator", enteredBy: actor.name },
+      occurredAt: leadReceivedAt,
+    }, tx);
+
+    return opp.id;
+  });
+}
+
+/** Record a generated version. Returns the version and the opportunity it belongs to. */
+export async function recordGenerated(
+  payload: ProposalPayload, actor: User,
+): Promise<{ version: number; opportunityId: string } | null> {
+  const opportunityId = payload.opportunity_id || await findOrCreateOpportunity(payload, actor);
 
   const db = getDb();
   return db.transaction(async (tx) => {
@@ -76,7 +170,7 @@ export async function recordGenerated(payload: ProposalPayload, actor: User): Pr
       meta: { version, feeRaw },
     }, tx);
 
-    return version;
+    return { version, opportunityId };
   });
 }
 
@@ -84,9 +178,10 @@ export async function recordGenerated(payload: ProposalPayload, actor: User): Pr
 export async function recordSent(
   payload: ProposalPayload, actor: User, sentTo: string,
   cadenceDays: number[],
-): Promise<void> {
-  const opportunityId = payload.opportunity_id;
-  if (!opportunityId) return;
+): Promise<string | null> {
+  // Sending straight from the generator without generating first still has to
+  // produce a record — this is the moment the deal becomes real.
+  const opportunityId = payload.opportunity_id || await findOrCreateOpportunity(payload, actor);
 
   const db = getDb();
   await db.transaction(async (tx) => {
@@ -139,4 +234,6 @@ export async function recordSent(
       followupPausedReason: "",
     }).where(eq(opportunities.id, opportunityId));
   });
+
+  return opportunityId;
 }

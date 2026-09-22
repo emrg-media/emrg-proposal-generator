@@ -242,12 +242,14 @@ export interface ProposalSeed {
 }
 
 export default function ProposalBuilder({
-  opportunityId, opportunityCode, seed, backHref,
+  opportunityId, opportunityCode, seed, backHref, leadSources,
 }: {
-  opportunityId: string;
-  opportunityCode: string;
+  /** Absent when starting fresh — the opportunity is created on generate/send. */
+  opportunityId?: string;
+  opportunityCode?: string;
   seed: ProposalSeed;
   backHref: string;
+  leadSources: string[];
 }) {
   const [client, setClient] = useState<ClientFields>({ ...initialClient, ...seed.client });
   const [events, setEvents] = useState<EventEntry[]>(
@@ -271,7 +273,16 @@ export default function ProposalBuilder({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [sentAt, setSentAt] = useState("");
-  const proposalId = opportunityCode;
+  const proposalId = opportunityCode ?? "";
+  const isNew = !opportunityId;
+
+  // Where the enquiry came from and when. Only asked when starting fresh: an
+  // existing record already knows, and without this a phone call answered
+  // yesterday and quoted today would look like an instant response.
+  const [leadSource, setLeadSource] = useState("");
+  const [enquiryAt, setEnquiryAt] = useState("");
+  // Set once the record exists, so the planner can jump straight to it.
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -293,6 +304,24 @@ export default function ProposalBuilder({
 
   function handleCurrencyBlur(name: keyof ClientFields) {
     return () => setClient((p) => ({ ...p, [name]: formatCurrency(p[name]) }));
+  }
+
+  // The service fee is NOT plain currency: EMRG quote it either as a dollar
+  // figure or as a percentage of the event budget ("20%", "18-22%"). The
+  // currency filter above strips "%", which silently turned a 20% fee on an
+  // $80,000 event into a $20 fee — and that number flows straight into the
+  // pipeline value, win/loss totals and the executive dashboard. So this field
+  // keeps its own rules and leaves a percentage exactly as typed.
+  function handleFeeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setClient((p) => ({ ...p, service_fee: e.target.value.replace(/[^\d$,.%\-\s]/g, "") }));
+  }
+
+  function handleFeeBlur() {
+    setClient((p) => {
+      const v = p.service_fee.trim();
+      if (!v || v.includes("%")) return p;
+      return { ...p, service_fee: formatCurrency(v) };
+    });
   }
 
   // ── Event entry handlers ──────────────────────────────────────────────────
@@ -387,9 +416,11 @@ export default function ProposalBuilder({
       const res = await fetch("/api/pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, events, selectedServices }),
+        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, lead_source: leadSource, enquiry_received_at: enquiryAt ? new Date(enquiryAt).toISOString() : undefined, events, selectedServices }),
       });
       if (!res.ok) throw new Error("PDF generation failed");
+      const newId = res.headers.get("X-Opportunity-Id");
+      if (newId) setCreatedId(newId);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -445,10 +476,11 @@ export default function ProposalBuilder({
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, events, selectedServices, subject: emailSubject, body: emailBody }),
+        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, lead_source: leadSource, enquiry_received_at: enquiryAt ? new Date(enquiryAt).toISOString() : undefined, events, selectedServices, subject: emailSubject, body: emailBody }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? "Send failed");
+      if (body.opportunityId) setCreatedId(body.opportunityId);
       setEmailModalOpen(false);
       setSentAt(new Date().toLocaleString("en-US", {
         month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
@@ -487,19 +519,29 @@ export default function ProposalBuilder({
       <div style={{ height: 4, background: "var(--emrg-red)" }} />
 
       <header style={{ background: "var(--emrg-black)" }} className="text-white px-6 md:px-8 py-4 flex items-center gap-4">
-        <a href={backHref} className="text-[11px] tracking-[0.18em] uppercase text-white/50 hover:text-white transition-colors whitespace-nowrap">
-          ← Back to opportunity
+        <a href={createdId ? `/opportunity/${createdId}` : backHref}
+          className="text-[11px] tracking-[0.18em] uppercase text-white/50 hover:text-white transition-colors whitespace-nowrap">
+          {isNew && !createdId ? "\u2190 Back to pipeline" : "\u2190 Back to opportunity"}
         </a>
-        <div className="flex items-baseline gap-2 ml-auto">
+        <div className="flex items-baseline gap-2 ml-auto min-w-0">
           <span className="text-[13px] font-semibold truncate max-w-[280px]">
             {client.client_name || "New proposal"}
           </span>
-          <span className="text-[11px] font-mono text-white/40">{opportunityCode}</span>
+          {opportunityCode && (
+            <span className="text-[11px] font-mono text-white/40">{opportunityCode}</span>
+          )}
           {seed.version > 1 && (
             <span className="text-[10px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded"
               style={{ background: "rgba(255,255,255,0.12)" }}>
               Version {seed.version}
             </span>
+          )}
+          {createdId && (
+            <a href={`/opportunity/${createdId}`}
+              className="text-[10px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded whitespace-nowrap"
+              style={{ background: "var(--emrg-red)", color: "#fff" }}>
+              Open in pipeline
+            </a>
           )}
         </div>
       </header>
@@ -534,6 +576,34 @@ export default function ProposalBuilder({
                 </button>
               </div>
             </div>
+
+            {/* Where this lead came from — only when starting fresh */}
+            {isNew && !createdId && (
+              <div className="mb-8">
+                <SectionLabel>Where This Came From</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <FieldLabel>Lead source</FieldLabel>
+                    <select value={leadSource} onChange={(e) => setLeadSource(e.target.value)}
+                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900">
+                      <option value="">Select...</option>
+                      {leadSources.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <FieldLabel>Enquiry came in</FieldLabel>
+                    <input type="datetime-local" value={enquiryAt}
+                      onChange={(e) => setEnquiryAt(e.target.value)}
+                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900" />
+                  </div>
+                </div>
+                <p className="text-[12px] text-stone-500 mt-2 leading-relaxed">
+                  Generating or sending creates the opportunity automatically. Setting when the
+                  enquiry actually arrived keeps the response-time reporting honest &mdash; leave it
+                  blank and it counts from now.
+                </p>
+              </div>
+            )}
 
             {/* Client */}
             <SectionLabel>Client Details</SectionLabel>
@@ -579,8 +649,8 @@ export default function ProposalBuilder({
               <div>
                 <FieldLabel required>EMRG Service Fee</FieldLabel>
                 <input type="text" value={client.service_fee}
-                  onChange={handleCurrencyChange("service_fee")} onBlur={handleCurrencyBlur("service_fee")}
-                  placeholder="$12,000"
+                  onChange={handleFeeChange} onBlur={handleFeeBlur}
+                  placeholder="$12,000 or 20%"
                   className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
               </div>
             </div>

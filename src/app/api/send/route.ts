@@ -117,8 +117,8 @@ export async function POST(req: NextRequest) {
     // Await rather than fire-and-forget: Vercel freezes the function once the
     // response is returned, which would kill an un-awaited write.
     const { followupCadenceDays } = await getSettings();
-    await recordSent(data, user, client_email, followupCadenceDays);
-    return NextResponse.json({ ok: true, sentAt: new Date().toISOString() });
+    const opportunityId = await recordSent(data, user, client_email, followupCadenceDays);
+    return NextResponse.json({ ok: true, sentAt: new Date().toISOString(), opportunityId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Send failed";
     return NextResponse.json({ error: msg }, { status: 500 });
