@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { listOpportunities } from "@/lib/opportunities";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import DataGrid, { type GridRow } from "./DataGrid";
 import { speedToLeadMs } from "@/lib/time";
 
@@ -39,6 +40,7 @@ export default async function DataPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="data" user={user} />
+      <SampleDataBanner />
       <DataGrid rows={grid} owners={owners} />
     </div>
   );

@@ -420,6 +420,23 @@ export async function controlFollowup(id: string, cmd: FollowupCommand, actor: U
   });
 }
 
+/**
+ * How many records came from the sample-data script.
+ *
+ * Seeded records are tagged in rawIntake so the app can say plainly that it is
+ * showing samples. Without it, "Google — $85,000" on a demo looks like real
+ * committed pipeline, which is a confusing thing to put in front of anyone.
+ * Returns 0 once `npm run db:demo -- wipe` has been run, and the banner
+ * disappears on its own.
+ */
+export async function countSampleRecords(): Promise<number> {
+  const [row] = await getDb()
+    .select({ n: sql<number>`count(*)::int` })
+    .from(opportunities)
+    .where(sql`${opportunities.rawIntake} ->> 'demo' = 'true'`);
+  return row?.n ?? 0;
+}
+
 export async function listUsers(): Promise<User[]> {
   return getDb().select().from(users).where(eq(users.active, true)).orderBy(users.name);
 }

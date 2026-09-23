@@ -4,6 +4,7 @@ import { users } from "@/db/schema";
 import { getSettings } from "@/lib/settings";
 import SiteHeader from "@/components/SiteHeader";
 import AdminPanel from "./AdminPanel";
+import FollowupQueue from "@/components/FollowupQueue";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export default async function AdminPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="admin" user={user} />
+      <div className="px-5 md:px-8 pt-6 max-w-[1000px] mx-auto">
+        <FollowupQueue />
+      </div>
       <AdminPanel
         currentUserId={user.id}
         team={team.map((u) => ({

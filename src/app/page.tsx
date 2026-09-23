@@ -8,6 +8,7 @@ import {
 } from "@/lib/attention";
 import { fmtCents } from "@/lib/fee";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import { EmptyState, OwnerBadge, StatCard } from "@/components/ui";
 
 // Wow feature #1 (brief §14). Nobody should have to read the whole pipeline to
@@ -78,6 +79,7 @@ export default async function NeedsAttentionPage({
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="attention" user={user} />
+      <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-7 max-w-[1600px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">

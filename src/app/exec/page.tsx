@@ -7,6 +7,7 @@ import { STAGE_LABELS } from "@/lib/constants";
 import { fmtCents } from "@/lib/fee";
 import { formatDuration } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import { StatCard } from "@/components/ui";
 
 // Mario's private view (brief §21–24). requireAdmin() redirects anyone else,
@@ -55,6 +56,7 @@ export default async function ExecPage({
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="exec" user={user} />
+      <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">

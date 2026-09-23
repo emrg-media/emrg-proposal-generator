@@ -82,6 +82,7 @@ npm run db:demo -- wipe  # remove them again
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` / `SMTP_BCC` | Sending proposals. |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` / `PROPOSAL_LOG_SHEET_ID` | The read-only Google Sheet mirror. |
 | `CRON_SECRET` | Required for the cron endpoints. Without it they refuse every request. |
+| `FOLLOWUPS_ENABLED` | Set to `true` to let the system email clients. Anything else and it only ever previews. |
 
 `APP_PASSCODE` is no longer used — the shared passcode has been replaced by per-user PINs.
 
@@ -149,15 +150,32 @@ because a Server Action is a POST endpoint that can be called directly.
 
 ---
 
-## Not built yet (Phase 2)
+## Follow-ups
 
-Follow-up state, cadence and the pause/resume controls are all in place and the schema is
-ready; what is missing is the cron that actually sends.
+Built and tested, and **off until you turn it on**. This is the only part of the system that
+emails clients by itself, so:
 
-1. Follow-up cron — send step N, respect `followupState`
-2. Email intake — inbound enquiry becomes an opportunity (`lead_source` and `raw_intake`
-   already shaped for it)
-3. Mario's private daily Events Revenue Brief — reuses `attention.ts` and `kpi.ts`
+- It does nothing unless `FOLLOWUPS_ENABLED=true`.
+- It never touches a paused, stopped, won or lost deal, or one with no proposal sent.
+- It claims each step *before* sending, so a crash mid-run costs a client one fewer email
+  rather than one too many.
+- `/admin` shows the queue with the exact wording that would go out. Read it before
+  enabling.
+
+Runs weekdays at 10am ET (`vercel.json`). Cadence is configurable in `/admin`, default
+1 / 3 / 7 days after the proposal is sent.
+
+## Not built yet
+
+1. Email intake — inbound enquiry becomes an opportunity (`lead_source` and `raw_intake`
+   are already shaped for it)
+2. Mario's private daily Events Revenue Brief — reuses `attention.ts` and `kpi.ts`
+
+## Sample data
+
+`npm run db:demo` loads nine realistic opportunities and the app shows a banner saying so.
+`npm run db:demo -- wipe` removes them, and the banner disappears with them. Anything
+created by hand is untouched either way.
 
 GHL integration is deliberately out of scope; the records are structured cleanly enough to
 connect it later without redesigning anything.

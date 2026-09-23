@@ -5,6 +5,7 @@ import { STAGE_LABELS } from "@/lib/constants";
 import { fmtCents } from "@/lib/fee";
 import { fmtDateTime } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import { EmptyState, StageChip, StatCard } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function ProposalsPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="proposals" user={user} />
+      <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>Proposals</h1>

@@ -3,6 +3,7 @@ import { listOpportunities } from "@/lib/opportunities";
 import { getSettings } from "@/lib/settings";
 import { responseStatus } from "@/lib/attention";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import PipelineBoard, { type BoardCard } from "./PipelineBoard";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function PipelinePage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="pipeline" user={user} />
+      <SampleDataBanner />
       <PipelineBoard cards={cards} />
     </div>
   );

@@ -5,6 +5,7 @@ import { LOST_REASON_LABELS, LOST_REASONS } from "@/lib/constants";
 import { fmtCents } from "@/lib/fee";
 import { fmtDate, formatDuration } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
+import SampleDataBanner from "@/components/SampleDataBanner";
 import { EmptyState, StatCard, OwnerBadge } from "@/components/ui";
 
 // Won and lost, side by side. Nothing is ever deleted (brief §18) — the lost
@@ -35,6 +36,7 @@ export default async function ClosedPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
       <SiteHeader active="closed" user={user} />
+      <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>Won / Lost</h1>
