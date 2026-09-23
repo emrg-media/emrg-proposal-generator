@@ -89,7 +89,7 @@ async function writeActivity(exec: Executor, input: LogActivityInput): Promise<v
         opportunityId,
         type: "followup_paused",
         actorId,
-        body: "Follow-up paused — human conversation active",
+        body: "Follow-up paused, human conversation active",
         meta: { auto: true, trigger: type },
         occurredAt: at,
       });

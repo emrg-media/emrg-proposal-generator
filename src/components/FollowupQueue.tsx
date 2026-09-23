@@ -57,7 +57,7 @@ export default async function FollowupQueue() {
               </span>
               <span className="text-[11.5px] text-stone-500 ml-auto">
                 {m.blocked
-                  ? <span style={{ color: "var(--emrg-red)" }}>Blocked — {m.blocked}</span>
+                  ? <span style={{ color: "var(--emrg-red)" }}>Blocked: {m.blocked}</span>
                   : <>to {m.to}</>}
               </span>
             </div>

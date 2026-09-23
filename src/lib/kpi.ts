@@ -212,5 +212,5 @@ export function periodWindow(
 }
 
 export function fmtPercent(rate: number | null): string {
-  return rate === null ? "—" : `${Math.round(rate * 100)}%`;
+  return rate === null ? "" : `${Math.round(rate * 100)}%`;
 }

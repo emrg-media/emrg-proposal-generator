@@ -94,7 +94,7 @@ export function fromCents(cents: number | null | undefined): number | null {
 
 export function fmtCents(cents: number | null | undefined): string {
   const d = fromCents(cents);
-  return d === null ? "—" : fmtMoney(d);
+  return d === null ? "" : fmtMoney(d);
 }
 
 /** Parse a single free-text money field (a budget bound) into cents. */

@@ -100,7 +100,7 @@ export function composeFollowup(c: FollowupCandidate): { subject: string; text: 
     ],
     [
       `Hi ${name},`, ``,
-      `Last note from me on ${dated} — I don't want to keep filling your inbox.`, ``,
+      `Last note from me on ${dated}. I don't want to keep filling your inbox.`, ``,
       `If the timing isn't right, no problem at all; just say the word and I'll close it off. And if you'd still like to move ahead, we're here.`,
     ],
   ];
@@ -113,7 +113,7 @@ export function composeFollowup(c: FollowupCandidate): { subject: string; text: 
     `EMRG Media | 212.254.3700`,
   ].join("\n");
 
-  return { subject: `Following up — ${c.company || event}`, text };
+  return { subject: `Following up on ${c.company || event}`, text };
 }
 
 // ── Preview ──────────────────────────────────────────────────────────────────

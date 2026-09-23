@@ -128,7 +128,7 @@ export default async function NeedsAttentionPage({
           <EmptyState
             title="Nothing needs your attention."
             hint={mineOnly && allGroups.length > 0
-              ? `${allGroups.length} opportunit${allGroups.length === 1 ? "y" : "ies"} on the wider team — switch to Everyone to see them.`
+              ? `${allGroups.length} opportunit${allGroups.length === 1 ? "y" : "ies"} on the wider team. Switch to Everyone to see them.`
               : "Every lead has been answered and every deal has a next action."}
             action={<Link href="/proposal"
               className="inline-block text-[11px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white"
@@ -181,7 +181,7 @@ function AttentionRow({ group, first }: { group: AttentionGroup; first: boolean 
       </span>
 
       <span className="hidden md:block w-[110px] text-right">
-        <OwnerBadge name={group.ownerName} />
+        <OwnerBadge name={group.ownerName} color={group.ownerColor} />
       </span>
 
       <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-stone-400 whitespace-nowrap hidden lg:block w-[130px] text-right">

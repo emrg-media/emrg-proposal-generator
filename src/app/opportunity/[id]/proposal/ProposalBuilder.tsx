@@ -599,7 +599,7 @@ export default function ProposalBuilder({
                 </div>
                 <p className="text-[12px] text-stone-500 mt-2 leading-relaxed">
                   Generating or sending creates the opportunity automatically. Setting when the
-                  enquiry actually arrived keeps the response-time reporting honest &mdash; leave it
+                  enquiry actually arrived keeps the response-time reporting honest. Leave it
                   blank and it counts from now.
                 </p>
               </div>
@@ -643,7 +643,7 @@ export default function ProposalBuilder({
               </div>
               {budgetInvalid && (
                 <p className="text-[13px] font-semibold -mt-2" style={{ color: "var(--emrg-red)" }}>
-                  Low budget is higher than high budget — swap the values before generating.
+                  Low budget is higher than high budget. Swap the values before generating.
                 </p>
               )}
               <div>

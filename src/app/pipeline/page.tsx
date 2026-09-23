@@ -15,6 +15,7 @@ export default async function PipelinePage() {
 
   const cards: BoardCard[] = rows.map((r) => ({
     id: r.id,
+    ownerColor: r.ownerColor,
     company: r.company,
     contact: [r.firstName, r.lastName].filter(Boolean).join(" "),
     eventName: r.eventName || r.eventTypes.join(" / "),

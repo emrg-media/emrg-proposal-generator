@@ -5,12 +5,15 @@ import LogoutButton from "./LogoutButton";
 // The team's four working screens come first, exactly as the brief lays them
 // out. Data and Exec are reporting surfaces; Exec is admin-only and simply
 // isn't rendered for anyone else.
+//
+// New Proposal is deliberately NOT in this list. It is the primary action, not
+// a destination, so it lives once as the red button on the right. Having it in
+// both places made the same thing look like two different features.
 
 export type NavKey = "newproposal" | "attention" | "pipeline" | "proposals" | "closed" | "data" | "exec" | "invoice" | "admin";
 
 const PRIMARY: Array<{ key: NavKey; href: string; label: string }> = [
   { key: "attention", href: "/", label: "Needs Attention" },
-  { key: "newproposal", href: "/proposal", label: "New Proposal" },
   { key: "pipeline", href: "/pipeline", label: "Pipeline" },
   { key: "proposals", href: "/proposals", label: "Proposals" },
   { key: "closed", href: "/closed", label: "Won / Lost" },

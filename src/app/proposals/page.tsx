@@ -25,7 +25,7 @@ export default async function ProposalsPage() {
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>Proposals</h1>
         <p className="text-[13px] text-stone-500 mb-5">
-          Every proposal ever generated, kept permanently — won, lost or never answered.
+          Every proposal ever generated, kept permanently whether it was won, lost or never answered.
         </p>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -39,7 +39,7 @@ export default async function ProposalsPage() {
         {rows.length === 0 ? (
           <EmptyState
             title="No proposals yet."
-            hint="Open an opportunity and generate one — it will be recorded here permanently."
+            hint="Generate one from New Proposal and it will be recorded here permanently."
           />
         ) : (
           <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
@@ -59,13 +59,13 @@ export default async function ProposalsPage() {
                     <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDateTime(r.generatedAt)}</td>
                     <td className="px-3 py-2.5 font-medium">
                       <Link href={`/opportunity/${r.opportunityId}`} className="hover:underline">
-                        {r.company || "—"}
+                        {r.company || "Untitled"}
                       </Link>
                     </td>
-                    <td className="px-3 py-2.5">{r.eventName || "—"}</td>
+                    <td className="px-3 py-2.5">{r.eventName || ""}</td>
                     <td className="px-3 py-2.5 tabular-nums text-stone-500">v{r.version}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap tabular-nums font-semibold">
-                      {r.feeCents !== null ? fmtCents(r.feeCents) : r.feeRaw || "—"}
+                      {r.feeCents !== null ? fmtCents(r.feeCents) : r.feeRaw || ""}
                     </td>
                     <td className="px-3 py-2.5">
                       <StageChip stage={r.stage} label={STAGE_LABELS[r.stage as keyof typeof STAGE_LABELS] ?? r.stage} />
@@ -75,7 +75,7 @@ export default async function ProposalsPage() {
                         ? <span title={r.sentTo}>{fmtDateTime(r.sentAt)}</span>
                         : <span style={{ color: "#92600a" }}>Not sent</span>}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{r.generatedBy ?? "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{r.generatedBy ?? ""}</td>
                   </tr>
                 ))}
               </tbody>

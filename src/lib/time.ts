@@ -10,7 +10,7 @@ export function speedToLeadMs(o: { leadReceivedAt: Date; firstResponseAt: Date |
 
 /** "22m", "3h 05m", "2d 4h" — compact enough for a table cell. */
 export function formatDuration(ms: number | null): string {
-  if (ms === null || !isFinite(ms) || ms < 0) return "—";
+  if (ms === null || !isFinite(ms) || ms < 0) return "";
   const mins = Math.floor(ms / 60000);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
@@ -20,18 +20,18 @@ export function formatDuration(ms: number | null): string {
 }
 
 export function fmtDateTime(v: Date | string | null | undefined): string {
-  if (!v) return "—";
+  if (!v) return "";
   const d = typeof v === "string" ? new Date(v) : v;
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleString("en-US", {
     month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
   });
 }
 
 export function fmtDate(v: Date | string | null | undefined): string {
-  if (!v) return "—";
+  if (!v) return "";
   const d = typeof v === "string" ? new Date(v) : v;
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 

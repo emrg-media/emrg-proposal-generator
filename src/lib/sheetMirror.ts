@@ -62,7 +62,7 @@ export async function mirrorToSheet(): Promise<MirrorResult> {
 
   const note = [
     `Mirrored from the EMRG Events Revenue System at ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })} ET.`,
-    "This tab is rebuilt automatically — edits here are overwritten. Edit in the app instead.",
+    "This tab is rebuilt automatically, so edits here are overwritten. Edit in the app instead.",
   ];
 
   await sheets.spreadsheets.values.update({

@@ -55,7 +55,7 @@ export default function AdminPanel({ currentUserId, team, settings }: {
         <div className="mb-5 px-4 py-3.5 rounded-lg border"
           style={{ background: "#fdf6e9", borderColor: "#e7d3a6" }}>
           <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-1" style={{ color: "#7a5309" }}>
-            {revealed.name}&apos;s PIN — shown once
+            {revealed.name}&apos;s PIN (shown once)
           </p>
           <p className="text-[28px] font-bold tracking-[0.3em] tabular-nums mb-1" style={{ color: "#7a5309" }}>
             {revealed.pin}

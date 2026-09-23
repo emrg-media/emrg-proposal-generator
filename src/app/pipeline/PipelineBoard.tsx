@@ -7,6 +7,7 @@ import { STAGES, STAGE_LABELS } from "@/lib/constants";
 import { fmtCents } from "@/lib/fee";
 import { formatDuration } from "@/lib/time";
 import { changeStageAction } from "@/app/actions";
+import { stageStyle, readableInk } from "@/lib/colors";
 import type { Stage } from "@/db/schema";
 
 // Nine columns, drag to move. Moves apply optimistically so the board never
@@ -14,7 +15,8 @@ import type { Stage } from "@/db/schema";
 // back and the error is shown rather than silently swallowed.
 
 export interface BoardCard {
-  id: string; company: string; contact: string; eventName: string; eventDate: string;
+  id: string; ownerColor: string | null;
+  company: string; contact: string; eventName: string; eventDate: string;
   valueCents: number | null; valueEstimated: boolean; feeRaw: string;
   stage: Stage; ownerName: string | null; collaboratorNames: string[];
   leadAgeMs: number; lastActivityMs: number;
@@ -59,7 +61,7 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
         <div>
           <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "#111111" }}>Pipeline</h1>
           <p className="text-[13px] text-stone-500 mt-1">
-            {local.length} opportunit{local.length === 1 ? "y" : "ies"} · drag a card to move it
+            {local.length} opportunit{local.length === 1 ? "y" : "ies"}. Drag a card to move it.
           </p>
         </div>
       </div>
@@ -76,6 +78,7 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
           const column = local.filter((c) => c.stage === stage);
           const total = column.reduce((s, c) => s + (c.valueCents ?? 0), 0);
           const isOver = overStage === stage;
+          const c = stageStyle(stage);
           return (
             <div
               key={stage}
@@ -83,17 +86,24 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
               onDragLeave={() => setOverStage((s) => (s === stage ? "" : s))}
               onDrop={(e) => { e.preventDefault(); drop(stage); }}
               className="flex-shrink-0 w-[248px] rounded-lg transition-colors"
-              style={{ background: isOver ? "rgba(192,24,42,0.05)" : "transparent" }}
+              style={{ background: isOver ? c.bg : "transparent" }}
             >
-              <div className="px-2 pb-2 sticky top-0">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-[10.5px] font-bold tracking-[0.12em] uppercase text-stone-600 truncate">
+              <div className="pb-2">
+                <div
+                  className="flex items-baseline justify-between gap-2 px-2.5 py-2 rounded-lg border"
+                  style={{ background: c.bg, borderColor: c.border }}
+                >
+                  <p className="text-[10.5px] font-bold tracking-[0.1em] uppercase truncate"
+                    style={{ color: c.fg }}>
                     {STAGE_LABELS[stage]}
                   </p>
-                  <span className="text-[11px] text-stone-400 tabular-nums">{column.length}</span>
+                  <span className="text-[11px] tabular-nums font-semibold flex-shrink-0"
+                    style={{ color: c.fg, opacity: 0.75 }}>
+                    {column.length}
+                  </span>
                 </div>
-                <p className="text-[11.5px] text-stone-400 tabular-nums">
-                  {total > 0 ? fmtCents(total) : "—"}
+                <p className="text-[11.5px] text-stone-500 tabular-nums px-2.5 pt-1.5">
+                  {total > 0 ? fmtCents(total) : ""}
                 </p>
               </div>
 
@@ -123,6 +133,8 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
 }) {
   const late = card.responseStatus === "overdue";
   const approaching = card.responseStatus === "approaching";
+  const c = stageStyle(card.stage);
+  const owner = card.ownerColor;
 
   return (
     <Link
@@ -130,8 +142,15 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="block bg-white border border-stone-200 rounded-lg px-3 py-2.5 hover:border-stone-300 transition-all cursor-grab active:cursor-grabbing"
-      style={{ opacity: dragging ? 0.4 : 1 }}
+      className="block bg-white border rounded-lg pl-3 pr-3 py-2.5 hover:border-stone-300 cursor-grab active:cursor-grabbing"
+      style={{
+        opacity: dragging ? 0.4 : 1,
+        borderColor: "#e7e5e4",
+        // The stage colour lives on the card itself, so dropping it in a new
+        // column recolours it immediately rather than only moving it.
+        borderLeft: `3px solid ${c.solid}`,
+        transition: "border-left-color 140ms ease, opacity 120ms ease",
+      }}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="text-[13.5px] font-semibold text-stone-900 leading-tight truncate">
@@ -158,8 +177,18 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
       </div>
 
       <div className="flex items-center justify-between gap-2 text-[11px] text-stone-400">
-        <span className="truncate">
-          {card.ownerName ?? <span style={{ color: "var(--emrg-red)" }}>Unassigned</span>}
+        <span className="truncate inline-flex items-center gap-1.5">
+          {card.ownerName ? (
+            <>
+              <span className="w-[16px] h-[16px] rounded-full inline-flex items-center justify-center text-[8.5px] font-bold flex-shrink-0"
+                style={{ background: owner ?? "#57534e", color: readableInk(owner ?? "#57534e") }}>
+                {card.ownerName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+              </span>
+              <span className="truncate">{card.ownerName.split(" ")[0]}</span>
+            </>
+          ) : (
+            <span style={{ color: "var(--emrg-red)" }}>Unassigned</span>
+          )}
           {card.collaboratorNames.length > 0 && ` +${card.collaboratorNames.length}`}
         </span>
         <span className="whitespace-nowrap">{formatDuration(card.lastActivityMs)} ago</span>

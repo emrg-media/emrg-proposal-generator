@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { stageStyle, readableInk } from "@/lib/colors";
 
 // Small shared presentation pieces, so the screens stay readable and every
 // page renders a stage chip or a money figure the same way.
@@ -22,24 +23,12 @@ export function StatCard({ label, value, accent, sub }: {
   );
 }
 
-const STAGE_COLORS: Record<string, { bg: string; fg: string }> = {
-  new_lead: { bg: "#eef2ff", fg: "#3730a3" },
-  contacted: { bg: "#f0f9ff", fg: "#075985" },
-  proposal_needed: { bg: "#fdf6e9", fg: "#92600a" },
-  proposal_review: { bg: "#fff7ed", fg: "#9a3412" },
-  proposal_sent: { bg: "#f5f3ff", fg: "#5b21b6" },
-  client_reviewing: { bg: "#ecfeff", fg: "#155e75" },
-  contract_deposit: { bg: "#f0fdf4", fg: "#166534" },
-  won: { bg: "#dcfce7", fg: "#14532d" },
-  lost: { bg: "#f5f5f4", fg: "#57534e" },
-};
-
 export function StageChip({ stage, label }: { stage: string; label: string }) {
-  const c = STAGE_COLORS[stage] ?? STAGE_COLORS.new_lead;
+  const c = stageStyle(stage);
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-[0.08em] uppercase whitespace-nowrap"
-      style={{ background: c.bg, color: c.fg }}
+      className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-[0.08em] uppercase whitespace-nowrap border"
+      style={{ background: c.bg, color: c.fg, borderColor: c.border }}
     >
       {label}
     </span>
@@ -68,8 +57,8 @@ export function OppLink({ id, children, className }: { id: string; children: Rea
   return <Link href={`/opportunity/${id}`} className={className}>{children}</Link>;
 }
 
-/** Owner initials, or a clear warning when nobody owns it. */
-export function OwnerBadge({ name }: { name: string | null }) {
+/** Owner initials in that person's colour, always beside their name. */
+export function OwnerBadge({ name, color }: { name: string | null; color?: string | null }) {
   if (!name) {
     return (
       <span className="text-[11px] font-semibold px-2 py-0.5 rounded"
@@ -79,11 +68,12 @@ export function OwnerBadge({ name }: { name: string | null }) {
     );
   }
   const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const fill = color ?? "#57534e";
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
       <span
-        className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full text-[9.5px] font-bold text-white flex-shrink-0"
-        style={{ background: "#57534e" }}
+        className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full text-[9.5px] font-bold flex-shrink-0"
+        style={{ background: fill, color: readableInk(fill) }}
       >
         {initials}
       </span>

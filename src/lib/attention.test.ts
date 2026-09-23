@@ -14,7 +14,7 @@ const OPTS = { now: NOW, responseTargetMinutes: 15 };
 function opp(over: Partial<AttentionInput> = {}): AttentionInput {
   return {
     id: "o1", code: "EMRG-1", company: "Acme", eventName: "Holiday Party",
-    stage: "contacted", ownerId: "u1", ownerName: "Victoria", valueCents: 5_000_000,
+    stage: "contacted", ownerId: "u1", ownerName: "Victoria", ownerColor: "#2a78d6", valueCents: 5_000_000,
     leadReceivedAt: ago(5 * MIN),
     firstResponseAt: ago(4 * MIN),
     proposalSentAt: null,

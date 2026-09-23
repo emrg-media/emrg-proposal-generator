@@ -121,7 +121,7 @@ export default async function ExecPage({
           <StatCard label="Proposals generated" value={String(k.proposalsGenerated)} />
           <StatCard label="Proposals sent" value={String(k.proposalsSent)}
             sub={`${fmtCents(k.proposalValueSentCents)} of value`} />
-          <StatCard label="Average proposal" value={k.avgProposalValueCents === null ? "—" : fmtCents(k.avgProposalValueCents)} />
+          <StatCard label="Average proposal" value={k.avgProposalValueCents === null ? "None yet" : fmtCents(k.avgProposalValueCents)} />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard label="Won" value={fmtCents(k.wonCents)} accent="green"
@@ -164,9 +164,9 @@ export default async function ExecPage({
         {/* ── Aging ── */}
         <SectionHeading title="Proposal aging" note="Open proposals, by how long since they were sent." />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          <StatCard label="0–3 days" value={String(k.proposalAging.d0_3)} />
-          <StatCard label="4–7 days" value={String(k.proposalAging.d4_7)} />
-          <StatCard label="8–14 days" value={String(k.proposalAging.d8_14)}
+          <StatCard label="0 to 3 days" value={String(k.proposalAging.d0_3)} />
+          <StatCard label="4 to 7 days" value={String(k.proposalAging.d4_7)} />
+          <StatCard label="8 to 14 days" value={String(k.proposalAging.d8_14)}
             accent={k.proposalAging.d8_14 > 0 ? "amber" : undefined} />
           <StatCard label="15+ days" value={String(k.proposalAging.d15plus)}
             accent={k.proposalAging.d15plus > 0 ? "red" : undefined} />

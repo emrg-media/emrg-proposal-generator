@@ -21,7 +21,7 @@ export default async function SampleDataBanner() {
         <p className="text-[12.5px]" style={{ color: "#7a5309" }}>
           <span className="font-bold">{count} sample opportunit{count === 1 ? "y" : "ies"}</span>{" "}
           are loaded so the screens have something to show. Google, Goldman Sachs and the rest
-          are made up &mdash; none of this is real EMRG pipeline. Anything you create yourself is
+          are made up, so none of this is real EMRG pipeline. Anything you create yourself is
           real and will stay when the samples are cleared.
         </p>
       </div>

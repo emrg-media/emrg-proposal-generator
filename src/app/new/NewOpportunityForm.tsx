@@ -127,7 +127,7 @@ export default function NewOpportunityForm({ team, currentUserId }: {
       <p className="text-[13px] text-stone-500 mb-5">
         For a lead you want on the board before there is a proposal. If you are quoting now,
         go straight to <a href="/proposal" className="font-semibold underline"
-        style={{ color: "var(--emrg-red)" }}>New Proposal</a> instead &mdash; that creates the
+        style={{ color: "var(--emrg-red)" }}>New Proposal</a> instead, which creates the
         opportunity for you.
       </p>
 
@@ -165,7 +165,7 @@ export default function NewOpportunityForm({ team, currentUserId }: {
           )}
           <div className="flex items-center justify-between gap-3 mt-3">
             <p className="text-[11.5px] text-stone-400">
-              {extracted ? "Details filled in below — check them before saving." : "Nothing is saved until you confirm."}
+              {extracted ? "Details filled in below. Check them before saving." : "Nothing is saved until you confirm."}
             </p>
             <button type="button" onClick={extract} disabled={!source.trim() || extracting}
               className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white disabled:opacity-40 whitespace-nowrap"
@@ -212,7 +212,7 @@ export default function NewOpportunityForm({ team, currentUserId }: {
           <Input label="Budget low" value={form.budgetLow} onChange={set("budgetLow")} placeholder="$50,000" />
           <Input label="Budget high" value={form.budgetHigh} onChange={set("budgetHigh")} placeholder="$75,000" />
           <div className="sm:col-span-2">
-            <Input label="Fee — a figure, a range, or a percentage" value={form.feeRaw}
+            <Input label="Fee (a figure, a range, or a percentage)" value={form.feeRaw}
               onChange={set("feeRaw")} placeholder="$12,000 or 20%" />
           </div>
         </div>
@@ -340,7 +340,7 @@ function Select({ label, value, onChange, options }: {
       </label>
       <select value={value} onChange={onChange}
         className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white">
-        <option value="">—</option>
+        <option value="">Select...</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
         {value && !options.includes(value) && <option value={value}>{value}</option>}
       </select>

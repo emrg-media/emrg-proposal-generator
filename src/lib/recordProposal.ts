@@ -111,7 +111,7 @@ export async function findOrCreateOpportunity(
       actorId: null,
       body: payload.lead_source
         ? `Lead received via ${payload.lead_source}`
-        : "Lead received — entered through the proposal generator",
+        : "Lead received, entered through the proposal generator",
       meta: { via: "proposal-generator", enteredBy: actor.name },
       occurredAt: leadReceivedAt,
     }, tx);

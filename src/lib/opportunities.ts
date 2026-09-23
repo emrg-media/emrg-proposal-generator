@@ -8,6 +8,7 @@ import {
 import { logActivity, type Executor } from "./activity";
 import { computeFee, toCents, budgetText } from "./fee";
 import type { AttentionInput } from "./attention";
+import { buildOwnerColors } from "./colors";
 
 // Read and write helpers for opportunities. Every mutation goes through here so
 // that the timeline, the derived timestamps and the resolved money value all
@@ -15,6 +16,8 @@ import type { AttentionInput } from "./attention";
 
 export interface OpportunityRow extends Opportunity {
   ownerName: string | null;
+  /** The owner's assigned colour, so every screen paints a person the same. */
+  ownerColor: string | null;
   collaboratorNames: string[];
   lastInboundAt: Date | null;
   lastOutboundAt: Date | null;
@@ -68,11 +71,15 @@ export async function listOpportunities(opts: { stages?: Stage[] } = {}): Promis
     .where(where)
     .orderBy(desc(opportunities.lastActivityAt));
 
-  const collaborators = await collaboratorsByOpportunity(rows.map((r) => r.opp.id));
+  const [collaborators, colors] = await Promise.all([
+    collaboratorsByOpportunity(rows.map((r) => r.opp.id)),
+    ownerColorMap(),
+  ]);
 
   return rows.map((r) => ({
     ...r.opp,
     ownerName: r.ownerName,
+    ownerColor: r.opp.ownerId ? colors[r.opp.ownerId] ?? null : null,
     collaboratorNames: collaborators.get(r.opp.id) ?? [],
     lastInboundAt: r.lastInboundAt ? new Date(r.lastInboundAt) : null,
     lastOutboundAt: r.lastOutboundAt ? new Date(r.lastOutboundAt) : null,
@@ -135,6 +142,7 @@ export function toAttentionInput(r: OpportunityRow): AttentionInput {
     stage: r.stage,
     ownerId: r.ownerId,
     ownerName: r.ownerName,
+    ownerColor: r.ownerColor,
     valueCents: r.proposalValueCents,
     leadReceivedAt: r.leadReceivedAt,
     firstResponseAt: r.firstResponseAt,
@@ -345,7 +353,7 @@ export async function markLost(id: string, reason: LostReason, note: string, act
     }).where(eq(opportunities.id, id));
     await logActivity({
       opportunityId: id, type: "lost", actorId: actor.id,
-      body: `Marked lost — ${reason.replace(/_/g, " ")}${note ? `: ${note}` : ""}`,
+      body: `Marked lost, reason: ${reason.replace(/_/g, " ")}${note ? `. ${note}` : ""}`,
       meta: { reason, note },
     }, tx);
   });
@@ -435,6 +443,18 @@ export async function countSampleRecords(): Promise<number> {
     .from(opportunities)
     .where(sql`${opportunities.rawIntake} ->> 'demo' = 'true'`);
   return row?.n ?? 0;
+}
+
+/**
+ * userId -> colour for the whole team, ordered oldest account first so the
+ * assignment never shifts when somebody is added or deactivated.
+ */
+export async function ownerColorMap(): Promise<Record<string, string>> {
+  const rows = await getDb()
+    .select({ id: users.id })
+    .from(users)
+    .orderBy(users.createdAt, users.id);
+  return buildOwnerColors(rows.map((r) => r.id));
 }
 
 export async function listUsers(): Promise<User[]> {

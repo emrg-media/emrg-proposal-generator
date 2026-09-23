@@ -49,11 +49,11 @@ export default async function ClosedPage() {
             sub={`${won.length} deal${won.length === 1 ? "" : "s"}`} />
           <StatCard label="Lost" value={fmtCents(lostCents)}
             sub={`${lost.length} deal${lost.length === 1 ? "" : "s"}`} />
-          <StatCard label="Win rate" value={winRate === null ? "—" : `${winRate}%`}
+          <StatCard label="Win rate" value={winRate === null ? "" : `${winRate}%`}
             accent={winRate !== null && winRate >= 50 ? "green" : undefined}
             sub="Of everything decided" />
           <StatCard label="Top lost reason"
-            value={reasonCounts[0] ? String(reasonCounts[0].count) : "—"}
+            value={reasonCounts[0] ? String(reasonCounts[0].count) : ""}
             sub={reasonCounts[0] ? LOST_REASON_LABELS[reasonCounts[0].reason] : "Nothing lost yet"} />
         </div>
 
@@ -120,16 +120,16 @@ function Column({ title, tone, rows }: {
                   {r.stage === "lost" && r.lostReason && (
                     <p className="text-[11.5px] mt-0.5" style={{ color: "#92600a" }}>
                       {LOST_REASON_LABELS[r.lostReason]}
-                      {r.lostNote ? ` — ${r.lostNote}` : ""}
+                      {r.lostNote ? `. ${r.lostNote}` : ""}
                     </p>
                   )}
                 </div>
                 <span className="text-[13px] font-semibold whitespace-nowrap tabular-nums"
                   style={{ color: tone === "green" ? "#15803d" : "#57534e" }}>
-                  {r.proposalValueCents ? fmtCents(r.proposalValueCents) : "—"}
+                  {r.proposalValueCents ? fmtCents(r.proposalValueCents) : ""}
                 </span>
                 <span className="hidden sm:block w-[100px] text-right">
-                  <OwnerBadge name={r.ownerName} />
+                  <OwnerBadge name={r.ownerName} color={r.ownerColor} />
                 </span>
               </Link>
             );

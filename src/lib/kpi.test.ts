@@ -158,8 +158,10 @@ test("period windows start where they should", () => {
   assert.equal(custom.end!.getHours(), 23, "the end day is included in full");
 });
 
-test("percentages format, and null stays a dash", () => {
+test("percentages format, and an unknown rate renders as nothing", () => {
   assert.equal(fmtPercent(0.5), "50%");
   assert.equal(fmtPercent(1), "100%");
-  assert.equal(fmtPercent(null), "—");
+  // Blank rather than a placeholder glyph: an empty cell reads as "no data"
+  // without putting a stray mark in front of the reader.
+  assert.equal(fmtPercent(null), "");
 });

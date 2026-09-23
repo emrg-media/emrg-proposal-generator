@@ -173,21 +173,21 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
                 <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDate(r.leadReceivedAt)}</td>
                 <td className="px-3 py-2.5 font-medium">
                   <Link href={`/opportunity/${r.id}`} className="hover:underline">
-                    {r.company || "—"}
+                    {r.company || "Untitled"}
                   </Link>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap">{r.contact || "—"}</td>
-                <td className="px-3 py-2.5">{r.eventName || "—"}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-stone-600">{r.eventDate || "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap">{r.contact || ""}</td>
+                <td className="px-3 py-2.5">{r.eventName || ""}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-stone-600">{r.eventDate || ""}</td>
                 <td className="px-3 py-2.5"><StageChip stage={r.stage} label={STAGE_LABELS[r.stage as keyof typeof STAGE_LABELS] ?? r.stage} /></td>
                 <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
-                  {r.valueCents === null ? (r.feeRaw || "—") : (r.valueEstimated ? "≈ " : "") + fmtCents(r.valueCents)}
+                  {r.valueCents === null ? (r.feeRaw || "") : (r.valueEstimated ? "≈ " : "") + fmtCents(r.valueCents)}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   {r.ownerName ?? <span style={{ color: "var(--emrg-red)" }}>Unassigned</span>}
                 </td>
                 <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-stone-600">
-                  {r.speedMins === null ? "—" : `${r.speedMins}m`}
+                  {r.speedMins === null ? "" : `${r.speedMins}m`}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDate(r.lastActivityAt)}</td>
               </tr>

@@ -122,7 +122,7 @@ export default function VoiceCapture({ value, onChange }: {
 
       {!supported && (
         <p className="text-[12.5px] mb-2" style={{ color: "#7a5309" }}>
-          This browser can&apos;t do speech recognition — type or paste below instead. Chrome and Safari both work.
+          This browser can&apos;t do speech recognition, so type or paste below instead. Chrome and Safari both work.
         </p>
       )}
 

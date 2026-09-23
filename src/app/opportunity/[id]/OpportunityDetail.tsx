@@ -154,7 +154,7 @@ export default function OpportunityDetail({
 
       {opp.stage === "lost" && opp.lostReason && (
         <Banner tone="grey">
-          <strong>Lost — {LOST_REASON_LABELS[opp.lostReason]}.</strong>{" "}
+          <strong>Lost: {LOST_REASON_LABELS[opp.lostReason]}.</strong>{" "}
           {opp.lostNote || "Kept on record for reporting and future nurture."}
         </Banner>
       )}
@@ -236,7 +236,7 @@ export default function OpportunityDetail({
                     </div>
                     <span className="text-[13px] font-semibold whitespace-nowrap"
                       style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {p.feeCents !== null ? fmtCents(p.feeCents) : p.feeRaw || "—"}
+                      {p.feeCents !== null ? fmtCents(p.feeCents) : p.feeRaw || "Not set"}
                     </span>
                   </div>
                 ))}
@@ -266,7 +266,7 @@ export default function OpportunityDetail({
                         <span className="font-semibold">
                           {ACTIVITY_LABELS[t.type as keyof typeof ACTIVITY_LABELS] ?? t.type}
                         </span>
-                        {t.body && <span className="text-stone-600"> — {t.body}</span>}
+                        {t.body && <span className="text-stone-600">: {t.body}</span>}
                       </p>
                       <p className="text-[11.5px] text-stone-400 mt-0.5">
                         {fmtDateTime(t.occurredAt)}{t.actorName ? ` · ${t.actorName}` : ""}
@@ -364,7 +364,7 @@ function FollowupPaused({ reason, pending, onCommand }: {
     <div className="mb-4 px-4 py-3 rounded-lg border"
       style={{ background: "#fdf6e9", borderColor: "#e7d3a6" }}>
       <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-1" style={{ color: "#7a5309" }}>
-        Follow-up paused — {reason || "human conversation active"}
+        Follow-up paused: {reason || "human conversation active"}
       </p>
       <p className="text-[12.5px] mb-3" style={{ color: "#7a5309" }}>
         Automated follow-ups have stepped aside so they don&apos;t talk over a live conversation.
@@ -456,7 +456,7 @@ function LogActivity({ opp, pending, onLog }: {
         ))}
       </div>
       <textarea value={body} onChange={(e) => setBody(e.target.value)}
-        placeholder="A sentence is enough — it goes on the timeline."
+        placeholder="A sentence is enough. It goes on the timeline."
         className="w-full h-20 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white resize-none" />
       <div className="flex items-center justify-between mt-2 gap-3">
         <p className="text-[11.5px] text-stone-400">
@@ -526,7 +526,7 @@ function EditableDetails({ opp, pending, onSave }: {
           <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Lead source</label>
           <select value={form.leadSource} onChange={(e) => set("leadSource")(e.target.value)}
             className="w-full border-2 border-stone-300 rounded-md px-3 py-1.5 text-[14px] bg-white">
-            <option value="">—</option>
+            <option value="">Not set</option>
             {LEAD_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
             {form.leadSource && !LEAD_SOURCES.includes(form.leadSource) &&
               <option value={form.leadSource}>{form.leadSource}</option>}

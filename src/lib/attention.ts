@@ -25,6 +25,7 @@ export interface AttentionInput {
   stage: Stage;
   ownerId: string | null;
   ownerName: string | null;
+  ownerColor: string | null;
   valueCents: number | null;
   leadReceivedAt: Date;
   firstResponseAt: Date | null;
@@ -49,6 +50,7 @@ export interface AttentionItem {
   valueCents: number | null;
   ownerId: string | null;
   ownerName: string | null;
+  ownerColor: string | null;
   company: string;
   eventName: string;
   code: string;
@@ -122,6 +124,7 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
       valueCents: o.valueCents,
       ownerId: o.ownerId,
       ownerName: o.ownerName,
+      ownerColor: o.ownerColor,
       company: o.company,
       eventName: o.eventName,
       code: o.code,
@@ -142,7 +145,7 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
   // 2. The client wrote back and nobody has replied since.
   if (o.lastInboundAt && (!o.lastOutboundAt || o.lastOutboundAt < o.lastInboundAt)) {
     const waiting = t - o.lastInboundAt.getTime();
-    add("client_waiting", waiting, `Client replied ${ageLabel(waiting)} ago — no response yet`);
+    add("client_waiting", waiting, `Client replied ${ageLabel(waiting)} ago, no response yet`);
   }
 
   // 3. Sitting in Erica's approval queue.
@@ -221,6 +224,7 @@ export interface AttentionGroup {
   valueCents: number | null;
   ownerId: string | null;
   ownerName: string | null;
+  ownerColor: string | null;
   primary: AttentionItem;
   others: AttentionItem[];
   severity: number;
@@ -246,6 +250,7 @@ export function groupAttention(items: AttentionItem[]): AttentionGroup[] {
         valueCents: primary.valueCents,
         ownerId: primary.ownerId,
         ownerName: primary.ownerName,
+        ownerColor: primary.ownerColor,
         primary,
         others,
         severity: primary.severity,
