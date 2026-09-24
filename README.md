@@ -151,6 +151,34 @@ because a Server Action is a POST endpoint that can be called directly.
 
 ---
 
+## Connecting a mailbox
+
+Two routes, and the first needs no Google admin.
+
+### Forwarding, via Resend (works today)
+
+1. Accept the Resend marketplace terms, then `vercel integration add resend`.
+2. In Resend, add a receiving address and point a webhook at
+   `POST https://<the app>/api/intake/resend`, subscribed to `email.received`.
+3. Put the webhook signing secret in `RESEND_WEBHOOK_SECRET` and the API key in
+   `RESEND_API_KEY`.
+4. In Gmail, Settings → Forwarding, add that receiving address, verify it, then add a
+   filter forwarding whatever should become leads.
+
+Roughly fifteen minutes, entirely in Gmail's own settings.
+
+Resend's webhook deliberately carries metadata only, so the handler fetches the body
+through the receiving API afterwards. That fetch also returns SPF, DKIM and DMARC
+results computed by the receiving server rather than read from the message, so a
+sender cannot forge them; anything that hard-fails SPF or DMARC is dropped rather
+than filed. Signatures are verified against the raw body before it is parsed.
+
+### Gmail API (the long-term one)
+
+Domain-wide delegation, approved once by the Workspace admin, covering the shared
+inboxes and pushing in real time. Whatever watches the mailbox just posts to
+`/api/intake/email`; nothing else changes.
+
 ## Inbound email
 
 `POST /api/intake/email` turns a message into an opportunity. Everything is built
