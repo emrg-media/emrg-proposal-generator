@@ -81,6 +81,7 @@ npm run db:demo -- wipe  # remove them again
 | `ANTHROPIC_API_KEY` | Transcript and voice extraction. |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` / `SMTP_BCC` | Sending proposals. |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` / `PROPOSAL_LOG_SHEET_ID` | The read-only Google Sheet mirror. |
+| `INTAKE_SECRET` | Bearer token for `POST /api/intake/email`. Without it the endpoint refuses every machine request. |
 | `CRON_SECRET` | Required for the cron endpoints. Without it they refuse every request. |
 | `FOLLOWUPS_ENABLED` | Set to `true` to let the system email clients. Anything else and it only ever previews. |
 
@@ -150,6 +151,36 @@ because a Server Action is a POST endpoint that can be called directly.
 
 ---
 
+## Inbound email
+
+`POST /api/intake/email` turns a message into an opportunity. Everything is built
+except the connection to a mailbox, so wiring Gmail up later is configuration rather
+than another feature. The same pipeline runs behind "Forwarded email" on `/new`, so
+what the team does by hand today is exactly what automation will do.
+
+```json
+{ "fromEmail": "priya@northwind.com", "fromName": "Priya Raman",
+  "subject": "Awards gala", "body": "...", "receivedAt": "2027-03-03T09:14:00Z" }
+```
+
+Authenticated with `INTAKE_SECRET` as a Bearer token, or a signed-in session. Fails
+closed when the secret is unset, and sits outside the session gate in `proxy.ts`
+because its caller is a machine.
+
+What it handles:
+
+- **Junk never becomes a lead.** Out-of-office, bounces, no-reply senders and bulk
+  mail are rejected on headers and shape; anything that gets past that is classified,
+  so a recruiter pitch or an invoice is ignored rather than filed as an enquiry.
+- **A reply lands on the existing deal**, not a duplicate. That is what pauses the
+  follow-up sequence and moves the opportunity into "client waiting on us".
+- **A forwarded enquiry is credited to the client**, not the colleague who forwarded it.
+- **The clock starts when the mail arrived**, not when the system got to it, so
+  speed-to-lead stays honest.
+- **Routing decides the owner** with no human present, which is the case the rules exist for.
+- **Signatures are kept deliberately.** They are usually the only place the company
+  name and job title appear.
+
 ## Who gets the lead
 
 Routing is decided in `lib/routing.ts`, a pure function, and configured under
@@ -187,9 +218,12 @@ Runs weekdays at 10am ET (`vercel.json`). Cadence is configurable in `/admin`, d
 
 ## Not built yet
 
-1. Email intake — inbound enquiry becomes an opportunity (`lead_source` and `raw_intake`
-   are already shaped for it)
-2. Mario's private daily Events Revenue Brief — reuses `attention.ts` and `kpi.ts`
+1. The Gmail connection itself: watching the inboxes and posting each new message to
+   the intake endpoint. Needs Workspace access, which is the long pole.
+2. Clarification drafts. `checkCompleteness()` already returns the question to ask for
+   every gap, so this is composition rather than logic.
+3. Putting the client email into the salesperson's Gmail drafts instead of sending it.
+4. Mario's private daily Events Revenue Brief, which reuses `attention.ts` and `kpi.ts`.
 
 ## Sample data
 

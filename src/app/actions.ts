@@ -9,6 +9,7 @@ import {
   type CreateOpportunityInput, type EditableFields,
 } from "@/lib/opportunities";
 import { parseMoneyToCents } from "@/lib/fee";
+import { processPastedEmail } from "@/lib/emailIntake";
 import { LOST_REASONS, STAGES } from "@/lib/constants";
 import type { Stage, LostReason, ActivityType } from "@/db/schema";
 
@@ -189,4 +190,35 @@ export async function controlFollowupAction(
     refresh(id);
     return { ok: true };
   } catch (err) { return fail(err); }
+}
+
+// ── Email intake ─────────────────────────────────────────────────────────────
+
+export type EmailIntakeResult =
+  | { ok: true; action: "created"; id: string; code: string; missing: string[]; routingReason: string }
+  | { ok: true; action: "reply_logged"; id: string; code: string }
+  | { ok: true; action: "ignored"; reason: string }
+  | { ok: false; error: string };
+
+/**
+ * Runs a pasted email through exactly the same pipeline a connected inbox
+ * will use, so what the team sees today is what automation will do later.
+ */
+export async function intakeEmailAction(raw: string): Promise<EmailIntakeResult> {
+  try {
+    const user = await requireUserOrThrow();
+    if (!raw.trim()) return { ok: false, error: "Paste the email first." };
+
+    const result = await processPastedEmail(raw, user);
+    refresh(result.action === "ignored" ? undefined : result.opportunityId);
+
+    if (result.action === "created") {
+      return { ok: true, action: "created", id: result.opportunityId, code: result.code,
+               missing: result.missing, routingReason: result.routingReason };
+    }
+    if (result.action === "reply_logged") {
+      return { ok: true, action: "reply_logged", id: result.opportunityId, code: result.code };
+    }
+    return { ok: true, action: "ignored", reason: result.reason };
+  } catch (err) { return fail(err) as EmailIntakeResult; }
 }

@@ -16,6 +16,8 @@ Never invent data that isn't in the source. Do not guess an email address from a
 
 Schema:
 {
+  "is_event_enquiry": "boolean — true only if this is someone asking about running an event, or an ongoing conversation about one. False for newsletters, invoices, job applications, supplier pitches, internal chatter and anything unrelated. When in doubt, false.",
+  "confidence": "string — high, medium or low, reflecting how much usable event detail is actually present.",
   "company": "string — company or client organisation name",
   "first_name": "string — the main contact's first name",
   "last_name": "string — the main contact's last name",
@@ -65,6 +67,10 @@ export async function POST(req: NextRequest) {
     const text = message.content[0].type === "text" ? message.content[0].text : "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const data = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    // Default to treating it as an enquiry: a human is reviewing anything that
+    // comes through the paste paths, and only the automated email intake acts
+    // on this flag unattended.
+    if (typeof data.is_event_enquiry !== "boolean") data.is_event_enquiry = true;
     return NextResponse.json(data);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

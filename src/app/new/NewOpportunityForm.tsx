@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { EVENT_TYPES, LEAD_SOURCES } from "@/lib/constants";
 import { parseMoneyToCents } from "@/lib/fee";
 import { checkCompleteness } from "@/lib/completeness";
-import { createOpportunityAction } from "@/app/actions";
+import { createOpportunityAction, intakeEmailAction, type EmailIntakeResult } from "@/app/actions";
 import VoiceCapture from "./VoiceCapture";
 
 // Four ways in, one record out (brief §5). Transcript, voice and (later) email
 // all land in the same draft form, which is then confirmed by a human — so the
 // extraction is always reviewed before it becomes an opportunity.
 
-type Mode = "transcript" | "voice" | "manual";
+type Mode = "transcript" | "voice" | "email" | "manual";
 
 const EMPTY = {
   company: "", firstName: "", lastName: "", title: "", email: "", cellPhone: "",
@@ -32,6 +32,13 @@ export default function NewOpportunityForm({ team, currentUserId }: {
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState("");
   const [extracted, setExtracted] = useState(false);
+
+  // Email is its own path rather than another paste box: it runs the full
+  // inbound pipeline, so it routes, spots a reply to an existing deal, and
+  // behaves exactly as a connected inbox will.
+  const [emailRaw, setEmailRaw] = useState("");
+  const [emailResult, setEmailResult] = useState<EmailIntakeResult | null>(null);
+  const [emailBusy, setEmailBusy] = useState(false);
 
   const [form, setForm] = useState(EMPTY);
   const [eventTypes, setEventTypes] = useState<string[]>([]);
@@ -140,6 +147,7 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         {([
           ["transcript", "Paste transcript"],
           ["voice", "Speak it"],
+          ["email", "Forwarded email"],
           ["manual", "Type it in"],
         ] as Array<[Mode, string]>).map(([m, label]) => (
           <button key={m} type="button" onClick={() => setMode(m)}
@@ -150,7 +158,66 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         ))}
       </div>
 
-      {mode !== "manual" && (
+      {mode === "email" && (
+        <div className="bg-white border-2 border-dashed border-stone-300 rounded-lg p-5 mb-6">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: "#111111" }}>
+            Paste a forwarded enquiry
+          </p>
+          <p className="text-[12.5px] text-stone-500 mb-2">
+            Headers and all. This runs the same pipeline a connected inbox will: it works out who
+            really sent it, routes it to the right planner, and recognises a reply to a deal
+            already in progress instead of creating a duplicate.
+          </p>
+          <textarea
+            value={emailRaw}
+            onChange={(e) => { setEmailRaw(e.target.value); setEmailResult(null); }}
+            placeholder={"From: Priya Raman <priya@northwind.com>\nSubject: Awards gala\nDate: Mon, 3 Mar 2027 09:14\n\nHi, we're looking at an awards gala next March for about 450 guests..."}
+            className="w-full h-44 text-[13.5px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400 font-mono"
+          />
+
+          {emailResult && !emailResult.ok && (
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--emrg-red)" }}>{emailResult.error}</p>
+          )}
+          {emailResult?.ok && emailResult.action === "ignored" && (
+            <p className="text-[12.5px] mt-1" style={{ color: "#7a5309" }}>
+              Skipped: {emailResult.reason.toLowerCase()}. Nothing was created.
+            </p>
+          )}
+          {emailResult?.ok && emailResult.action === "reply_logged" && (
+            <p className="text-[12.5px] mt-1" style={{ color: "#166534" }}>
+              Recognised as a reply on an existing opportunity and added to its timeline.{" "}
+              <a href={`/opportunity/${emailResult.id}`} className="underline font-semibold">Open it</a>
+            </p>
+          )}
+          {emailResult?.ok && emailResult.action === "created" && (
+            <div className="mt-2 text-[12.5px]" style={{ color: "#166534" }}>
+              <p className="font-semibold">Opportunity created. {emailResult.routingReason}.</p>
+              {emailResult.missing.length > 0 && (
+                <p style={{ color: "#7a5309" }}>
+                  Still needed: {emailResult.missing.map((m) => m.toLowerCase()).join(", ")}.
+                </p>
+              )}
+              <a href={`/opportunity/${emailResult.id}`} className="underline font-semibold">Open it</a>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end mt-3">
+            <button type="button" disabled={!emailRaw.trim() || emailBusy}
+              onClick={() => {
+                setEmailBusy(true);
+                intakeEmailAction(emailRaw)
+                  .then(setEmailResult)
+                  .finally(() => setEmailBusy(false));
+              }}
+              className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white disabled:opacity-40"
+              style={{ background: "var(--emrg-red)" }}>
+              {emailBusy ? "Reading..." : "Run it through"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(mode === "transcript" || mode === "voice") && (
         <div className="bg-white border-2 border-dashed border-stone-300 rounded-lg p-5 mb-6">
           {mode === "voice" ? (
             <VoiceCapture value={source} onChange={setSource} />
@@ -181,6 +248,8 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         </div>
       )}
 
+      {mode !== "email" && (
+        <>
       <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
         <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
           Contact
@@ -321,6 +390,8 @@ export default function NewOpportunityForm({ team, currentUserId }: {
           Cancel
         </button>
       </div>
+        </>
+      )}
     </div>
   );
 }

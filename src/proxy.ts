@@ -25,6 +25,14 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except the login screen, its endpoints, and static assets.
-  matcher: ["/((?!login|api/auth|api/cron|_next/static|_next/image|favicon.ico|emrg-logo.png).*)"],
+  // Everything except the login screen, static assets, and the endpoints that
+  // are called by machines rather than people.
+  //
+  // api/cron and api/intake authenticate themselves with a shared secret and
+  // both fail closed when that secret is unset. They have to sit outside this
+  // gate because their callers carry a Bearer token, not a session cookie;
+  // leaving them inside it silently rejects every automated request.
+  matcher: [
+    "/((?!login|api/auth|api/cron|api/intake|_next/static|_next/image|favicon.ico|emrg-logo.png).*)",
+  ],
 };
