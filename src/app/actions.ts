@@ -10,6 +10,7 @@ import {
 } from "@/lib/opportunities";
 import { parseMoneyToCents } from "@/lib/fee";
 import { processPastedEmail } from "@/lib/emailIntake";
+import { sendClarification } from "@/lib/sendClarification";
 import { LOST_REASONS, STAGES } from "@/lib/constants";
 import type { Stage, LostReason, ActivityType } from "@/db/schema";
 
@@ -221,4 +222,27 @@ export async function intakeEmailAction(raw: string): Promise<EmailIntakeResult>
     }
     return { ok: true, action: "ignored", reason: result.reason };
   } catch (err) { return fail(err) as EmailIntakeResult; }
+}
+
+// ── Clarification emails ─────────────────────────────────────────────────────
+
+/**
+ * Send the drafted question email to the client.
+ *
+ * A person has read it and pressed send, so this is reviewed rather than
+ * automatic. It is logged as an outbound touch, which stops the speed-to-lead
+ * clock and pauses any running follow-up, because it is a real conversation.
+ */
+export async function sendClarificationAction(
+  id: string, subject: string, body: string,
+): Promise<ActionResult> {
+  try {
+    const user = await requireUserOrThrow();
+    if (!subject.trim()) return { ok: false, error: "The email needs a subject." };
+    if (!body.trim()) return { ok: false, error: "The email is empty." };
+
+    await sendClarification(id, subject, body, user);
+    refresh(id);
+    return { ok: true };
+  } catch (err) { return fail(err); }
 }

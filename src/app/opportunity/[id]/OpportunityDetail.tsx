@@ -8,13 +8,14 @@ import {
   STAGES, STAGE_LABELS, LOST_REASONS, LOST_REASON_LABELS, ACTIVITY_LABELS, LEAD_SOURCES,
 } from "@/lib/constants";
 import { fmtCents, computeFee, budgetText, feeLabel } from "@/lib/fee";
-import { checkCompleteness, clarificationQuestions } from "@/lib/completeness";
+import { checkCompleteness } from "@/lib/completeness";
+import { composeClarification } from "@/lib/clarification";
 import { formatDuration, fmtDateTime, isoDate } from "@/lib/time";
 import { StageChip } from "@/components/ui";
 import {
   updateOpportunityAction, changeStageAction, setOwnerAction, setCollaboratorsAction,
   logActivityAction, markWonAction, markLostAction, requestApprovalAction,
-  approveProposalAction, controlFollowupAction,
+  approveProposalAction, controlFollowupAction, sendClarificationAction,
 } from "@/app/actions";
 
 // One opportunity, everything about it. Details on the left, the full
@@ -59,6 +60,8 @@ export default function OpportunityDetail({
   const fee = computeFee(opp.feeRaw, budgetText(opp.budgetLowCents, opp.budgetHighCents));
   const contactName = [opp.firstName, opp.lastName].filter(Boolean).join(" ");
   const completeness = checkCompleteness(opp);
+  // The draft is signed by whoever owns the deal, not by the app.
+  const ownerName = team.find((m) => m.id === opp.ownerId)?.name ?? "";
 
   const speedMs = opp.firstResponseAt
     ? new Date(opp.firstResponseAt).getTime() - new Date(opp.leadReceivedAt).getTime()
@@ -99,7 +102,9 @@ export default function OpportunityDetail({
         </div>
       </div>
 
-      {completeness.missing.length > 0 && <MissingInfo completeness={completeness} />}
+      {completeness.missing.length > 0 && (
+        <MissingInfo completeness={completeness} opp={opp} ownerName={ownerName} />
+      )}
       {opp.followupState === "paused" && (
         <FollowupPaused
           reason={opp.followupPausedReason}
@@ -342,60 +347,143 @@ function ActionButton({ children, onClick, disabled, tone }: {
 
 /**
  * What is still outstanding, split by whether it stops the proposal going out
- * or merely weakens it. The questions are already phrased for the client, so
- * chasing the gaps is a copy and paste rather than a writing job.
+ * or merely weakens it, with the email that asks about it ready to review.
  */
-function MissingInfo({ completeness }: { completeness: ReturnType<typeof checkCompleteness> }) {
-  const [copied, setCopied] = useState(false);
+function MissingInfo({ completeness, opp, ownerName }: {
+  completeness: ReturnType<typeof checkCompleteness>;
+  opp: Opportunity;
+  ownerName: string;
+}) {
+  const [drafting, setDrafting] = useState(false);
   const { blocking, important, optional } = completeness;
   const tone = blocking.length > 0
     ? { bg: "#fef2f2", border: "#fecaca", fg: "#991b1b" }
     : { bg: "#fdf6e9", border: "#e7d3a6", fg: "#7a5309" };
 
-  const questions = clarificationQuestions(completeness);
+  const draft = composeClarification({ ...opp, eventName: opp.eventName, ownerName });
 
   return (
-    <div className="mb-4 px-4 py-3 rounded-lg border"
-      style={{ background: tone.bg, borderColor: tone.border }}>
-      <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-2" style={{ color: tone.fg }}>
-        {blocking.length > 0
-          ? "Cannot send yet"
-          : `Still needed (${important.length})`}
-      </p>
-
-      {blocking.length > 0 && (
-        <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
-          <strong>{blocking.map((m) => m.label).join(" and ")}</strong>{" "}
-          {blocking.length === 1 ? "is" : "are"} required before this proposal can go out.
+    <>
+      <div className="mb-4 px-4 py-3 rounded-lg border"
+        style={{ background: tone.bg, borderColor: tone.border }}>
+        <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-2" style={{ color: tone.fg }}>
+          {blocking.length > 0 ? "Cannot send yet" : `Still needed (${important.length})`}
         </p>
-      )}
 
-      {important.length > 0 && (
-        <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
-          Also missing: {important.map((m) => m.label.toLowerCase()).join(", ")}.
-        </p>
-      )}
+        {blocking.length > 0 && (
+          <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
+            <strong>{blocking.map((m) => m.label).join(" and ")}</strong>{" "}
+            {blocking.length === 1 ? "is" : "are"} required before this proposal can go out.
+          </p>
+        )}
+        {important.length > 0 && (
+          <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
+            Also missing: {important.map((m) => m.label.toLowerCase()).join(", ")}.
+          </p>
+        )}
+        {optional.length > 0 && (
+          <p className="text-[12px] mb-2" style={{ color: tone.fg, opacity: 0.8 }}>
+            Nice to have: {optional.map((m) => m.label.toLowerCase()).join(", ")}.
+          </p>
+        )}
 
-      {optional.length > 0 && (
-        <p className="text-[12px] mb-2" style={{ color: tone.fg, opacity: 0.8 }}>
-          Nice to have: {optional.map((m) => m.label.toLowerCase()).join(", ")}.
-        </p>
-      )}
+        {draft.asking.length > 0 && (
+          <button type="button" onClick={() => setDrafting(true)}
+            className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
+            style={{ borderColor: tone.border, color: tone.fg, background: "#fff" }}>
+            Draft the email asking for {draft.asking.length === 1 ? "it" : "these"}
+          </button>
+        )}
+      </div>
 
-      {questions.length > 0 && (
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard?.writeText(questions.map((q) => `\u2022 ${q}`).join("\n"))
-              .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
-              .catch(() => {});
-          }}
-          className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
-          style={{ borderColor: tone.border, color: tone.fg, background: "#fff" }}
-        >
-          {copied ? "Copied" : `Copy ${questions.length} question${questions.length === 1 ? "" : "s"} for the client`}
-        </button>
+      {drafting && (
+        <ClarificationModal opp={opp} ownerName={ownerName} onClose={() => setDrafting(false)} />
       )}
+    </>
+  );
+}
+
+/**
+ * The draft, editable before it goes anywhere. Nothing sends on its own: a
+ * person reads it and decides, which is the point.
+ */
+function ClarificationModal({ opp, ownerName, onClose }: {
+  opp: Opportunity; ownerName: string; onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const draft = composeClarification({ ...opp, eventName: opp.eventName, ownerName });
+
+  const [subject, setSubject] = useState(draft.subject);
+  const [body, setBody] = useState(draft.body);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  function send() {
+    setError("");
+    startTransition(async () => {
+      const res = await sendClarificationAction(opp.id, subject, body);
+      if (!res.ok) { setError(res.error); return; }
+      setSent(true);
+      router.refresh();
+      setTimeout(onClose, 1200);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-5 py-8"
+      style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose}>
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-stone-200">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "#111111" }}>
+            Ask the client
+          </p>
+          <p className="text-[13px] text-stone-500 mt-0.5">
+            {draft.canSend
+              ? <>To <span className="font-semibold text-stone-800">{opp.email}</span>. Edit anything before it goes.</>
+              : <span style={{ color: "var(--emrg-red)" }}>{draft.blockedReason} Copy this and use it on a call, or add an address first.</span>}
+          </p>
+        </div>
+
+        <div className="px-6 py-4 space-y-3 overflow-y-auto">
+          <div>
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Subject</label>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)}
+              className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Message</label>
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14}
+              className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] leading-relaxed bg-white resize-y" />
+          </div>
+          {error && <p className="text-[13px] font-semibold" style={{ color: "var(--emrg-red)" }}>{error}</p>}
+          {sent && <p className="text-[13px] font-semibold" style={{ color: "#15803d" }}>Sent, and added to the timeline.</p>}
+        </div>
+
+        <div className="px-6 py-4 border-t border-stone-200 flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose}
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-stone-500">
+            Close
+          </button>
+          <button type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(`${subject}\n\n${body}`)
+                .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
+                .catch(() => {});
+            }}
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded border-2"
+            style={{ borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+            {copied ? "Copied" : "Copy"}
+          </button>
+          <button type="button" disabled={pending || sent || !draft.canSend} onClick={send}
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-5 py-2 rounded text-white disabled:opacity-40"
+            style={{ background: "var(--emrg-red)" }}>
+            {pending ? "Sending..." : "Send it"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
