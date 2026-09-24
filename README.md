@@ -150,6 +150,26 @@ because a Server Action is a POST endpoint that can be called directly.
 
 ---
 
+## Who gets the lead
+
+Routing is decided in `lib/routing.ts`, a pure function, and configured under
+`/admin`. Rules are read top to bottom and the first match wins:
+
+1. **An existing client stays with the planner who knows them.** Matched on contact
+   email first, then company name. Whoever entered the lead is added as a collaborator
+   rather than dropped. This can be switched off.
+2. **The team's own rules**, matching on event type, lead source or deal value.
+3. **Whoever is doing the work**, because a planner filling in a proposal is not looking
+   to hand it to someone else.
+4. **Nobody driving?** Either a named default owner, or whoever is carrying the fewest
+   open opportunities. Ties break deterministically.
+
+Every automatic assignment writes its reason to the timeline. Silent routing is the
+fastest way to make a team stop trusting it.
+
+Step 4 is the one that matters for email intake, where no human is present to own the
+lead by default.
+
 ## Follow-ups
 
 Built and tested, and **off until you turn it on**. This is the only part of the system that

@@ -1,8 +1,9 @@
 import "server-only";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { settings } from "@/db/schema";
 import { DEFAULT_RESPONSE_TARGET_MINUTES, DEFAULT_FOLLOWUP_CADENCE_DAYS } from "./constants";
+import { parseRoutingSettings, type RoutingSettings } from "./routing";
 
 // Tunables the team can change from /admin without a deploy.
 
@@ -32,4 +33,17 @@ export async function getSettings(): Promise<AppSettings> {
 export async function setSetting(key: string, value: unknown): Promise<void> {
   await getDb().insert(settings).values({ key, value, updatedAt: new Date() })
     .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } });
+}
+
+// ── Routing ──────────────────────────────────────────────────────────────────
+
+const ROUTING_KEY = "routing_rules";
+
+export async function getRoutingSettings(): Promise<RoutingSettings> {
+  const [row] = await getDb().select().from(settings).where(eq(settings.key, ROUTING_KEY)).limit(1);
+  return parseRoutingSettings(row?.value);
+}
+
+export async function setRoutingSettings(value: RoutingSettings): Promise<void> {
+  await setSetting(ROUTING_KEY, value);
 }

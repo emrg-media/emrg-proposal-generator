@@ -6,6 +6,8 @@ import { logActivity } from "./activity";
 import { computeFee, toCents, budgetText, parseMoneyToCents } from "./fee";
 import { newOpportunityCode } from "./opportunities";
 import { OPEN_STAGES } from "./constants";
+import { decideOwner } from "./routingService";
+import { opportunityCollaborators } from "@/db/schema";
 
 // Writing a proposal into the permanent record (brief §6). Every generated
 // version is kept forever, whatever becomes of the deal, and the snapshot is
@@ -77,6 +79,17 @@ export async function findOrCreateOpportunity(
   const budgetHighCents = parseMoneyToCents(payload.budget_high ?? "");
   const resolved = computeFee(feeRaw, budgetText(budgetLowCents, budgetHighCents));
 
+  // Who should own this. Usually the planner filling the form, but an existing
+  // client stays with whoever already has the relationship, and the team's own
+  // rules can override both.
+  const routed = await decideOwner({
+    company: payload.client_name ?? "",
+    email: payload.client_email ?? "",
+    eventTypes,
+    leadSource: payload.lead_source || "Proposal Generator",
+    valueCents: toCents(resolved.value),
+  }, actor.id);
+
   return db.transaction(async (tx) => {
     const [opp] = await tx.insert(opportunities).values({
       code: newOpportunityCode(),
@@ -98,12 +111,19 @@ export async function findOrCreateOpportunity(
       budgetLowCents, budgetHighCents,
       proposalValueCents: toCents(resolved.value),
       valueEstimated: resolved.estimated,
-      ownerId: actor.id,
+      ownerId: routed.userId ?? actor.id,
       createdById: actor.id,
       lastTouchedById: actor.id,
       stage: "proposal_needed",
       lastActivityAt: leadReceivedAt,
     }).returning();
+
+    // Whoever typed it up rides along, so nobody loses sight of work they began.
+    if (routed.collaboratorIds.length > 0) {
+      await tx.insert(opportunityCollaborators).values(
+        [...new Set(routed.collaboratorIds)].map((userId) => ({ opportunityId: opp.id, userId })),
+      ).onConflictDoNothing();
+    }
 
     await logActivity({
       opportunityId: opp.id,
@@ -115,6 +135,19 @@ export async function findOrCreateOpportunity(
       meta: { via: "proposal-generator", enteredBy: actor.name },
       occurredAt: leadReceivedAt,
     }, tx);
+
+    // Always say why this landed where it did. Silent assignment is the fastest
+    // way to make people distrust routing.
+    if (routed.userId && routed.userId !== actor.id) {
+      await logActivity({
+        opportunityId: opp.id,
+        type: "owner_change",
+        actorId: null,
+        body: `Assigned automatically. ${routed.reason}`,
+        meta: { routed: true, reason: routed.reason, ownerId: routed.userId },
+        occurredAt: leadReceivedAt,
+      }, tx);
+    }
 
     return opp.id;
   });

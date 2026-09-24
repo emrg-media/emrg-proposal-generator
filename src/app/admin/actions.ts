@@ -6,7 +6,8 @@ import { getDb } from "@/db";
 import { users, type UserRole } from "@/db/schema";
 import { requireAdminOrThrow } from "@/lib/auth";
 import { hashPin, generatePin, isValidPinFormat } from "@/lib/pin";
-import { setSetting } from "@/lib/settings";
+import { setSetting, setRoutingSettings } from "@/lib/settings";
+import { parseRoutingSettings, type RoutingRule } from "@/lib/routing";
 
 // Admin-only. Every action re-checks the role itself — a Server Action is a
 // POST endpoint, so being absent from the UI protects nothing on its own.
@@ -108,6 +109,35 @@ export async function saveSettingsAction(
     revalidatePath("/admin");
     revalidatePath("/");
     revalidatePath("/exec");
+    return { ok: true };
+  } catch (err) { return fail(err); }
+}
+
+const RULE_KINDS = ["event_type", "lead_source", "value_over", "always"];
+
+export async function saveRoutingAction(payload: {
+  relationshipWins: boolean;
+  fallbackUserId: string | null;
+  rules: RoutingRule[];
+}): Promise<AdminResult> {
+  try {
+    await requireAdminOrThrow();
+
+    for (const r of payload.rules ?? []) {
+      if (!RULE_KINDS.includes(r.kind)) return { ok: false, error: `Unknown rule type: ${r.kind}` };
+      if (!r.userId) return { ok: false, error: "Every rule needs someone to route to." };
+      if ((r.kind === "event_type" || r.kind === "lead_source") && !r.match?.trim()) {
+        return { ok: false, error: "That rule needs something to match on." };
+      }
+      if (r.kind === "value_over" && !(typeof r.minValueCents === "number" && r.minValueCents > 0)) {
+        return { ok: false, error: "A value rule needs an amount above zero." };
+      }
+    }
+
+    // Round-trip through the same guard the reader uses, so nothing can be
+    // stored that the router would later choke on.
+    await setRoutingSettings(parseRoutingSettings(payload));
+    revalidatePath("/admin");
     return { ok: true };
   } catch (err) { return fail(err); }
 }

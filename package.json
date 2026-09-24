@@ -18,7 +18,8 @@
     "verify:concurrency": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-concurrency.ts",
     "check:sheet": "dotenv -e .env.local -- tsx scripts/check-sheet.ts",
     "verify:intake": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-generator-intake.ts",
-    "verify:followups": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-followups.ts"
+    "verify:followups": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-followups.ts",
+    "verify:routing": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-routing.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
