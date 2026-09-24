@@ -5,6 +5,7 @@ import { getSettings, getRoutingSettings } from "@/lib/settings";
 import SiteHeader from "@/components/SiteHeader";
 import AdminPanel from "./AdminPanel";
 import FollowupQueue from "@/components/FollowupQueue";
+import BriefPreview from "@/components/BriefPreview";
 import RoutingPanel from "./RoutingPanel";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export default async function AdminPage() {
           settings={routing}
           team={team.filter((u) => u.active).map((u) => ({ id: u.id, name: u.name }))}
         />
+        <BriefPreview />
         <FollowupQueue />
       </div>
       <AdminPanel

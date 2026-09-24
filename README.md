@@ -83,6 +83,8 @@ npm run db:demo -- wipe  # remove them again
 | `GOOGLE_SERVICE_ACCOUNT_KEY` / `PROPOSAL_LOG_SHEET_ID` | The read-only Google Sheet mirror. |
 | `INTAKE_SECRET` | Bearer token for `POST /api/intake/email`. Without it the endpoint refuses every machine request. |
 | `CRON_SECRET` | Required for the cron endpoints. Without it they refuse every request. |
+| `APP_URL` | Where the brief links back to. Falls back to the production domain, then the deployment. |
+| `BRIEF_RECIPIENTS` | Comma-separated override for who gets the daily brief. Defaults to active admins. |
 | `FOLLOWUPS_ENABLED` | Set to `true` to let the system email clients. Anything else and it only ever previews. |
 
 `APP_PASSCODE` is no longer used — the shared passcode has been replaced by per-user PINs.
@@ -229,6 +231,25 @@ fastest way to make a team stop trusting it.
 Step 4 is the one that matters for email intake, where no human is present to own the
 lead by default.
 
+## Mario's daily brief
+
+One email each weekday at 7am ET (`vercel.json`), to admins only and never copied to
+the shared inbox. `/admin` shows exactly what tomorrow's will say with today's numbers.
+
+Ordered by what he can act on:
+
+1. **Needs you** — approvals, and anything nobody owns. The only things he personally unblocks.
+2. **Right now** — open pipeline, stalled money, leads past target. Unaffected by any date filter.
+3. **Yesterday** (or *since Friday* on a Monday, so a weekend is never skipped) — what moved.
+4. **Needs attention** — the rest, capped so the email stays scannable.
+
+A quiet day is three lines. Zero rows are omitted rather than printed as zeroes, and the
+subject says the state without needing the body opened: *"EMRG brief: 2 need you"*.
+
+Built from `kpi.ts` and `attention.ts`, the same modules the screens read, so the brief
+and the dashboard cannot tell different stories. Recipients default to active admins;
+`BRIEF_RECIPIENTS` overrides with a comma-separated list.
+
 ## Follow-ups
 
 Built and tested, and **off until you turn it on**. This is the only part of the system that
@@ -247,11 +268,11 @@ Runs weekdays at 10am ET (`vercel.json`). Cadence is configurable in `/admin`, d
 ## Not built yet
 
 1. The Gmail connection itself: watching the inboxes and posting each new message to
-   the intake endpoint. Needs Workspace access, which is the long pole.
-2. Clarification drafts. `checkCompleteness()` already returns the question to ask for
-   every gap, so this is composition rather than logic.
-3. Putting the client email into the salesperson's Gmail drafts instead of sending it.
-4. Mario's private daily Events Revenue Brief, which reuses `attention.ts` and `kpi.ts`.
+   the intake endpoint. Needs Workspace access, which is the long pole. The Resend
+   forwarding route above works without it.
+2. Putting the client email into the salesperson's Gmail drafts instead of sending it,
+   which waits on the decision between sending and drafting.
+
 
 ## Sample data
 

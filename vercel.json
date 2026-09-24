@@ -1,5 +1,6 @@
 {
   "crons": [
+    { "path": "/api/cron/brief", "schedule": "0 11 * * 1-5" },
     { "path": "/api/cron/followups", "schedule": "0 14 * * 1-5" },
     { "path": "/api/cron/mirror", "schedule": "0 5 * * *" }
   ]
