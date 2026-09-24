@@ -22,6 +22,7 @@ export interface BoardCard {
   leadAgeMs: number; lastActivityMs: number;
   nextAction: string; nextActionOverdue: boolean;
   followupState: string; approvalWaiting: boolean;
+  missingInfo: string; missingBlocks: boolean;
   responseStatus: "answered" | "within" | "approaching" | "overdue";
 }
 
@@ -173,6 +174,9 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
         {approaching && <Tag tone="amber">Answer soon</Tag>}
         {card.nextActionOverdue && <Tag tone="amber">Action overdue</Tag>}
         {card.followupState === "paused" && <Tag tone="grey">Follow-up paused</Tag>}
+        {card.missingInfo && (
+          <Tag tone={card.missingBlocks ? "red" : "grey"}>{card.missingInfo}</Tag>
+        )}
         {!card.nextAction.trim() && !card.nextActionOverdue && <Tag tone="grey">No next action</Tag>}
       </div>
 

@@ -120,6 +120,22 @@ async function main() {
     ownerId: null, stage: "new_lead",
   }, erica);
 
+  // 6b. Ready to quote, but the planner never captured an email address. Shows
+  //     the missing-information check doing its job: the proposal physically
+  //     cannot be sent, and Needs Attention says so.
+  const noEmail = await createOpportunity({
+    company: "Everline Group", firstName: "Tomas", lastName: "Reyes", title: "Chief of Staff",
+    email: "", cellPhone: "917-555-0143",
+    leadSource: "Phone Call", leadReceivedAt: ago(6 * HOUR), rawIntake: demo,
+    eventName: "Leadership Offsite", eventTypes: ["Executive Retreat"],
+    eventDate: "May 21, 2027", guestCount: "60", venue: "TBD",
+    feeRaw: "$18,000", ownerId: maryjane.id,
+    stage: "proposal_needed",
+    nextAction: "Get an email address from Tomas",
+    nextActionDate: new Date(Date.now() + DAY),
+  }, maryjane);
+  await logActivity({ opportunityId: noEmail.id, type: "call", actorId: maryjane.id, body: "Took the brief over the phone", occurredAt: ago(6 * HOUR - 4 * MIN) });
+
   // 7. A healthy deal: answered fast, moving along. Should NOT appear.
   const healthy = await createOpportunity({
     company: "Vertex Labs", firstName: "Priya", lastName: "Raman", title: "Chief of Staff",

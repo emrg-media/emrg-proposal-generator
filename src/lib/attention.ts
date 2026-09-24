@@ -11,6 +11,7 @@ import { isOpen } from "./constants";
 export type AttentionKind =
   | "unanswered_lead"
   | "client_waiting"
+  | "missing_info"
   | "awaiting_approval"
   | "next_action_overdue"
   | "followup_overdue"
@@ -39,6 +40,8 @@ export interface AttentionInput {
   lastInboundAt: Date | null;
   /** Most recent outbound human touch from the team, if any. */
   lastOutboundAt: Date | null;
+  /** Gaps that stop a proposal going out at all, e.g. no email address. */
+  blockingGaps: string[];
 }
 
 export interface AttentionItem {
@@ -72,6 +75,8 @@ const DAY = 24 * HOUR;
 const BASE: Record<AttentionKind, number> = {
   unanswered_lead: 1000,
   client_waiting: 800,
+  // Someone is ready to quote and cannot, which is revenue held up by a blank field.
+  missing_info: 700,
   awaiting_approval: 600,
   next_action_overdue: 400,
   followup_overdue: 300,
@@ -154,20 +159,32 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
     add("awaiting_approval", waiting, "Waiting for Erica's approval");
   }
 
-  // 4. A next action whose date has passed.
+  // 4. Ready to quote but something essential is blank. Only raised once the
+  //    deal has actually reached the point of needing a proposal, so a brand
+  //    new lead is not nagged about a venue nobody has discussed yet.
+  const quoting: Stage[] = [
+    "proposal_needed", "proposal_review", "proposal_sent",
+    "client_reviewing", "contract_deposit",
+  ];
+  if (o.blockingGaps.length > 0 && quoting.includes(o.stage)) {
+    add("missing_info", 0,
+      `Cannot send: no ${o.blockingGaps.map((g) => g.toLowerCase()).join(" or ")} on file`);
+  }
+
+  // 5. A next action whose date has passed.
   if (o.nextActionDate && o.nextActionDate.getTime() < t) {
     const overdue = t - o.nextActionDate.getTime();
     add("next_action_overdue", overdue, `Next action overdue by ${ageLabel(overdue)}`);
   }
 
-  // 5. An automated follow-up that should already have gone out. A paused
+  // 6. An automated follow-up that should already have gone out. A paused
   //    sequence is deliberate and must never be flagged.
   if (o.followupState === "active" && o.followupDueAt && o.followupDueAt.getTime() < t) {
     const overdue = t - o.followupDueAt.getTime();
     add("followup_overdue", overdue, `Follow-up overdue by ${ageLabel(overdue)}`);
   }
 
-  // 6. A proposal that went out and went quiet.
+  // 7. A proposal that went out and went quiet.
   if (o.proposalSentAt && !o.lastInboundAt) {
     const silent = t - o.proposalSentAt.getTime();
     if (silent >= silentDays * DAY) {
@@ -175,7 +192,7 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
     }
   }
 
-  // 7. Nothing scheduled — the quiet way deals die.
+  // 8. Nothing scheduled, which is the quiet way deals die.
   if (!o.nextAction.trim() && !o.nextActionDate) {
     add("no_next_action", 0, "No next action assigned");
   }

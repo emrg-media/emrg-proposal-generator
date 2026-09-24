@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 const KIND_LABELS: Record<AttentionKind, string> = {
   unanswered_lead: "Unanswered leads",
   client_waiting: "Clients waiting on us",
+  missing_info: "Missing information",
   awaiting_approval: "Waiting for approval",
   next_action_overdue: "Overdue next actions",
   followup_overdue: "Overdue follow-ups",
@@ -30,6 +31,7 @@ const KIND_LABELS: Record<AttentionKind, string> = {
 const KIND_TONE: Record<AttentionKind, "red" | "amber" | "grey"> = {
   unanswered_lead: "red",
   client_waiting: "red",
+  missing_info: "red",
   awaiting_approval: "amber",
   next_action_overdue: "amber",
   followup_overdue: "amber",

@@ -8,6 +8,7 @@ import {
   STAGES, STAGE_LABELS, LOST_REASONS, LOST_REASON_LABELS, ACTIVITY_LABELS, LEAD_SOURCES,
 } from "@/lib/constants";
 import { fmtCents, computeFee, budgetText, feeLabel } from "@/lib/fee";
+import { checkCompleteness, clarificationQuestions } from "@/lib/completeness";
 import { formatDuration, fmtDateTime, isoDate } from "@/lib/time";
 import { StageChip } from "@/components/ui";
 import {
@@ -57,7 +58,7 @@ export default function OpportunityDetail({
 
   const fee = computeFee(opp.feeRaw, budgetText(opp.budgetLowCents, opp.budgetHighCents));
   const contactName = [opp.firstName, opp.lastName].filter(Boolean).join(" ");
-  const emailMissing = !opp.email.trim();
+  const completeness = checkCompleteness(opp);
 
   const speedMs = opp.firstResponseAt
     ? new Date(opp.firstResponseAt).getTime() - new Date(opp.leadReceivedAt).getTime()
@@ -98,11 +99,7 @@ export default function OpportunityDetail({
         </div>
       </div>
 
-      {emailMissing && (
-        <Banner tone="red">
-          No email address on file. Add one before this proposal can be sent.
-        </Banner>
-      )}
+      {completeness.missing.length > 0 && <MissingInfo completeness={completeness} />}
       {opp.followupState === "paused" && (
         <FollowupPaused
           reason={opp.followupPausedReason}
@@ -340,6 +337,66 @@ function ActionButton({ children, onClick, disabled, tone }: {
         : { borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
       {children}
     </button>
+  );
+}
+
+/**
+ * What is still outstanding, split by whether it stops the proposal going out
+ * or merely weakens it. The questions are already phrased for the client, so
+ * chasing the gaps is a copy and paste rather than a writing job.
+ */
+function MissingInfo({ completeness }: { completeness: ReturnType<typeof checkCompleteness> }) {
+  const [copied, setCopied] = useState(false);
+  const { blocking, important, optional } = completeness;
+  const tone = blocking.length > 0
+    ? { bg: "#fef2f2", border: "#fecaca", fg: "#991b1b" }
+    : { bg: "#fdf6e9", border: "#e7d3a6", fg: "#7a5309" };
+
+  const questions = clarificationQuestions(completeness);
+
+  return (
+    <div className="mb-4 px-4 py-3 rounded-lg border"
+      style={{ background: tone.bg, borderColor: tone.border }}>
+      <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-2" style={{ color: tone.fg }}>
+        {blocking.length > 0
+          ? "Cannot send yet"
+          : `Still needed (${important.length})`}
+      </p>
+
+      {blocking.length > 0 && (
+        <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
+          <strong>{blocking.map((m) => m.label).join(" and ")}</strong>{" "}
+          {blocking.length === 1 ? "is" : "are"} required before this proposal can go out.
+        </p>
+      )}
+
+      {important.length > 0 && (
+        <p className="text-[13px] mb-2" style={{ color: tone.fg }}>
+          Also missing: {important.map((m) => m.label.toLowerCase()).join(", ")}.
+        </p>
+      )}
+
+      {optional.length > 0 && (
+        <p className="text-[12px] mb-2" style={{ color: tone.fg, opacity: 0.8 }}>
+          Nice to have: {optional.map((m) => m.label.toLowerCase()).join(", ")}.
+        </p>
+      )}
+
+      {questions.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(questions.map((q) => `\u2022 ${q}`).join("\n"))
+              .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
+              .catch(() => {});
+          }}
+          className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
+          style={{ borderColor: tone.border, color: tone.fg, background: "#fff" }}
+        >
+          {copied ? "Copied" : `Copy ${questions.length} question${questions.length === 1 ? "" : "s"} for the client`}
+        </button>
+      )}
+    </div>
   );
 }
 

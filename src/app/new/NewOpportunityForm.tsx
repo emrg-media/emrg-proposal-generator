@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EVENT_TYPES, LEAD_SOURCES } from "@/lib/constants";
 import { parseMoneyToCents } from "@/lib/fee";
+import { checkCompleteness } from "@/lib/completeness";
 import { createOpportunityAction } from "@/app/actions";
 import VoiceCapture from "./VoiceCapture";
 
@@ -111,12 +112,16 @@ export default function NewOpportunityForm({ team, currentUserId }: {
     });
   }
 
-  // The brief insists a missing email is flagged before a proposal goes out;
-  // surfacing it at intake is the cheapest possible moment to catch it.
-  const missing = [
-    !form.company.trim() && !form.lastName.trim() ? "a company or contact name" : "",
-    !form.email.trim() ? "an email address" : "",
-  ].filter(Boolean);
+  // Same rules the opportunity screen uses, so a gap flagged here is the same
+  // gap flagged later rather than a second opinion.
+  const completeness = checkCompleteness({
+    company: form.company, firstName: form.firstName, lastName: form.lastName,
+    title: form.title, email: form.email, cellPhone: form.cellPhone,
+    eventDate: form.eventDate, guestCount: form.guestCount, venue: form.venue,
+    eventTypes, requestedServices: services, feeRaw: form.feeRaw,
+    budgetLowCents: parseMoneyToCents(form.budgetLow),
+    budgetHighCents: parseMoneyToCents(form.budgetHigh),
+  });
   const canSave = !!(form.company.trim() || form.lastName.trim());
 
   return (
@@ -280,13 +285,22 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         </div>
       </div>
 
-      {missing.length > 0 && (
+      {completeness.missing.length > 0 && (
         <div className="mb-4 px-4 py-2.5 rounded-lg border text-[13px]"
           style={{ background: "#fdf6e9", borderColor: "#e7d3a6", color: "#7a5309" }}>
-          Still missing {missing.join(" and ")}.
-          {!canSave
-            ? " A company or contact name is needed to save."
-            : " You can save now and add the email before the proposal goes out."}
+          {completeness.blocking.length > 0 && (
+            <p className="mb-1">
+              <strong>Needed before a proposal can go out:</strong>{" "}
+              {completeness.blocking.map((m) => m.label.toLowerCase()).join(", ")}.
+            </p>
+          )}
+          {completeness.important.length > 0 && (
+            <p>
+              Still missing: {completeness.important.map((m) => m.label.toLowerCase()).join(", ")}.
+              {" "}You can save now and fill these in later.
+            </p>
+          )}
+          {!canSave && <p className="mt-1">A company or contact name is needed to save.</p>}
         </div>
       )}
       {error && (

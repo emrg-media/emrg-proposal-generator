@@ -20,7 +20,7 @@ function opp(over: Partial<AttentionInput> = {}): AttentionInput {
     proposalSentAt: null,
     nextAction: "Call back", nextActionDate: new Date(NOW.getTime() + DAY),
     approvalState: "not_required", followupState: "inactive", followupDueAt: null,
-    lastInboundAt: null, lastOutboundAt: ago(4 * MIN),
+    lastInboundAt: null, lastOutboundAt: ago(4 * MIN), blockingGaps: [],
     ...over,
   };
 }
@@ -194,4 +194,39 @@ test("grouping preserves every opportunity", () => {
                 opp({ id: "c", nextActionDate: ago(DAY) })];
   const groups = groupAttention(buildAttentionList(rows, OPTS));
   assert.deepEqual(new Set(groups.map((g) => g.opportunityId)), new Set(["a", "b", "c"]));
+});
+
+// ── Missing information (Mario's checklist item 4) ───────────────────────────
+
+test("a blank essential field blocks a deal that is ready to quote", () => {
+  const k = kinds(opp({ stage: "proposal_needed", blockingGaps: ["Email address"] }));
+  assert.ok(k.includes("missing_info"));
+});
+
+test("but a brand new lead is not nagged about it", () => {
+  // Nobody has discussed a venue or an email yet; flagging here is just noise.
+  assert.ok(!kinds(opp({ stage: "new_lead", blockingGaps: ["Email address"] })).includes("missing_info"));
+  assert.ok(!kinds(opp({ stage: "contacted", blockingGaps: ["Email address"] })).includes("missing_info"));
+});
+
+test("the headline says what is missing and why it matters", () => {
+  const [item] = attentionFor(
+    opp({ stage: "proposal_sent", blockingGaps: ["Email address"], nextAction: "x", nextActionDate: new Date(NOW.getTime() + DAY) }),
+    OPTS).filter((i) => i.kind === "missing_info");
+  assert.equal(item.headline, "Cannot send: no email address on file");
+});
+
+test("it outranks an overdue action but not an unanswered lead", () => {
+  const list = buildAttentionList([
+    opp({ id: "overdue", stage: "proposal_needed", nextActionDate: ago(3 * DAY) }),
+    opp({ id: "blocked", stage: "proposal_needed", blockingGaps: ["Email address"] }),
+    opp({ id: "unanswered", firstResponseAt: null, lastOutboundAt: null, leadReceivedAt: ago(2 * HOUR) }),
+  ], OPTS);
+  assert.equal(list[0].opportunityId, "unanswered");
+  assert.equal(list[1].opportunityId, "blocked");
+});
+
+test("a closed deal with gaps is left alone", () => {
+  assert.deepEqual(kinds(opp({ stage: "won", blockingGaps: ["Email address"] })), []);
+  assert.deepEqual(kinds(opp({ stage: "lost", blockingGaps: ["Email address"] })), []);
 });

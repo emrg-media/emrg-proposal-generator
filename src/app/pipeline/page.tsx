@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { listOpportunities } from "@/lib/opportunities";
 import { getSettings } from "@/lib/settings";
 import { responseStatus } from "@/lib/attention";
+import { checkCompleteness, missingSummary } from "@/lib/completeness";
 import SiteHeader from "@/components/SiteHeader";
 import SampleDataBanner from "@/components/SampleDataBanner";
 import PipelineBoard, { type BoardCard } from "./PipelineBoard";
@@ -33,6 +34,8 @@ export default async function PipelinePage() {
     followupState: r.followupState,
     approvalWaiting: r.approvalState === "waiting",
     responseStatus: responseStatus(r, now, appSettings.responseTargetMinutes),
+    missingInfo: missingSummary(checkCompleteness(r)),
+    missingBlocks: !checkCompleteness(r).readyToSend,
   }));
 
   return (

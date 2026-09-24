@@ -9,6 +9,7 @@ import { logActivity, type Executor } from "./activity";
 import { computeFee, toCents, budgetText } from "./fee";
 import type { AttentionInput } from "./attention";
 import { buildOwnerColors } from "./colors";
+import { checkCompleteness } from "./completeness";
 
 // Read and write helpers for opportunities. Every mutation goes through here so
 // that the timeline, the derived timestamps and the resolved money value all
@@ -154,6 +155,7 @@ export function toAttentionInput(r: OpportunityRow): AttentionInput {
     followupDueAt: r.followupDueAt,
     lastInboundAt: r.lastInboundAt,
     lastOutboundAt: r.lastOutboundAt,
+    blockingGaps: checkCompleteness(r).blocking.map((m) => m.label),
   };
 }
 
