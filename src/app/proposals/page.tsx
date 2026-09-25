@@ -18,13 +18,13 @@ export default async function ProposalsPage() {
   const totalSent = sent.reduce((s, r) => s + (r.feeCents ?? 0), 0);
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="proposals" user={user} />
       <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
-        <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>Proposals</h1>
-        <p className="text-[13px] text-stone-500 mb-5">
+        <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "var(--ink)" }}>Proposals</h1>
+        <p className="text-[13px] text-ink3 mb-5">
           Every proposal ever generated, kept permanently whether it was won, lost or never answered.
         </p>
 
@@ -42,10 +42,10 @@ export default async function ProposalsPage() {
             hint="Generate one from New Proposal and it will be recorded here permanently."
           />
         ) : (
-          <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+          <div className="bg-raised border border-line rounded-lg overflow-x-auto">
             <table className="w-full text-[13px]" style={{ minWidth: 900 }}>
               <thead>
-                <tr style={{ background: "var(--emrg-black)" }} className="text-white">
+                <tr style={{ background: "var(--header-bg)" }} className="text-white">
                   {["Generated", "Company", "Event", "Ver", "Value", "Stage", "Sent", "By"].map((h) => (
                     <th key={h} className="text-left font-semibold px-3 py-2.5 text-[10.5px] tracking-[0.08em] uppercase whitespace-nowrap">
                       {h}
@@ -55,27 +55,27 @@ export default async function ProposalsPage() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-stone-100 hover:bg-stone-50">
-                    <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDateTime(r.generatedAt)}</td>
+                  <tr key={r.id} className="border-t border-line hover:bg-sunken">
+                    <td className="px-3 py-2.5 whitespace-nowrap text-ink3">{fmtDateTime(r.generatedAt)}</td>
                     <td className="px-3 py-2.5 font-medium">
                       <Link href={`/opportunity/${r.opportunityId}`} className="hover:underline">
                         {r.company || "Untitled"}
                       </Link>
                     </td>
                     <td className="px-3 py-2.5">{r.eventName || ""}</td>
-                    <td className="px-3 py-2.5 tabular-nums text-stone-500">v{r.version}</td>
+                    <td className="px-3 py-2.5 tabular-nums text-ink3">v{r.version}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap tabular-nums font-semibold">
                       {r.feeCents !== null ? fmtCents(r.feeCents) : r.feeRaw || ""}
                     </td>
                     <td className="px-3 py-2.5">
                       <StageChip stage={r.stage} label={STAGE_LABELS[r.stage as keyof typeof STAGE_LABELS] ?? r.stage} />
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-stone-600">
+                    <td className="px-3 py-2.5 whitespace-nowrap text-ink2">
                       {r.sentAt
                         ? <span title={r.sentTo}>{fmtDateTime(r.sentAt)}</span>
-                        : <span style={{ color: "#92600a" }}>Not sent</span>}
+                        : <span style={{ color: "var(--warn)" }}>Not sent</span>}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{r.generatedBy ?? ""}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-ink3">{r.generatedBy ?? ""}</td>
                   </tr>
                 ))}
               </tbody>

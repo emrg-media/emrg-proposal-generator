@@ -57,30 +57,30 @@ export default function RoutingPanel({ settings, team }: {
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
-      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: "#111111" }}>
+    <section className="bg-raised border border-line rounded-lg p-5 mb-5">
+      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: "var(--ink)" }}>
         Who gets the lead
       </p>
-      <p className="text-[12.5px] text-stone-500 mb-4">
+      <p className="text-[12.5px] text-ink3 mb-4">
         Read top to bottom, first match wins. Whoever ends up with it is told why on the timeline.
       </p>
 
       {error && (
         <div className="mb-3 px-3 py-2 rounded border text-[13px]"
-          style={{ background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}>{error}</div>
+          style={{ background: "var(--danger-bg)", borderColor: "var(--danger-line)", color: "var(--danger-ink)" }}>{error}</div>
       )}
       {saved && (
         <div className="mb-3 px-3 py-2 rounded border text-[13px]"
-          style={{ background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" }}>Saved.</div>
+          style={{ background: "var(--good-bg)", borderColor: "var(--good-line)", color: "var(--good-ink)" }}>Saved.</div>
       )}
 
       <label className="flex items-start gap-2.5 mb-4 cursor-pointer">
         <input type="checkbox" checked={relationshipWins}
           onChange={(e) => setRelationshipWins(e.target.checked)}
           className="mt-0.5 h-[15px] w-[15px] flex-shrink-0" />
-        <span className="text-[13.5px] text-stone-700">
+        <span className="text-[13.5px] text-ink2">
           <strong>Keep existing clients with the planner who knows them.</strong>{" "}
-          <span className="text-stone-500">
+          <span className="text-ink3">
             Checked before any rule below. Whoever enters the lead is added as a collaborator
             rather than dropped.
           </span>
@@ -89,12 +89,12 @@ export default function RoutingPanel({ settings, team }: {
 
       <div className="space-y-2 mb-3">
         {rules.map((r, i) => (
-          <div key={r.id} className="flex flex-wrap items-center gap-2 py-2 border-t border-stone-100">
-            <span className="text-[11px] text-stone-400 tabular-nums w-[18px]">{i + 1}</span>
+          <div key={r.id} className="flex flex-wrap items-center gap-2 py-2 border-t border-line">
+            <span className="text-[11px] text-ink3 tabular-nums w-[18px]">{i + 1}</span>
 
             <select value={r.kind} disabled={pending}
               onChange={(e) => patch(r.id, { kind: e.target.value as RuleKind, match: "" })}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[12.5px] bg-white">
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[12.5px] bg-raised">
               {(Object.keys(KIND_LABELS) as RuleKind[]).map((k) => (
                 <option key={k} value={k}>{KIND_LABELS[k]}</option>
               ))}
@@ -102,50 +102,50 @@ export default function RoutingPanel({ settings, team }: {
 
             {r.kind === "event_type" && (
               <select value={r.match ?? ""} onChange={(e) => patch(r.id, { match: e.target.value })}
-                className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[12.5px] bg-white">
+                className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[12.5px] bg-raised">
                 <option value="">Pick one...</option>
                 {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             )}
             {r.kind === "lead_source" && (
               <select value={r.match ?? ""} onChange={(e) => patch(r.id, { match: e.target.value })}
-                className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[12.5px] bg-white">
+                className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[12.5px] bg-raised">
                 <option value="">Pick one...</option>
                 {LEAD_SOURCES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             )}
             {r.kind === "value_over" && (
               <div className="flex items-center gap-1">
-                <span className="text-[13px] text-stone-500">$</span>
+                <span className="text-[13px] text-ink3">$</span>
                 <input type="number" min={1}
                   value={r.minValueCents ? r.minValueCents / 100 : ""}
                   onChange={(e) => patch(r.id, { minValueCents: Math.round(Number(e.target.value) * 100) })}
-                  className="w-[110px] border-2 border-stone-300 rounded-md px-2 py-1.5 text-[12.5px] bg-white" />
+                  className="w-[110px] border-2 border-line-strong rounded-md px-2 py-1.5 text-[12.5px] bg-raised" />
               </div>
             )}
 
-            <span className="text-[12.5px] text-stone-500">goes to</span>
+            <span className="text-[12.5px] text-ink3">goes to</span>
             <select value={r.userId} onChange={(e) => patch(r.id, { userId: e.target.value })}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[12.5px] bg-white">
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[12.5px] bg-raised">
               <option value="">Pick someone...</option>
               {team.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
 
             <div className="ml-auto flex items-center gap-1">
               <button type="button" onClick={() => move(r.id, -1)} disabled={i === 0}
-                className="px-1.5 py-1 text-[12px] text-stone-400 disabled:opacity-25" title="Move up">↑</button>
+                className="px-1.5 py-1 text-[12px] text-ink3 disabled:opacity-25" title="Move up">↑</button>
               <button type="button" onClick={() => move(r.id, 1)} disabled={i === rules.length - 1}
-                className="px-1.5 py-1 text-[12px] text-stone-400 disabled:opacity-25" title="Move down">↓</button>
+                className="px-1.5 py-1 text-[12px] text-ink3 disabled:opacity-25" title="Move down">↓</button>
               <button type="button" onClick={() => patch(r.id, { enabled: !r.enabled })}
                 className="text-[10px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded border"
                 style={r.enabled
-                  ? { borderColor: "#bbf7d0", color: "#166534", background: "#f0fdf4" }
-                  : { borderColor: "#e7e5e4", color: "#78716c", background: "#fff" }}>
+                  ? { borderColor: "var(--good-line)", color: "var(--good-ink)", background: "var(--good-bg)" }
+                  : { borderColor: "var(--line)", color: "var(--ink-3)", background: "var(--raised)" }}>
                 {r.enabled ? "On" : "Off"}
               </button>
               <button type="button" onClick={() => setRules((rs) => rs.filter((x) => x.id !== r.id))}
                 className="text-[10px] font-bold tracking-[0.1em] uppercase px-2 py-1"
-                style={{ color: "var(--emrg-red)" }}>Remove</button>
+                style={{ color: "var(--accent)" }}>Remove</button>
             </div>
           </div>
         ))}
@@ -154,24 +154,25 @@ export default function RoutingPanel({ settings, team }: {
       <button type="button"
         onClick={() => setRules((rs) => [...rs, { id: newRuleId(), kind: "event_type", match: "", userId: "", enabled: true }])}
         className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border-2 mb-4"
-        style={{ borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+        style={{ borderColor: "var(--line-strong)", color: "var(--ink-2)", background: "var(--raised)" }}>
         Add a rule
       </button>
 
-      <div className="border-t border-stone-100 pt-3 mb-4">
-        <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+      <div className="border-t border-line pt-3 mb-4">
+        <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
           When nothing matches and nobody entered it by hand
         </label>
         <select value={fallbackUserId} onChange={(e) => setFallbackUserId(e.target.value)}
-          className="border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white">
+          className="border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised">
           <option value="">Give it to whoever has the fewest open opportunities</option>
           {team.map((m) => <option key={m.id} value={m.id}>Always {m.name}</option>)}
         </select>
       </div>
 
       <button type="button" disabled={pending} onClick={save}
-        className="text-[10px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded text-white"
-        style={{ background: "var(--emrg-red)" }}>
+        className="text-[10px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded"
+        
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
         {pending ? "Saving..." : "Save routing"}
       </button>
     </section>

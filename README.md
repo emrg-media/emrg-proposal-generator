@@ -211,6 +211,25 @@ What it handles:
 - **Signatures are kept deliberately.** They are usually the only place the company
   name and job title appear.
 
+## Colour and contrast
+
+Every colour is a semantic token in `globals.css` (`--ink`, `--ink-2`, `--ink-3`,
+`--surface`, `--raised`, stage colours, status colours). Components reference tokens,
+never raw hex, which is what lets a single attribute on `<html>` switch the whole app
+between light and dark.
+
+The values were measured, not chosen by eye. The previous palette leaned on Tailwind's
+stone-400 and stone-500 for small print, at 2.35:1 and 4.36:1 against the page, well
+under the 4.5:1 that size needs. That is what made the KPI sub-labels hard to read.
+
+```bash
+npm run verify:contrast    # every screen, both themes, fails under WCAG AA
+```
+
+It drives a real browser, composites translucent layers properly, and checks each text
+node against what is actually behind it. Worth running after any visual change: it
+catches dimmed text that looks fine to whoever just made it.
+
 ## Who gets the lead
 
 Routing is decided in `lib/routing.ts`, a pure function, and configured under

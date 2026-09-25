@@ -199,31 +199,31 @@ function EventTypeSelect({
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)}
-        className="w-full text-left border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white flex items-center justify-between gap-2 transition-colors"
-        style={{ color: selected.length ? "#111111" : "#9ca3af" }}>
+        className="w-full text-left border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised flex items-center justify-between gap-2 transition-colors"
+        style={{ color: selected.length ? "var(--ink)" : "var(--ink-3)" }}>
         <span className="truncate">
           {selected.length === 0 ? "Select event type(s)..." : selected.join(", ")}
         </span>
         <svg width="11" height="7" viewBox="0 0 11 7" fill="none" className="flex-shrink-0">
-          <path d="M1 1l4.5 4.5L10 1" stroke="#c0b8ae" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M1 1l4.5 4.5L10 1" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-raised border border-line rounded-lg shadow-lg overflow-hidden">
           <div className="max-h-56 overflow-y-auto py-1">
             {EVENT_TYPES.map((t) => (
-              <label key={t} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-stone-50">
+              <label key={t} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-sunken">
                 <input type="checkbox" checked={selected.includes(t)} onChange={() => toggle(t)}
-                  className="h-4 w-4 flex-shrink-0 rounded border-stone-300" />
-                <span className="text-[16px] text-stone-900">{t}</span>
+                  className="h-4 w-4 flex-shrink-0 rounded border-line-strong" />
+                <span className="text-[16px] text-ink">{t}</span>
               </label>
             ))}
           </div>
           {selected.length > 0 && (
-            <div className="border-t border-stone-100 px-4 py-2 flex justify-end">
+            <div className="border-t border-line px-4 py-2 flex justify-end">
               <button onClick={() => onChange([])}
                 className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: "var(--emrg-red)" }}>Clear all</button>
+                style={{ color: "var(--accent)" }}>Clear all</button>
             </div>
           )}
         </div>
@@ -516,11 +516,12 @@ export default function ProposalBuilder({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div style={{ height: 4, background: "var(--emrg-red)" }} />
+      <div style={{ height: 4, background: "var(--accent)" }} />
 
-      <header style={{ background: "var(--emrg-black)" }} className="text-white px-6 md:px-8 py-4 flex items-center gap-4">
+      <header style={{ background: "var(--header-bg)" }} className="text-white px-6 md:px-8 py-4 flex items-center gap-4">
         <a href={createdId ? `/opportunity/${createdId}` : backHref}
-          className="text-[11px] tracking-[0.18em] uppercase text-white/50 hover:text-white transition-colors whitespace-nowrap">
+          className="text-[11px] tracking-[0.18em] uppercase transition-opacity hover:opacity-100 whitespace-nowrap"
+          style={{ color: "var(--header-muted)" }}>
           {isNew && !createdId ? "\u2190 Back to pipeline" : "\u2190 Back to opportunity"}
         </a>
         <div className="flex items-baseline gap-2 ml-auto min-w-0">
@@ -528,7 +529,7 @@ export default function ProposalBuilder({
             {client.client_name || "New proposal"}
           </span>
           {opportunityCode && (
-            <span className="text-[11px] font-mono text-white/40">{opportunityCode}</span>
+            <span className="text-[11px] font-mono" style={{ color: "var(--header-muted)" }}>{opportunityCode}</span>
           )}
           {seed.version > 1 && (
             <span className="text-[10px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded"
@@ -539,7 +540,7 @@ export default function ProposalBuilder({
           {createdId && (
             <a href={`/opportunity/${createdId}`}
               className="text-[10px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded whitespace-nowrap"
-              style={{ background: "var(--emrg-red)", color: "#fff" }}>
+              style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
               Open in pipeline
             </a>
           )}
@@ -549,29 +550,29 @@ export default function ProposalBuilder({
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 69px)" }}>
 
         {/* ── LEFT: Form ── */}
-        <div className="w-[44%] overflow-y-auto bg-white border-r border-stone-200">
+        <div className="w-[44%] overflow-y-auto bg-raised border-r border-line">
           <div className="px-9 pt-8 pb-14">
 
             {/* Smart Import */}
-            <div className="mb-8 rounded-lg border-2 border-dashed border-stone-400 bg-stone-50 p-5">
-              <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#111111" }}>
+            <div className="mb-8 rounded-lg border-2 border-dashed border-line-strong bg-sunken p-5">
+              <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "var(--ink)" }}>
                 Smart Import
               </p>
               <textarea
                 value={importNotes}
                 onChange={(e) => setImportNotes(e.target.value)}
                 placeholder="Paste discovery call notes or a transcript to auto-fill the form."
-                className="w-full h-36 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400"
+                className="w-full h-36 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-ink placeholder-ink3"
               />
               {importError && (
-                <p className="text-[10px] mt-1" style={{ color: "var(--emrg-red)" }}>{importError}</p>
+                <p className="text-[10px] mt-1" style={{ color: "var(--accent)" }}>{importError}</p>
               )}
               <div className="flex justify-end mt-2">
                 <button
                   onClick={handleSmartImport}
                   disabled={!importNotes.trim() || importing}
                   className="text-[9px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded transition-opacity disabled:opacity-40"
-                  style={{ background: "var(--emrg-red)", color: "#fff" }}>
+                  style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
                   {importing ? "Extracting…" : "Auto-fill form"}
                 </button>
               </div>
@@ -585,7 +586,7 @@ export default function ProposalBuilder({
                   <div>
                     <FieldLabel>Lead source</FieldLabel>
                     <select value={leadSource} onChange={(e) => setLeadSource(e.target.value)}
-                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900">
+                      className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink">
                       <option value="">Select...</option>
                       {leadSources.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
@@ -594,10 +595,10 @@ export default function ProposalBuilder({
                     <FieldLabel>Enquiry came in</FieldLabel>
                     <input type="datetime-local" value={enquiryAt}
                       onChange={(e) => setEnquiryAt(e.target.value)}
-                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900" />
+                      className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink" />
                   </div>
                 </div>
-                <p className="text-[12px] text-stone-500 mt-2 leading-relaxed">
+                <p className="text-[12px] text-ink3 mt-2 leading-relaxed">
                   Generating or sending creates the opportunity automatically. Setting when the
                   enquiry actually arrived keeps the response-time reporting honest. Leave it
                   blank and it counts from now.
@@ -630,19 +631,19 @@ export default function ProposalBuilder({
                   <input type="text" value={client.budget_low}
                     onChange={handleCurrencyChange("budget_low")} onBlur={handleCurrencyBlur("budget_low")}
                     placeholder="$50,000"
-                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                    className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors" />
                 </div>
                 <div>
                   <FieldLabel>Budget (high)</FieldLabel>
                   <input type="text" value={client.budget_high}
                     onChange={handleCurrencyChange("budget_high")} onBlur={handleCurrencyBlur("budget_high")}
                     placeholder="$75,000"
-                    className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors"
-                    style={budgetInvalid ? { borderColor: "var(--emrg-red)" } : undefined} />
+                    className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors"
+                    style={budgetInvalid ? { borderColor: "var(--accent)" } : undefined} />
                 </div>
               </div>
               {budgetInvalid && (
-                <p className="text-[13px] font-semibold -mt-2" style={{ color: "var(--emrg-red)" }}>
+                <p className="text-[13px] font-semibold -mt-2" style={{ color: "var(--accent)" }}>
                   Low budget is higher than high budget. Swap the values before generating.
                 </p>
               )}
@@ -651,7 +652,7 @@ export default function ProposalBuilder({
                 <input type="text" value={client.service_fee}
                   onChange={handleFeeChange} onBlur={handleFeeBlur}
                   placeholder="$12,000 or 20%"
-                  className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                  className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors" />
               </div>
             </div>
 
@@ -659,17 +660,17 @@ export default function ProposalBuilder({
             <SectionLabel>Event Dates</SectionLabel>
             <div className="space-y-5 mb-4">
               {events.map((ev, idx) => (
-                <div key={ev.id} className="rounded-lg border border-stone-150 bg-stone-50/50 p-4 space-y-3 relative"
-                  style={{ borderColor: "#ede9e3" }}>
+                <div key={ev.id} className="rounded-lg border border-line bg-sunken/50 p-4 space-y-3 relative"
+                  style={{ borderColor: "var(--line)" }}>
                   {/* Row label + remove */}
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "#111111" }}>
+                    <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "var(--ink)" }}>
                       Event {idx + 1}
                     </span>
                     {events.length > 1 && (
                       <button onClick={() => removeEvent(ev.id)}
                         className="text-[9px] font-bold uppercase tracking-wider transition-opacity"
-                        style={{ color: "var(--emrg-red)" }}>Remove</button>
+                        style={{ color: "var(--accent)" }}>Remove</button>
                     )}
                   </div>
 
@@ -678,7 +679,7 @@ export default function ProposalBuilder({
                     <input type="text" value={ev.date}
                       onChange={(e) => updateEvent(ev.id, { date: e.target.value })}
                       placeholder="e.g. June 15, 2026 or 06/15/26"
-                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                      className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors" />
                   </div>
 
                   <div>
@@ -694,9 +695,9 @@ export default function ProposalBuilder({
                       onChange={(e) => handleGuestChange(ev.id, e.target.value)}
                       onBlur={(e) => handleGuestBlur(ev.id, e.target.value)}
                       placeholder="e.g. 250 or 100-150"
-                      className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+                      className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors" />
                     {ev.guestCountFormatted && (
-                      <p className="text-[12px] mt-1 ml-0.5" style={{ color: "#111111" }}>
+                      <p className="text-[12px] mt-1 ml-0.5" style={{ color: "var(--ink)" }}>
                         Will show as: <strong>{ev.guestCountFormatted}</strong>
                       </p>
                     )}
@@ -707,7 +708,7 @@ export default function ProposalBuilder({
 
             <button onClick={addEvent}
               className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider mb-9 transition-opacity hover:opacity-70"
-              style={{ color: "var(--emrg-red)" }}>
+              style={{ color: "var(--accent)" }}>
               <span className="text-base leading-none">+</span> Add another event date
             </button>
 
@@ -733,10 +734,10 @@ export default function ProposalBuilder({
               <div className="space-y-1.5 mb-3">
                 {customServices.map((label, i) => (
                   <div key={i} className="flex items-center gap-2 group py-0.5">
-                    <span className="flex-1 text-[16px] text-stone-900">{label}</span>
+                    <span className="flex-1 text-[16px] text-ink">{label}</span>
                     <button onClick={() => removeCustomService(i)}
                       className="text-[11px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: "var(--emrg-red)" }}>Remove</button>
+                      style={{ color: "var(--accent)" }}>Remove</button>
                   </div>
                 ))}
               </div>
@@ -746,14 +747,15 @@ export default function ProposalBuilder({
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomService()}
                 placeholder="Add a custom service..."
-                className="flex-1 border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors" />
+                className="flex-1 border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 outline-none transition-colors" />
               <button onClick={addCustomService}
-                className="px-5 py-2.5 text-white text-[16px] font-semibold rounded-md hover:opacity-90 transition-opacity"
-                style={{ background: "var(--emrg-red)" }}>Add</button>
+                className="px-5 py-2.5  text-[16px] font-semibold rounded-md hover:opacity-90 transition-opacity"
+                
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
             </div>
 
             {budgetInvalid && (
-              <p className="text-[13px] font-semibold mb-2 text-center" style={{ color: "var(--emrg-red)" }}>
+              <p className="text-[13px] font-semibold mb-2 text-center" style={{ color: "var(--accent)" }}>
                 Fix the budget range before generating.
               </p>
             )}
@@ -761,14 +763,14 @@ export default function ProposalBuilder({
               onClick={handleGeneratePdf}
               disabled={generatingPdf || !hasAnyField || budgetInvalid}
               className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: "var(--emrg-red)", color: "#fff" }}>
+              style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
               {generatingPdf ? "Generating…" : "Generate PDF"}
             </button>
 
             {/* Send to client */}
             <div className="mt-3">
               {!client.client_email.trim() ? (
-                <p className="text-[12px] text-stone-500 text-center">
+                <p className="text-[12px] text-ink3 text-center">
                   Add a client email above to enable sending.
                 </p>
               ) : (
@@ -776,15 +778,15 @@ export default function ProposalBuilder({
                   onClick={openEmailPreview}
                   disabled={sending || !hasAnyField || budgetInvalid}
                   className="w-full py-3.5 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md border-2 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ borderColor: "var(--emrg-black)", color: "var(--emrg-black)", background: "#fff" }}>
+                  style={{ borderColor: "var(--header-bg)", color: "var(--header-bg)", background: "var(--raised)" }}>
                   Send to Client
                 </button>
               )}
               {sendError && (
-                <p className="text-[12px] mt-2 text-center" style={{ color: "var(--emrg-red)" }}>{sendError}</p>
+                <p className="text-[12px] mt-2 text-center" style={{ color: "var(--accent)" }}>{sendError}</p>
               )}
               {sentAt && (
-                <p className="text-[13px] font-semibold mt-2 text-center" style={{ color: "#15803d" }}>
+                <p className="text-[13px] font-semibold mt-2 text-center" style={{ color: "var(--good)" }}>
                   ✓ Sent to {client.client_email} on {sentAt}
                 </p>
               )}
@@ -793,58 +795,58 @@ export default function ProposalBuilder({
         </div>
 
         {/* ── RIGHT: Document Preview ── */}
-        <div className="w-[56%] overflow-y-auto px-8 py-8" style={{ background: "#e8e4de" }}>
-          <p className="text-[11px] font-bold tracking-[0.25em] uppercase mb-6" style={{ color: "#111111" }}>
+        <div className="w-[56%] overflow-y-auto px-8 py-8" style={{ background: "var(--sunken)" }}>
+          <p className="text-[11px] font-bold tracking-[0.25em] uppercase mb-6" style={{ color: "var(--ink)" }}>
             Document Preview
           </p>
 
           {!hasAnyField ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <div className="w-10 h-10 rounded-full border border-stone-300 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full border border-line-strong flex items-center justify-center">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 2v10M2 7h10" stroke="#c0b8ae" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M7 2v10M2 7h10" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </div>
-              <p className="text-xs" style={{ color: "#c0b8ae" }}>Fill in the form to see the document</p>
+              <p className="text-xs" style={{ color: "var(--ink-3)" }}>Fill in the form to see the document</p>
             </div>
           ) : (
             <div className="space-y-6">
 
               {/* ── Page 1: Cover ── */}
               <PagePill>Page 1 · Cover</PagePill>
-              <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30 flex flex-col items-center justify-center text-center px-10 py-24"
+              <div className="bg-raised shadow-md rounded-lg overflow-hidden border border-line/30 flex flex-col items-center justify-center text-center px-10 py-24"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
                 <Image src="/emrg-logo.png" alt="EMRG Media" width={240} height={60} style={{ objectFit: "contain" }} className="mb-12" />
-                <p className="text-[11px] tracking-[0.3em] text-stone-500 mb-3">PREPARED FOR</p>
-                <p className="text-[26px] font-bold text-stone-900 mb-3">
-                  {client.client_name || <span className="text-stone-300">_______________</span>}
+                <p className="text-[11px] tracking-[0.3em] text-ink3 mb-3">PREPARED FOR</p>
+                <p className="text-[26px] font-bold text-ink mb-3">
+                  {client.client_name || <span className="text-ink3">_______________</span>}
                 </p>
-                <p className="text-[13.5px] text-stone-600">
+                <p className="text-[13.5px] text-ink2">
                   {[...new Set(events.flatMap((e) => e.eventTypes))].join(" / ")}
                   {events.flatMap((e) => e.eventTypes).length > 0 && events[0]?.date ? "  |  " : ""}
                   {events[0]?.date ? formatDatePlain(events[0].date) : ""}
                 </p>
-                <div className="mt-10" style={{ width: 40, height: 2, background: "var(--emrg-red)" }} />
+                <div className="mt-10" style={{ width: 40, height: 2, background: "var(--accent)" }} />
               </div>
 
               {/* ── Page 2: Intro letter ── */}
               <PagePill>Page 2 · Cover Letter</PagePill>
-              <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30 px-10 py-8"
+              <div className="bg-raised shadow-md rounded-lg overflow-hidden border border-line/30 px-10 py-8"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
                 <div className="flex justify-center mb-8">
                   <Image src="/emrg-logo.png" alt="EMRG Media" width={200} height={50} style={{ objectFit: "contain" }} />
                 </div>
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
-                  Dear {greetingName(client.signer_name) || <span className="inline-block border-b border-stone-400 w-24 align-bottom" />},
+                <p className="text-[14.5px] leading-7 text-ink mb-4">
+                  Dear {greetingName(client.signer_name) || <span className="inline-block border-b border-line-strong w-24 align-bottom" />},
                 </p>
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                <p className="text-[14.5px] leading-7 text-ink mb-4">
                   Thank you for the opportunity to plan{" "}
                   <span className="font-semibold">{client.client_name || "your company"}</span>&apos;s upcoming{" "}
                   {[...new Set(events.flatMap((e) => e.eventTypes))].join(" / ").toLowerCase() || "event"}.
                   {" "}For over 25 years, EMRG Media has produced more than 1,100 events for clients including
                   JPMorgan, Netflix, Bloomberg and Condé Nast, and we would be honored to add this celebration to that list.
                 </p>
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                <p className="text-[14.5px] leading-7 text-ink mb-4">
                   Enclosed is our proposed scope of services and agreement for your{" "}
                   {events[0]?.date
                     ? <span className="font-semibold">{formatDateOrdinalNoYear(events[0].date)}</span>
@@ -856,21 +858,21 @@ export default function ProposalBuilder({
                   {" "}Our team handles every detail from venue through day of execution, so your team enjoys
                   the night instead of running it.
                 </p>
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-8">
+                <p className="text-[14.5px] leading-7 text-ink mb-8">
                   We look forward to creating something exceptional together.
                 </p>
-                <p className="text-[14.5px] leading-6 text-stone-900">Warm regards,</p>
-                <p className="text-[14.5px] leading-6 font-semibold text-stone-900">Mario Stewart</p>
-                <p className="text-[13px] leading-6 text-stone-600">Founder and CEO, EMRG Media</p>
-                <p className="text-[13px] leading-6 text-stone-600">212.254.3700</p>
-                <div className="border-t border-stone-200 pt-4 mt-8 text-center">
-                  <p className="text-[13px] text-stone-800">{EMRG_ADDRESS}</p>
+                <p className="text-[14.5px] leading-6 text-ink">Warm regards,</p>
+                <p className="text-[14.5px] leading-6 font-semibold text-ink">Mario Stewart</p>
+                <p className="text-[13px] leading-6 text-ink2">Founder and CEO, EMRG Media</p>
+                <p className="text-[13px] leading-6 text-ink2">212.254.3700</p>
+                <div className="border-t border-line pt-4 mt-8 text-center">
+                  <p className="text-[13px] text-ink">{EMRG_ADDRESS}</p>
                 </div>
               </div>
 
               {/* ── Page 3+: Agreement ── */}
               <PagePill>Page 3 · Agreement</PagePill>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden border border-stone-200/30"
+            <div className="bg-raised shadow-md rounded-lg overflow-hidden border border-line/30"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
               <div className="px-10 py-8">
 
@@ -880,13 +882,13 @@ export default function ProposalBuilder({
                 </div>
 
                 {/* Intro paragraphs */}
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                <p className="text-[14.5px] leading-7 text-ink mb-4">
                   EMRG Media agrees to act as the event planner to coordinate the upcoming event for{" "}
                   <span className="font-semibold">{client.client_name || "_______________"}</span>.{" "}
                   EMRG Media will facilitate all related event planning needs and as outlined below.
                 </p>
 
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-4">
+                <p className="text-[14.5px] leading-7 text-ink mb-4">
                   The parties have discussed a general event overview including an estimated working event budget of{" "}
                   {client.budget_low || client.budget_high ? (
                     <>
@@ -898,7 +900,7 @@ export default function ProposalBuilder({
                   EMRG Media agrees to work within the parameters of the proposed budget.
                 </p>
 
-                <p className="text-[14.5px] leading-7 text-stone-900 mb-6">
+                <p className="text-[14.5px] leading-7 text-ink mb-6">
                   EMRG Media, LLC will be paid an event management and planning fee of{" "}
                   <span className="font-semibold">{client.service_fee || "$________"}</span>{" "}
                   for the services outlined below in: Event Planner, Event Management and Production Responsibilities.
@@ -908,9 +910,9 @@ export default function ProposalBuilder({
                 <table className="w-full border-collapse mb-0 text-[14.5px]">
                   <tbody>
                     <tr>
-                      <td className="border border-stone-400 px-3 py-1.5 font-semibold bg-stone-50 w-28">Client:</td>
-                      <td className="border border-stone-400 px-3 py-1.5">
-                        {client.client_name || <span className="text-stone-300">_______________</span>}
+                      <td className="border border-line-strong px-3 py-1.5 font-semibold bg-sunken w-28">Client:</td>
+                      <td className="border border-line-strong px-3 py-1.5">
+                        {client.client_name || <span className="text-ink3">_______________</span>}
                       </td>
                     </tr>
                   </tbody>
@@ -920,13 +922,13 @@ export default function ProposalBuilder({
                 <table className="w-full border-collapse mb-6 text-[14.5px]">
                   <thead>
                     <tr>
-                      <th className="border border-stone-400 px-3 py-1.5 text-left font-semibold bg-stone-50 w-[30%]">
+                      <th className="border border-line-strong px-3 py-1.5 text-left font-semibold bg-sunken w-[30%]">
                         {multipleEvents ? "Event Dates:" : "Preferred Date:"}
                       </th>
-                      <th className="border border-stone-400 px-3 py-1.5 text-left font-semibold bg-stone-50 w-[35%]">
+                      <th className="border border-line-strong px-3 py-1.5 text-left font-semibold bg-sunken w-[35%]">
                         {multipleEvents ? "Event Types:" : "Event Type:"}
                       </th>
-                      <th className="border border-stone-400 px-3 py-1.5 text-left font-semibold bg-stone-50">
+                      <th className="border border-line-strong px-3 py-1.5 text-left font-semibold bg-sunken">
                         {multipleEvents ? "Estimated Guest Counts:" : "Estimated Guest Count:"}
                       </th>
                     </tr>
@@ -935,30 +937,30 @@ export default function ProposalBuilder({
                     {multipleEvents ? (
                       // Multi-event: one row with stacked values in each cell
                       <tr>
-                        <td className="border border-stone-400 px-3 py-2 align-top">
+                        <td className="border border-line-strong px-3 py-2 align-top">
                           {events.map((ev) => (
                             <p key={ev.id} className="leading-6">
-                              {ev.date ? formatDateLong(ev.date) : <span className="text-stone-300">___</span>}
+                              {ev.date ? formatDateLong(ev.date) : <span className="text-ink3">___</span>}
                             </p>
                           ))}
                         </td>
-                        <td className="border border-stone-400 px-3 py-2 align-top">
+                        <td className="border border-line-strong px-3 py-2 align-top">
                           {events.map((ev) => (
                             <p key={ev.id} className="leading-6">
                               {ev.eventTypes.length > 0
                                 ? ev.eventTypes.join(", ")
-                                : <span className="text-stone-300">___</span>}
+                                : <span className="text-ink3">___</span>}
                             </p>
                           ))}
                         </td>
-                        <td className="border border-stone-400 px-3 py-2 align-top">
+                        <td className="border border-line-strong px-3 py-2 align-top">
                           {events.map((ev) => {
                             const dateLabel = ev.date ? formatDateLong(ev.date).split(",")[0] : null;
                             const count = ev.guestCountFormatted || (ev.guestCount ? formatGuestCount(ev.guestCount) : "");
                             return (
                               <p key={ev.id} className="leading-6">
                                 {dateLabel && <span className="font-medium">{dateLabel}: </span>}
-                                {count || <span className="text-stone-300">___</span>}
+                                {count || <span className="text-ink3">___</span>}
                               </p>
                             );
                           })}
@@ -967,20 +969,20 @@ export default function ProposalBuilder({
                     ) : (
                       // Single event row
                       <tr>
-                        <td className="border border-stone-400 px-3 py-2">
+                        <td className="border border-line-strong px-3 py-2">
                           {events[0]?.date
                             ? formatDateLong(events[0].date)
-                            : <span className="text-stone-300">_______________</span>}
+                            : <span className="text-ink3">_______________</span>}
                         </td>
-                        <td className="border border-stone-400 px-3 py-2">
+                        <td className="border border-line-strong px-3 py-2">
                           {events[0]?.eventTypes.length > 0
                             ? events[0].eventTypes.join(", ")
-                            : <span className="text-stone-300">_______________</span>}
+                            : <span className="text-ink3">_______________</span>}
                         </td>
-                        <td className="border border-stone-400 px-3 py-2">
+                        <td className="border border-line-strong px-3 py-2">
                           {events[0]?.guestCount
                             ? (events[0].guestCountFormatted || formatGuestCount(events[0].guestCount))
-                            : <span className="text-stone-300">_______________</span>}
+                            : <span className="text-ink3">_______________</span>}
                         </td>
                       </tr>
                     )}
@@ -988,73 +990,73 @@ export default function ProposalBuilder({
                 </table>
 
                 {/* Responsibilities */}
-                <p className="text-[14.5px] font-bold text-stone-900 mb-3">
+                <p className="text-[14.5px] font-bold text-ink mb-3">
                   EMRG Media Event Planner, Event Management and Production Responsibilities:
                 </p>
                 <div className="mb-5 space-y-1">
                   {selectedServices.length > 0 ? (
                     selectedServices.map((s, i) => (
-                      <p key={i} className="text-[14.5px] text-stone-900 leading-snug">
+                      <p key={i} className="text-[14.5px] text-ink leading-snug">
                         <span className="mr-3">·</span>{s}
                       </p>
                     ))
                   ) : (
-                    <p className="text-[12.5px] text-stone-300 italic">No services selected</p>
+                    <p className="text-[12.5px] text-ink3 italic">No services selected</p>
                   )}
                 </div>
 
                 {/* Service fee */}
-                <p className="text-[14.5px] font-bold text-stone-900 mb-6">
+                <p className="text-[14.5px] font-bold text-ink mb-6">
                   EMRG Media Service Fee: {client.service_fee || "$__________"}
                 </p>
 
                 {/* Assistance clause */}
-                <p className="text-[13.5px] text-stone-800 italic mb-6 leading-6">
+                <p className="text-[13.5px] text-ink italic mb-6 leading-6">
                   ** Above is the General Event Scope. Should{" "}
                   <span className="font-semibold not-italic">{client.client_name || "_______________"}</span>{" "}
                   require additional assistance, parties can determine the rate for such services provided.
                 </p>
 
                 {/* Signing section */}
-                <p className="text-[14.5px] text-stone-900 mb-5 leading-7">
+                <p className="text-[14.5px] text-ink mb-5 leading-7">
                   By signing below I,{" "}
                   {client.signer_name
                     ? <span className="font-semibold">
                         {client.signer_name}{client.signer_title ? `, ${client.signer_title}` : ""}
                       </span>
-                    : <span className="inline-block border-b border-stone-400 w-48 align-bottom" />},{" "}
+                    : <span className="inline-block border-b border-line-strong w-48 align-bottom" />},{" "}
                   am agreeing to hire EMRG Media LLC to handle the above event scope and event planning
                   details pertaining to the{" "}
                   {events.flatMap((e) => e.eventTypes).length > 0
                     ? <span className="font-semibold">{[...new Set(events.flatMap((e) => e.eventTypes))].join(" / ")}</span>
-                    : <span className="inline-block border-b border-stone-400 w-24 align-bottom" />
+                    : <span className="inline-block border-b border-line-strong w-24 align-bottom" />
                   }{" "}event.
                 </p>
 
                 {/* Signature blocks */}
-                <div className="text-[13.5px] text-stone-900 space-y-2 mb-8">
+                <div className="text-[13.5px] text-ink space-y-2 mb-8">
                   <p>Company: {client.client_name
                     ? <span className="font-medium">{client.client_name}</span>
-                    : <span className="inline-block border-b border-stone-400 w-64 align-bottom" />}</p>
+                    : <span className="inline-block border-b border-line-strong w-64 align-bottom" />}</p>
                   <div className="flex gap-8">
                     <p>Name: {client.signer_name
                       ? <span className="font-medium">{client.signer_name}</span>
-                      : <span className="inline-block border-b border-stone-400 w-36 align-bottom" />}</p>
-                    <p>Signature: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
+                      : <span className="inline-block border-b border-line-strong w-36 align-bottom" />}</p>
+                    <p>Signature: <span className="inline-block border-b border-line-strong w-36 align-bottom" /></p>
                   </div>
-                  <p>Date: <span className="inline-block border-b border-stone-400 w-24 align-bottom" /></p>
+                  <p>Date: <span className="inline-block border-b border-line-strong w-24 align-bottom" /></p>
                   <div className="h-3" />
-                  <p>Planning Agency: <span className="inline-block border-b border-stone-400 w-52 align-bottom" /></p>
+                  <p>Planning Agency: <span className="inline-block border-b border-line-strong w-52 align-bottom" /></p>
                   <div className="flex gap-8">
-                    <p>Name: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
-                    <p>Signature: <span className="inline-block border-b border-stone-400 w-36 align-bottom" /></p>
+                    <p>Name: <span className="inline-block border-b border-line-strong w-36 align-bottom" /></p>
+                    <p>Signature: <span className="inline-block border-b border-line-strong w-36 align-bottom" /></p>
                   </div>
-                  <p>Date: <span className="inline-block border-b border-stone-400 w-24 align-bottom" /></p>
+                  <p>Date: <span className="inline-block border-b border-line-strong w-24 align-bottom" /></p>
                 </div>
 
                 {/* Address footer */}
-                <div className="border-t border-stone-200 pt-4 text-center">
-                  <p className="text-[13px] text-stone-800" style={{ fontFamily: "Georgia, serif" }}>
+                <div className="border-t border-line pt-4 text-center">
+                  <p className="text-[13px] text-ink" style={{ fontFamily: "Georgia, serif" }}>
                     {EMRG_ADDRESS}
                   </p>
                 </div>
@@ -1073,44 +1075,45 @@ export default function ProposalBuilder({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6"
           style={{ background: "rgba(20,18,16,0.55)" }}
           onMouseDown={(e) => { if (e.target === e.currentTarget) setEmailModalOpen(false); }}>
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between">
+          <div className="bg-raised rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-7 py-5 border-b border-line flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "#111111" }}>
+                <p className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "var(--ink)" }}>
                   Review email before sending
                 </p>
-                <p className="text-[13px] text-stone-500 mt-0.5">
-                  To: <span className="font-semibold text-stone-800">{client.client_email}</span>
-                  <span className="ml-3 text-stone-400">BCC: events@emrgmedia.com · Proposal PDF attached</span>
+                <p className="text-[13px] text-ink3 mt-0.5">
+                  To: <span className="font-semibold text-ink">{client.client_email}</span>
+                  <span className="ml-3 text-ink3">BCC: events@emrgmedia.com · Proposal PDF attached</span>
                 </p>
               </div>
               <button onClick={() => setEmailModalOpen(false)}
-                className="text-stone-400 hover:text-stone-700 text-xl leading-none px-1" aria-label="Close">×</button>
+                className="text-ink3 hover:text-ink2 text-xl leading-none px-1" aria-label="Close">×</button>
             </div>
             <div className="px-7 py-5 space-y-4 overflow-y-auto">
               <div>
                 <FieldLabel>Subject</FieldLabel>
                 <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[15px] bg-white text-stone-900" />
+                  className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[15px] bg-raised text-ink" />
               </div>
               <div>
                 <FieldLabel>Message</FieldLabel>
                 <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)}
                   rows={12}
-                  className="w-full border-2 border-stone-400 rounded-md px-4 py-3 text-[15px] leading-relaxed bg-white text-stone-900 resize-y" />
+                  className="w-full border-2 border-line-strong rounded-md px-4 py-3 text-[15px] leading-relaxed bg-raised text-ink resize-y" />
               </div>
               {sendError && (
-                <p className="text-[13px] font-semibold" style={{ color: "var(--emrg-red)" }}>{sendError}</p>
+                <p className="text-[13px] font-semibold" style={{ color: "var(--accent)" }}>{sendError}</p>
               )}
             </div>
-            <div className="px-7 py-4 border-t border-stone-200 flex justify-end gap-3">
+            <div className="px-7 py-4 border-t border-line flex justify-end gap-3">
               <button onClick={() => setEmailModalOpen(false)}
-                className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-stone-300 text-stone-600">
+                className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-line-strong text-ink2">
                 Cancel
               </button>
               <button onClick={handleSendToClient} disabled={sending || !emailSubject.trim() || !emailBody.trim()}
-                className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md text-white disabled:opacity-40"
-                style={{ background: "var(--emrg-red)" }}>
+                className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md  disabled:opacity-40"
+                
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
                 {sending ? "Sending…" : "Send Email"}
               </button>
             </div>
@@ -1125,24 +1128,24 @@ export default function ProposalBuilder({
 
 function PagePill({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500 !mb-2">{children}</p>
+    <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-ink3 !mb-2">{children}</p>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 mb-4">
-      <div style={{ width: 2, height: 11, background: "var(--emrg-red)", borderRadius: 2 }} />
-      <h2 className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "#111111" }}>{children}</h2>
+      <div style={{ width: 2, height: 11, background: "var(--accent)", borderRadius: 2 }} />
+      <h2 className="text-[11px] font-bold tracking-[0.22em] uppercase" style={{ color: "var(--ink)" }}>{children}</h2>
     </div>
   );
 }
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "#111111" }}>
+    <label className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-1.5" style={{ color: "var(--ink)" }}>
       {children}
-      {required && <span style={{ color: "var(--emrg-red)" }} className="ml-0.5"> *</span>}
+      {required && <span style={{ color: "var(--accent)" }} className="ml-0.5"> *</span>}
     </label>
   );
 }
@@ -1156,7 +1159,7 @@ function TextField({ label, name, value, onChange, placeholder, required }: {
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
       <input type="text" name={name} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full border-2 border-stone-400 rounded-md px-4 py-2.5 text-[16px] bg-white text-stone-900 placeholder-stone-400 transition-colors" />
+        className="w-full border-2 border-line-strong rounded-md px-4 py-2.5 text-[16px] bg-raised text-ink placeholder-ink3 transition-colors" />
     </div>
   );
 }
@@ -1165,8 +1168,8 @@ function CheckRow({ label, checked, onChange }: { label: string; checked: boolea
   return (
     <label className="flex items-start gap-3 cursor-pointer">
       <input type="checkbox" checked={checked} onChange={onChange}
-        className="mt-0.5 h-[15px] w-[15px] flex-shrink-0 rounded border-stone-300" />
-      <span className="text-[16px] leading-snug transition-colors" style={{ color: "#111111" }}>{label}</span>
+        className="mt-0.5 h-[15px] w-[15px] flex-shrink-0 rounded border-line-strong" />
+      <span className="text-[16px] leading-snug transition-colors" style={{ color: "var(--ink)" }}>{label}</span>
     </label>
   );
 }

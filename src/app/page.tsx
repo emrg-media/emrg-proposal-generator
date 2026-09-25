@@ -40,9 +40,9 @@ const KIND_TONE: Record<AttentionKind, "red" | "amber" | "grey"> = {
 };
 
 const TONE_STYLES = {
-  red: { dot: "var(--emrg-red)", text: "var(--emrg-red)" },
-  amber: { dot: "#d97706", text: "#92600a" },
-  grey: { dot: "#a8a29e", text: "#78716c" },
+  red: { dot: "var(--accent)", text: "var(--accent)" },
+  amber: { dot: "#d97706", text: "var(--warn)" },
+  grey: { dot: "var(--ink-3)", text: "var(--ink-3)" },
 };
 
 export default async function NeedsAttentionPage({
@@ -79,24 +79,24 @@ export default async function NeedsAttentionPage({
   const totalValue = totalValueAtStake(groups);
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="attention" user={user} />
       <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-7 max-w-[1600px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "#111111" }}>
+            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "var(--ink)" }}>
               {mineOnly ? `Good to see you, ${user.name.split(" ")[0]}` : "Everything that needs attention"}
             </h1>
-            <p className="text-[13px] text-stone-500 mt-1">
+            <p className="text-[13px] text-ink3 mt-1">
               {groups.length === 0
                 ? "Nothing needs you right now."
                 : `${groups.length} opportunit${groups.length === 1 ? "y needs" : "ies need"} attention, most urgent first.`}
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-raised border border-line rounded-lg p-1">
             {[
               { key: "mine", label: `Mine (${mineGroups.length})`, href: "/" },
               { key: "all", label: `Everyone (${allGroups.length})`, href: "/?scope=all" },
@@ -106,8 +106,8 @@ export default async function NeedsAttentionPage({
                 <Link key={t.key} href={t.href}
                   className="px-4 py-1.5 text-[11px] font-bold tracking-[0.12em] uppercase rounded-md transition-colors"
                   style={active
-                    ? { background: "var(--emrg-black)", color: "#fff" }
-                    : { color: "#78716c" }}>
+                    ? { background: "var(--header-bg)", color: "var(--header-ink)" }
+                    : { color: "var(--ink-3)" }}>
                   {t.label}
                 </Link>
               );
@@ -133,11 +133,12 @@ export default async function NeedsAttentionPage({
               ? `${allGroups.length} opportunit${allGroups.length === 1 ? "y" : "ies"} on the wider team. Switch to Everyone to see them.`
               : "Every lead has been answered and every deal has a next action."}
             action={<Link href="/proposal"
-              className="inline-block text-[11px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white"
-              style={{ background: "var(--emrg-red)" }}>+ New Proposal</Link>}
+              className="inline-block text-[11px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded"
+              
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>+ New Proposal</Link>}
           />
         ) : (
-          <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="bg-raised border border-line rounded-lg overflow-hidden">
             {groups.map((group, i) => (
               <AttentionRow key={group.opportunityId} group={group} first={i === 0} />
             ))}
@@ -153,23 +154,23 @@ function AttentionRow({ group, first }: { group: AttentionGroup; first: boolean 
   return (
     <Link
       href={`/opportunity/${group.opportunityId}`}
-      className={`flex items-center gap-4 px-5 py-3.5 hover:bg-stone-50 transition-colors ${first ? "" : "border-t border-stone-100"}`}
+      className={`flex items-center gap-4 px-5 py-3.5 hover:bg-sunken transition-colors ${first ? "" : "border-t border-line"}`}
     >
       <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: tone.dot }} />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-[14.5px] font-semibold text-stone-900 truncate">
+          <span className="text-[14.5px] font-semibold text-ink truncate">
             {group.company || "Untitled"}
           </span>
           {group.eventName && (
-            <span className="text-[13px] text-stone-500 truncate">{group.eventName}</span>
+            <span className="text-[13px] text-ink3 truncate">{group.eventName}</span>
           )}
         </div>
         <p className="text-[12.5px] font-medium mt-0.5" style={{ color: tone.text }}>
           {group.primary.headline}
           {group.others.length > 0 && (
-            <span className="text-stone-400 font-normal">
+            <span className="text-ink3 font-normal">
               {" · "}
               {group.others.map((o) => o.headline.toLowerCase()).join(" · ")}
             </span>
@@ -177,7 +178,7 @@ function AttentionRow({ group, first }: { group: AttentionGroup; first: boolean 
         </p>
       </div>
 
-      <span className="text-[13.5px] font-semibold text-stone-700 whitespace-nowrap hidden sm:block"
+      <span className="text-[13.5px] font-semibold text-ink2 whitespace-nowrap hidden sm:block"
         style={{ fontVariantNumeric: "tabular-nums" }}>
         {group.valueCents ? fmtCents(group.valueCents) : ""}
       </span>
@@ -186,7 +187,7 @@ function AttentionRow({ group, first }: { group: AttentionGroup; first: boolean 
         <OwnerBadge name={group.ownerName} color={group.ownerColor} />
       </span>
 
-      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-stone-400 whitespace-nowrap hidden lg:block w-[130px] text-right">
+      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-ink3 whitespace-nowrap hidden lg:block w-[130px] text-right">
         {KIND_LABELS[group.primary.kind]}
       </span>
     </Link>

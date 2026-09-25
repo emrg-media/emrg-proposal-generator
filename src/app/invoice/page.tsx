@@ -125,28 +125,28 @@ export default function InvoicePage() {
     }
   }
 
-  const inputCls = "w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white text-stone-900 placeholder-stone-400";
+  const inputCls = "w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised text-ink placeholder-ink3";
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
-      <div style={{ height: 4, background: "var(--emrg-red)" }} />
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
+      <div style={{ height: 4, background: "var(--accent)" }} />
       <InvoiceHeader />
 
       <div className="px-8 py-8 max-w-[1000px] mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-500">Invoice</p>
+            <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-ink3">Invoice</p>
             <input value={inv.invoiceNumber} onChange={(e) => setField("invoiceNumber", e.target.value)}
-              className="text-[24px] font-bold text-stone-900 bg-transparent outline-none" />
+              className="text-[24px] font-bold text-ink bg-transparent outline-none" />
           </div>
           {t.paidInFull && (
             <span className="px-4 py-2 rounded-md text-[14px] font-bold uppercase tracking-wider border-2"
-              style={{ color: "#15803d", borderColor: "#15803d" }}>Paid in Full</span>
+              style={{ color: "var(--good)", borderColor: "var(--good)" }}>Paid in Full</span>
           )}
         </div>
 
         {/* Client / event */}
-        <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
+        <div className="bg-raised border border-line rounded-lg p-5 mb-5">
           {proposals.length > 0 && (
             <div className="mb-4">
               <FieldLabel>Start from a proposal (optional)</FieldLabel>
@@ -172,12 +172,12 @@ export default function InvoicePage() {
         </div>
 
         {/* Line items */}
-        <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
+        <div className="bg-raised border border-line rounded-lg p-5 mb-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-500">Line Items</p>
+            <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-ink3">Line Items</p>
             <div className="flex items-center gap-3">
               <select defaultValue="" onChange={(e) => { if (e.target.value) { insertPreset(e.target.value); e.target.value = ""; } }}
-                className="border-2 border-stone-300 rounded-md px-3 py-1.5 text-[12px] font-semibold text-stone-700 bg-white">
+                className="border-2 border-line-strong rounded-md px-3 py-1.5 text-[12px] font-semibold text-ink2 bg-raised">
                 <option value="">Insert preset…</option>
                 {presetData.presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
@@ -187,7 +187,7 @@ export default function InvoicePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]" style={{ minWidth: 720 }}>
               <thead>
-                <tr className="text-left text-[10px] uppercase tracking-wider text-stone-500 border-b border-stone-200">
+                <tr className="text-left text-[10px] uppercase tracking-wider text-ink3 border-b border-line">
                   <th className="py-2 pr-2 font-semibold">Description</th>
                   <th className="py-2 px-2 font-semibold w-16 text-right">Qty</th>
                   <th className="py-2 px-2 font-semibold w-20 text-center">Per guest</th>
@@ -199,34 +199,34 @@ export default function InvoicePage() {
               </thead>
               <tbody>
                 {t.lines.map((l) => (
-                  <tr key={l.id} className="border-b border-stone-100">
+                  <tr key={l.id} className="border-b border-line">
                     <td className="py-1.5 pr-2">
                       <input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })}
                         placeholder="Item description"
-                        className="w-full border border-stone-200 rounded px-2 py-1.5 text-[13px] bg-white" />
+                        className="w-full border border-line rounded px-2 py-1.5 text-[13px] bg-raised" />
                     </td>
                     <td className="py-1.5 px-2">
                       <input value={l.perGuest ? String(l.effectiveQty) : l.quantity}
                         onChange={(e) => updateLine(l.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })}
                         disabled={l.perGuest} inputMode="numeric"
-                        className="w-full border border-stone-200 rounded px-2 py-1.5 text-[13px] text-right bg-white disabled:bg-stone-100 disabled:text-stone-400" />
+                        className="w-full border border-line rounded px-2 py-1.5 text-[13px] text-right bg-raised disabled:bg-sunken disabled:text-ink3" />
                     </td>
                     <td className="py-1.5 px-2 text-center">
                       <input type="checkbox" checked={l.perGuest} onChange={(e) => updateLine(l.id, { perGuest: e.target.checked })}
-                        className="h-4 w-4" style={{ accentColor: "var(--emrg-red)" }} />
+                        className="h-4 w-4" style={{ accentColor: "var(--accent)" }} />
                     </td>
                     <td className="py-1.5 px-2">
                       <input value={l.unitPrice} onChange={(e) => updateLine(l.id, { unitPrice: e.target.value.replace(/[^0-9.]/g, "") })}
                         placeholder="0.00"
-                        className="w-full border border-stone-200 rounded px-2 py-1.5 text-[13px] text-right bg-white" />
+                        className="w-full border border-line rounded px-2 py-1.5 text-[13px] text-right bg-raised" />
                     </td>
                     <td className="py-1.5 px-2 text-center">
                       <input type="checkbox" checked={l.taxable} onChange={(e) => updateLine(l.id, { taxable: e.target.checked })}
-                        className="h-4 w-4" style={{ accentColor: "var(--emrg-red)" }} />
+                        className="h-4 w-4" style={{ accentColor: "var(--accent)" }} />
                     </td>
                     <td className="py-1.5 px-2 text-right font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(l.lineTotal)}</td>
                     <td className="py-1.5 pl-2 text-center">
-                      <button onClick={() => removeLine(l.id)} className="text-stone-300 hover:text-[color:var(--emrg-red)] text-lg leading-none" aria-label="Remove line">×</button>
+                      <button onClick={() => removeLine(l.id)} className="text-ink3 hover:text-[color:var(--emrg-red)] text-lg leading-none" aria-label="Remove line">×</button>
                     </td>
                   </tr>
                 ))}
@@ -234,62 +234,63 @@ export default function InvoicePage() {
             </table>
           </div>
 
-          <button onClick={addLine} className="mt-3 text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--emrg-red)" }}>
+          <button onClick={addLine} className="mt-3 text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
             + Add line
           </button>
         </div>
 
         {/* Totals */}
         <div className="flex justify-end mb-5">
-          <div className="bg-white border border-stone-200 rounded-lg p-5 w-full max-w-sm">
-            <div className="flex justify-between py-1 text-[14px]"><span className="text-stone-500">Subtotal</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.subtotal)}</span></div>
+          <div className="bg-raised border border-line rounded-lg p-5 w-full max-w-sm">
+            <div className="flex justify-between py-1 text-[14px]"><span className="text-ink3">Subtotal</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.subtotal)}</span></div>
             <div className="flex justify-between py-1 text-[14px]">
-              <span className="text-stone-500 flex items-center gap-2">
+              <span className="text-ink3 flex items-center gap-2">
                 Tax
                 <input value={String(inv.taxRate)} onChange={(e) => setField("taxRate", parseFloat(e.target.value.replace(/[^0-9.]/g, "")) || 0)}
-                  className="w-14 border border-stone-200 rounded px-1.5 py-0.5 text-[12px] text-right" />%
-                <span className="text-stone-400 text-[12px]">on {fmtMoney(t.taxableSubtotal)}</span>
+                  className="w-14 border border-line rounded px-1.5 py-0.5 text-[12px] text-right" />%
+                <span className="text-ink3 text-[12px]">on {fmtMoney(t.taxableSubtotal)}</span>
               </span>
               <span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.tax)}</span>
             </div>
-            <div className="flex justify-between py-2 mt-1 border-t border-stone-300 text-[16px] font-bold"><span>Total</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.total)}</span></div>
-            {t.paid > 0 && <div className="flex justify-between py-1 text-[14px]"><span className="text-stone-500">Paid to date</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.paid)}</span></div>}
-            <div className="flex justify-between py-2 mt-1 rounded-md px-2 text-[15px] font-bold" style={{ background: t.paidInFull ? "#dcf2dc" : "#fdf0d5", color: t.paidInFull ? "#15803d" : "#92600a" }}>
+            <div className="flex justify-between py-2 mt-1 border-t border-line-strong text-[16px] font-bold"><span>Total</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.total)}</span></div>
+            {t.paid > 0 && <div className="flex justify-between py-1 text-[14px]"><span className="text-ink3">Paid to date</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(t.paid)}</span></div>}
+            <div className="flex justify-between py-2 mt-1 rounded-md px-2 text-[15px] font-bold" style={{ background: t.paidInFull ? "var(--good-bg)" : "var(--warn-bg)", color: t.paidInFull ? "var(--good)" : "var(--warn)" }}>
               <span>Balance Due</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(Math.max(0, t.balance))}</span>
             </div>
           </div>
         </div>
 
         {/* Payments */}
-        <div className="bg-white border border-stone-200 rounded-lg p-5 mb-6">
-          <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-500 mb-3">Payment Log</p>
-          {inv.payments.length === 0 && <p className="text-[13px] text-stone-400 mb-3">No payments recorded yet. Add the deposit or any payment received.</p>}
+        <div className="bg-raised border border-line rounded-lg p-5 mb-6">
+          <p className="text-[11px] font-bold tracking-[0.22em] uppercase text-ink3 mb-3">Payment Log</p>
+          {inv.payments.length === 0 && <p className="text-[13px] text-ink3 mb-3">No payments recorded yet. Add the deposit or any payment received.</p>}
           {inv.payments.map((p) => (
             <div key={p.id} className="flex items-center gap-3 mb-2">
               <input value={p.date} onChange={(e) => updatePayment(p.id, { date: e.target.value })} placeholder="YYYY-MM-DD"
-                className="border-2 border-stone-300 rounded-md px-3 py-2 text-[13px] w-40" />
+                className="border-2 border-line-strong rounded-md px-3 py-2 text-[13px] w-40" />
               <select value={p.method} onChange={(e) => updatePayment(p.id, { method: e.target.value })}
-                className="border-2 border-stone-300 rounded-md px-3 py-2 text-[13px] flex-1 bg-white">
+                className="border-2 border-line-strong rounded-md px-3 py-2 text-[13px] flex-1 bg-raised">
                 <option value="">Method…</option>
                 {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
               <div className="relative w-36">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-[13px]">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink3 text-[13px]">$</span>
                 <input value={p.amount} onChange={(e) => updatePayment(p.id, { amount: e.target.value.replace(/[^0-9.]/g, "") })} placeholder="0.00"
-                  className="border-2 border-stone-300 rounded-md pl-6 pr-3 py-2 text-[13px] w-full text-right" />
+                  className="border-2 border-line-strong rounded-md pl-6 pr-3 py-2 text-[13px] w-full text-right" />
               </div>
-              <button onClick={() => removePayment(p.id)} className="text-stone-300 hover:text-[color:var(--emrg-red)] text-lg leading-none px-1" aria-label="Remove payment">×</button>
+              <button onClick={() => removePayment(p.id)} className="text-ink3 hover:text-[color:var(--emrg-red)] text-lg leading-none px-1" aria-label="Remove payment">×</button>
             </div>
           ))}
-          <button onClick={addPayment} className="mt-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--emrg-red)" }}>+ Add payment</button>
+          <button onClick={addPayment} className="mt-2 text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>+ Add payment</button>
         </div>
 
         {/* Actions */}
         <div className="flex items-center justify-between">
-          <p className="text-[12px] text-stone-400 max-w-md">Draft format. Preset prices are placeholders until Olivia&apos;s list is in, and the layout will be matched to EMRG&apos;s real invoices.</p>
+          <p className="text-[12px] text-ink3 max-w-md">Draft format. Preset prices are placeholders until Olivia&apos;s list is in, and the layout will be matched to EMRG&apos;s real invoices.</p>
           <button onClick={downloadPdf} disabled={generating}
-            className="py-3 px-8 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md text-white transition-opacity disabled:opacity-40"
-            style={{ background: "var(--emrg-red)" }}>
+            className="py-3 px-8 text-[13px] font-bold tracking-[0.2em] uppercase rounded-md  transition-opacity disabled:opacity-40"
+            
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
             {generating ? "Generating…" : "Download PDF"}
           </button>
         </div>
@@ -301,7 +302,7 @@ export default function InvoicePage() {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: "#111111" }}>{children}</label>;
+  return <label className="block text-[10px] font-bold tracking-[0.18em] uppercase mb-1" style={{ color: "var(--ink)" }}>{children}</label>;
 }
 
 async function logout() {
@@ -311,17 +312,17 @@ async function logout() {
 
 function InvoiceHeader() {
   return (
-    <header style={{ background: "var(--emrg-black)" }} className="text-white px-10 py-5 flex items-center relative">
+    <header style={{ background: "var(--header-bg)" }} className="text-white px-10 py-5 flex items-center relative">
       <div className="flex items-baseline gap-2">
         <span className="text-xl font-bold tracking-tight">EMRG</span>
-        <span className="text-xl font-light tracking-[0.18em] text-white/50">MEDIA</span>
+        <span className="text-xl font-light tracking-[0.18em]" style={{ color: "var(--header-muted)" }}>MEDIA</span>
       </div>
       <nav className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-6 lg:gap-10 ml-auto lg:ml-0">
         <Link href="/" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Needs Attention</Link>
         <Link href="/pipeline" className="text-[11px] tracking-[0.22em] uppercase transition-colors pb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Pipeline</Link>
-        <Link href="/invoice" className="text-[11px] tracking-[0.22em] uppercase pb-0.5" style={{ color: "#fff", borderBottom: "1px solid var(--emrg-red)" }}>Invoice</Link>
+        <Link href="/invoice" className="text-[11px] tracking-[0.22em] uppercase pb-0.5" style={{ color: "var(--header-ink)", borderBottom: "1px solid var(--accent)" }}>Invoice</Link>
       </nav>
-      <button onClick={logout} className="ml-6 lg:ml-auto text-[11px] tracking-[0.22em] uppercase text-white/40 hover:text-white/80 transition-colors">Log out</button>
+      <button onClick={logout} className="ml-6 lg:ml-auto text-[11px] tracking-[0.22em] uppercase transition-opacity hover:opacity-100" style={{ color: "var(--header-muted)" }}>Log out</button>
     </header>
   );
 }

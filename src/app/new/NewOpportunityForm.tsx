@@ -133,17 +133,17 @@ export default function NewOpportunityForm({ team, currentUserId }: {
 
   return (
     <div className="px-5 md:px-8 py-6 max-w-[1100px] mx-auto">
-      <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>
+      <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "var(--ink)" }}>
         New opportunity
       </h1>
-      <p className="text-[13px] text-stone-500 mb-5">
+      <p className="text-[13px] text-ink3 mb-5">
         For a lead you want on the board before there is a proposal. If you are quoting now,
         go straight to <a href="/proposal" className="font-semibold underline"
-        style={{ color: "var(--emrg-red)" }}>New Proposal</a> instead, which creates the
+        style={{ color: "var(--accent)" }}>New Proposal</a> instead, which creates the
         opportunity for you.
       </p>
 
-      <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg p-1 w-fit mb-5">
+      <div className="flex items-center gap-1 bg-raised border border-line rounded-lg p-1 w-fit mb-5">
         {([
           ["transcript", "Paste transcript"],
           ["voice", "Speak it"],
@@ -152,18 +152,18 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         ] as Array<[Mode, string]>).map(([m, label]) => (
           <button key={m} type="button" onClick={() => setMode(m)}
             className="px-4 py-1.5 text-[11px] font-bold tracking-[0.12em] uppercase rounded-md transition-colors"
-            style={mode === m ? { background: "var(--emrg-black)", color: "#fff" } : { color: "#78716c" }}>
+            style={mode === m ? { background: "var(--header-bg)", color: "var(--header-ink)" } : { color: "var(--ink-3)" }}>
             {label}
           </button>
         ))}
       </div>
 
       {mode === "email" && (
-        <div className="bg-white border-2 border-dashed border-stone-300 rounded-lg p-5 mb-6">
-          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: "#111111" }}>
+        <div className="bg-raised border-2 border-dashed border-line-strong rounded-lg p-5 mb-6">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: "var(--ink)" }}>
             Paste a forwarded enquiry
           </p>
-          <p className="text-[12.5px] text-stone-500 mb-2">
+          <p className="text-[12.5px] text-ink3 mb-2">
             Headers and all. This runs the same pipeline a connected inbox will: it works out who
             really sent it, routes it to the right planner, and recognises a reply to a deal
             already in progress instead of creating a duplicate.
@@ -172,28 +172,28 @@ export default function NewOpportunityForm({ team, currentUserId }: {
             value={emailRaw}
             onChange={(e) => { setEmailRaw(e.target.value); setEmailResult(null); }}
             placeholder={"From: Priya Raman <priya@northwind.com>\nSubject: Awards gala\nDate: Mon, 3 Mar 2027 09:14\n\nHi, we're looking at an awards gala next March for about 450 guests..."}
-            className="w-full h-44 text-[13.5px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400 font-mono"
+            className="w-full h-44 text-[13.5px] resize-none bg-transparent outline-none leading-relaxed text-ink placeholder-ink3 font-mono"
           />
 
           {emailResult && !emailResult.ok && (
-            <p className="text-[12.5px] mt-1" style={{ color: "var(--emrg-red)" }}>{emailResult.error}</p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--accent)" }}>{emailResult.error}</p>
           )}
           {emailResult?.ok && emailResult.action === "ignored" && (
-            <p className="text-[12.5px] mt-1" style={{ color: "#7a5309" }}>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--warn-ink)" }}>
               Skipped: {emailResult.reason.toLowerCase()}. Nothing was created.
             </p>
           )}
           {emailResult?.ok && emailResult.action === "reply_logged" && (
-            <p className="text-[12.5px] mt-1" style={{ color: "#166534" }}>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--good-ink)" }}>
               Recognised as a reply on an existing opportunity and added to its timeline.{" "}
               <a href={`/opportunity/${emailResult.id}`} className="underline font-semibold">Open it</a>
             </p>
           )}
           {emailResult?.ok && emailResult.action === "created" && (
-            <div className="mt-2 text-[12.5px]" style={{ color: "#166534" }}>
+            <div className="mt-2 text-[12.5px]" style={{ color: "var(--good-ink)" }}>
               <p className="font-semibold">Opportunity created. {emailResult.routingReason}.</p>
               {emailResult.missing.length > 0 && (
-                <p style={{ color: "#7a5309" }}>
+                <p style={{ color: "var(--warn-ink)" }}>
                   Still needed: {emailResult.missing.map((m) => m.toLowerCase()).join(", ")}.
                 </p>
               )}
@@ -209,8 +209,9 @@ export default function NewOpportunityForm({ team, currentUserId }: {
                   .then(setEmailResult)
                   .finally(() => setEmailBusy(false));
               }}
-              className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white disabled:opacity-40"
-              style={{ background: "var(--emrg-red)" }}>
+              className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded  disabled:opacity-40"
+              
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
               {emailBusy ? "Reading..." : "Run it through"}
             </button>
           </div>
@@ -218,30 +219,31 @@ export default function NewOpportunityForm({ team, currentUserId }: {
       )}
 
       {(mode === "transcript" || mode === "voice") && (
-        <div className="bg-white border-2 border-dashed border-stone-300 rounded-lg p-5 mb-6">
+        <div className="bg-raised border-2 border-dashed border-line-strong rounded-lg p-5 mb-6">
           {mode === "voice" ? (
             <VoiceCapture value={source} onChange={setSource} />
           ) : (
             <>
-              <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: "#111111" }}>
+              <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: "var(--ink)" }}>
                 Transcript or notes
               </p>
               <textarea value={source} onChange={(e) => setSource(e.target.value)}
                 placeholder="Paste the call transcript, your notes, or a forwarded enquiry email."
-                className="w-full h-40 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400" />
+                className="w-full h-40 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-ink placeholder-ink3" />
             </>
           )}
 
           {extractError && (
-            <p className="text-[12.5px] mt-1" style={{ color: "var(--emrg-red)" }}>{extractError}</p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--accent)" }}>{extractError}</p>
           )}
           <div className="flex items-center justify-between gap-3 mt-3">
-            <p className="text-[11.5px] text-stone-400">
+            <p className="text-[11.5px] text-ink3">
               {extracted ? "Details filled in below. Check them before saving." : "Nothing is saved until you confirm."}
             </p>
             <button type="button" onClick={extract} disabled={!source.trim() || extracting}
-              className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded text-white disabled:opacity-40 whitespace-nowrap"
-              style={{ background: "var(--emrg-red)" }}>
+              className="text-[10px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded  disabled:opacity-40 whitespace-nowrap"
+              
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
               {extracting ? "Reading…" : "Pull out the details"}
             </button>
           </div>
@@ -250,8 +252,8 @@ export default function NewOpportunityForm({ team, currentUserId }: {
 
       {mode !== "email" && (
         <>
-      <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
+      <div className="bg-raised border border-line rounded-lg p-5 mb-5">
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "var(--ink)" }}>
           Contact
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -272,8 +274,8 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
+      <div className="bg-raised border border-line rounded-lg p-5 mb-5">
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "var(--ink)" }}>
           Event
         </p>
         <div className="grid sm:grid-cols-2 gap-3 mb-4">
@@ -296,12 +298,12 @@ export default function NewOpportunityForm({ team, currentUserId }: {
 
         {services.length > 0 && (
           <div className="mt-4">
-            <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+            <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
               Requested services
             </p>
             <div className="flex flex-wrap gap-1.5">
               {services.map((s) => (
-                <span key={s} className="px-2.5 py-1 rounded text-[12px] border border-stone-300 text-stone-600">
+                <span key={s} className="px-2.5 py-1 rounded text-[12px] border border-line-strong text-ink2">
                   {s}
                 </span>
               ))}
@@ -310,29 +312,29 @@ export default function NewOpportunityForm({ team, currentUserId }: {
         )}
 
         <div className="mt-4">
-          <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">Notes</label>
+          <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">Notes</label>
           <textarea value={form.notes} onChange={set("notes")}
-            className="w-full h-20 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white resize-none" />
+            className="w-full h-20 border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised resize-none" />
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-lg p-5 mb-5">
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
+      <div className="bg-raised border border-line rounded-lg p-5 mb-5">
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "var(--ink)" }}>
           Who owns it
         </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
               Primary owner
             </label>
             <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)}
-              className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white">
+              className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised">
               <option value="">Unassigned</option>
               {team.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
               Collaborators
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -343,8 +345,8 @@ export default function NewOpportunityForm({ team, currentUserId }: {
                     onClick={() => setCollaborators((c) => on ? c.filter((x) => x !== m.id) : [...c, m.id])}
                     className="px-2.5 py-1 rounded text-[12px] font-medium border transition-colors"
                     style={on
-                      ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.06)", color: "#111" }
-                      : { borderColor: "#d6d3d1", background: "#fff", color: "#78716c" }}>
+                      ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+                      : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-3)" }}>
                     {m.name.split(" ")[0]}
                   </button>
                 );
@@ -356,7 +358,7 @@ export default function NewOpportunityForm({ team, currentUserId }: {
 
       {completeness.missing.length > 0 && (
         <div className="mb-4 px-4 py-2.5 rounded-lg border text-[13px]"
-          style={{ background: "#fdf6e9", borderColor: "#e7d3a6", color: "#7a5309" }}>
+          style={{ background: "var(--warn-bg)", borderColor: "var(--warn-line)", color: "var(--warn-ink)" }}>
           {completeness.blocking.length > 0 && (
             <p className="mb-1">
               <strong>Needed before a proposal can go out:</strong>{" "}
@@ -374,19 +376,20 @@ export default function NewOpportunityForm({ team, currentUserId }: {
       )}
       {error && (
         <div className="mb-4 px-4 py-2.5 rounded-lg border text-[13px]"
-          style={{ background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}>
+          style={{ background: "var(--danger-bg)", borderColor: "var(--danger-line)", color: "var(--danger-ink)" }}>
           {error}
         </div>
       )}
 
       <div className="flex items-center gap-3 pb-10">
         <button type="button" onClick={save} disabled={pending || !canSave}
-          className="text-[11px] font-bold tracking-[0.16em] uppercase px-5 py-2.5 rounded text-white disabled:opacity-40"
-          style={{ background: "var(--emrg-red)" }}>
+          className="text-[11px] font-bold tracking-[0.16em] uppercase px-5 py-2.5 rounded  disabled:opacity-40"
+          
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
           {pending ? "Saving…" : "Create opportunity"}
         </button>
         <button type="button" onClick={() => router.push("/")}
-          className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2.5 text-stone-500">
+          className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2.5 text-ink3">
           Cancel
         </button>
       </div>
@@ -404,12 +407,12 @@ function Input({ label, value, onChange, placeholder, type = "text", highlight }
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
         {label}
       </label>
       <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full border-2 rounded-md px-3 py-2 text-[14px] bg-white"
-        style={{ borderColor: highlight ? "#e7d3a6" : "#d6d3d1" }} />
+        className="w-full border-2 rounded-md px-3 py-2 text-[14px] bg-raised"
+        style={{ borderColor: highlight ? "var(--warn-line)" : "var(--line-strong)" }} />
     </div>
   );
 }
@@ -420,11 +423,11 @@ function Select({ label, value, onChange, options }: {
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
         {label}
       </label>
       <select value={value} onChange={onChange}
-        className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white">
+        className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised">
         <option value="">Select...</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
         {value && !options.includes(value) && <option value={value}>{value}</option>}
@@ -448,7 +451,7 @@ function Chips({ label, all, selected, onToggle }: {
 
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
         {label}
       </label>
       <div className="flex flex-wrap gap-1.5">
@@ -458,15 +461,15 @@ function Chips({ label, all, selected, onToggle }: {
             <button key={t} type="button" onClick={() => onToggle(t)}
               className="px-2.5 py-1 rounded text-[12px] font-medium border transition-colors"
               style={on
-                ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.06)", color: "#111" }
-                : { borderColor: "#d6d3d1", background: "#fff", color: "#78716c" }}>
+                ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+                : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-3)" }}>
               {t}
             </button>
           );
         })}
         {(open || hiddenCount > 0) && (
           <button type="button" onClick={() => setOpen((o) => !o)}
-            className="px-2.5 py-1 rounded text-[12px] font-semibold" style={{ color: "var(--emrg-red)" }}>
+            className="px-2.5 py-1 rounded text-[12px] font-semibold" style={{ color: "var(--accent)" }}>
             {open ? "Show fewer" : `+${hiddenCount} more`}
           </button>
         )}

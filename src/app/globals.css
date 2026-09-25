@@ -1,42 +1,178 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Colour tokens.
+
+   Every value below was checked against the surface it sits on rather than
+   picked by eye. The old palette leaned on Tailwind's stone-400 and stone-500
+   for small print, which measured 2.35:1 and 4.36:1 against the page, well
+   under the 4.5:1 needed at those sizes. That is what made the KPI sub-labels
+   hard to read.
+
+   Hierarchy is carried by weight and size as much as lightness, because at
+   11-12px there is not much room to go lighter and stay legible.
+   ────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #f5f4f2;
-  --foreground: #111111;
-  --emrg-red: #c0182a;
-  --emrg-red-dark: #a01020;
-  --emrg-black: #0d0d0d;
+  color-scheme: light;
+
+  --surface:        #f5f4f2;  /* page */
+  --raised:         #ffffff;  /* cards */
+  --sunken:         #ebe9e5;  /* wells, table headers on light */
+
+  --ink:            #111111;  /* 17.2:1 on page  */
+  --ink-2:          #44403c;  /*  9.4:1          */
+  --ink-3:          #6b645e;  /*  5.3:1, the floor for small print */
+
+  --line:           #e2ded8;
+  --line-strong:    #c9c4bd;
+
+  --accent:         #c0182a;  /* 5.6:1 */
+  --accent-hover:   #a01020;
+  --accent-ink:     #ffffff;
+  --accent-soft:    rgba(192, 24, 42, 0.08);
+
+  --good:           #15803d;
+  --good-bg:        #f0fdf4;
+  --good-line:      #bbf7d0;
+  --good-ink:       #166534;
+
+  --warn:           #92600a;
+  --warn-bg:        #fdf6e9;
+  --warn-line:      #e7d3a6;
+  --warn-ink:       #7a5309;
+
+  --danger:         #991b1b;
+  --danger-bg:      #fef2f2;
+  --danger-line:    #fecaca;
+  --danger-ink:     #991b1b;
+
+  --header-bg:      #0d0d0d;
+  --header-ink:     #ffffff;
+  --header-muted:   rgba(255, 255, 255, 0.72);
+
+  /* Pipeline stages. Light: pale tint, dark text. */
+  --stage-new-lead-bg: #eef2ff; --stage-new-lead-fg: #3730a3; --stage-new-lead-solid: #4f46e5; --stage-new-lead-line: #c7d2fe;
+  --stage-contacted-bg: #e0f2fe; --stage-contacted-fg: #075985; --stage-contacted-solid: #0284c7; --stage-contacted-line: #bae6fd;
+  --stage-proposal-needed-bg: #fef3c7; --stage-proposal-needed-fg: #854d0e; --stage-proposal-needed-solid: #d97706; --stage-proposal-needed-line: #fde68a;
+  --stage-proposal-review-bg: #ffedd5; --stage-proposal-review-fg: #9a3412; --stage-proposal-review-solid: #ea580c; --stage-proposal-review-line: #fed7aa;
+  --stage-proposal-sent-bg: #f3e8ff; --stage-proposal-sent-fg: #6b21a8; --stage-proposal-sent-solid: #9333ea; --stage-proposal-sent-line: #e9d5ff;
+  --stage-client-reviewing-bg: #ccfbf1; --stage-client-reviewing-fg: #115e59; --stage-client-reviewing-solid: #0d9488; --stage-client-reviewing-line: #99f6e4;
+  --stage-contract-deposit-bg: #dcfce7; --stage-contract-deposit-fg: #166534; --stage-contract-deposit-solid: #16a34a; --stage-contract-deposit-line: #bbf7d0;
+  --stage-won-bg: #15803d; --stage-won-fg: #ffffff; --stage-won-solid: #15803d; --stage-won-line: #166534;
+  --stage-lost-bg: #eceae7; --stage-lost-fg: #514d49; --stage-lost-solid: #a8a29e; --stage-lost-line: #d8d4cf;
+}
+
+/* Dark values, derived from the same hues and verified against the dark card
+   rather than flipped automatically. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface:        #16161a;
+  --raised:         #201f24;
+  --sunken:         #121216;
+
+  --ink:            #f7f7f5;  /* 15.3:1 on a card */
+  --ink-2:          #c9c6c0;  /*  9.6:1 */
+  --ink-3:          #a09c95;  /*  6.0:1 */
+
+  --line:           #34323a;
+  --line-strong:    #4a4752;
+
+  --accent:         #ff6b7d;  /* the brand red lightened until it reads on dark */
+  --accent-hover:   #ff8593;
+  --accent-ink:     #1a1014;
+  --accent-soft:    rgba(255, 107, 125, 0.14);
+
+  --good:           #5fd18a;
+  --good-bg:        #14291d;
+  --good-line:      #1f4a31;
+  --good-ink:       #7fdda2;
+
+  --warn:           #e8b64a;
+  --warn-bg:        #2e2413;
+  --warn-line:      #574220;
+  --warn-ink:       #f0c96f;
+
+  --danger:         #ff8080;
+  --danger-bg:      #2e1618;
+  --danger-line:    #5c2629;
+  --danger-ink:     #ff9b9b;
+
+  --header-bg:      #0b0b0e;
+  --header-ink:     #f7f7f5;
+  --header-muted:   rgba(247, 247, 245, 0.72);
+
+  --stage-new-lead-bg: #29274b; --stage-new-lead-fg: #8d87ee; --stage-new-lead-solid: #8d87ee; --stage-new-lead-line: #322e6d;
+  --stage-contacted-bg: #1a3345; --stage-contacted-fg: #41a3d5; --stage-contacted-solid: #41a3d5; --stage-contacted-line: #154562;
+  --stage-proposal-needed-bg: #45311e; --stage-proposal-needed-fg: #df8b2b; --stage-proposal-needed-solid: #df8b2b; --stage-proposal-needed-line: #664019;
+  --stage-proposal-review-bg: #482a1f; --stage-proposal-review-fg: #ee793d; --stage-proposal-review-solid: #ee793d; --stage-proposal-review-line: #6d351b;
+  --stage-proposal-sent-bg: #37234c; --stage-proposal-sent-fg: #b97af1; --stage-proposal-sent-solid: #b97af1; --stage-proposal-sent-line: #4c276f;
+  --stage-client-reviewing-bg: #1c3638; --stage-client-reviewing-fg: #3da9a0; --stage-client-reviewing-solid: #3da9a0; --stage-client-reviewing-line: #194b4a;
+  --stage-contract-deposit-bg: #1e392c; --stage-contract-deposit-fg: #39b165; --stage-contract-deposit-solid: #39b165; --stage-contract-deposit-line: #1c5132;
+  --stage-won-bg: #1e3229; --stage-won-fg: #5ba677; --stage-won-solid: #5ba677; --stage-won-line: #1c442e;
+  --stage-lost-bg: #3b393c; --stage-lost-fg: #a8a29e; --stage-lost-solid: #a8a29e; --stage-lost-line: #545152;
+}
+
+/* Kept so older markup referring to the brand red still resolves. */
+:root {
+  --emrg-red: var(--accent);
+  --emrg-red-dark: var(--accent-hover);
+  --emrg-black: var(--header-bg);
+  --background: var(--surface);
+  --foreground: var(--ink);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink-2);
+  --color-ink3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-background: var(--surface);
+  --color-foreground: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--surface);
+  color: var(--ink);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1ccc5; border-radius: 99px; }
+/* Theme changes should feel like a switch, not a flash. */
+body, .themed {
+  transition: background-color 140ms ease, color 140ms ease;
+}
 
-/* Input focus ring */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px; }
+
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--emrg-red) !important;
-  box-shadow: 0 0 0 3px rgba(192, 24, 42, 0.08);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-/* Checkbox accent */
 input[type="checkbox"] {
-  accent-color: var(--emrg-red);
+  accent-color: var(--accent);
   cursor: pointer;
 }
+
+/* Form controls inherit the theme instead of staying stubbornly white. */
+input, select, textarea {
+  background-color: var(--raised);
+  color: var(--ink);
+}
+input::placeholder, textarea::placeholder { color: var(--ink-3); }
 
 /* Horizontal nav scrolls on narrow screens without showing a bar */
 .no-scrollbar::-webkit-scrollbar { display: none; }

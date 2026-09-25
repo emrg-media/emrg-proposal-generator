@@ -14,16 +14,20 @@ export interface Swatch { bg: string; fg: string; border: string; solid: string 
 // they are outcomes, so green reads as good and Lost stays a quiet grey rather
 // than competing for attention with live work.
 
+// Each stage resolves through CSS variables rather than carrying hexes, so the
+// same chip works in both themes without the component knowing which is active.
+// The dark values were derived from these hues and checked against the dark
+// card, not flipped automatically.
 export const STAGE_STYLES: Record<Stage, Swatch> = {
-  new_lead:         { bg: "#eef2ff", fg: "#3730a3", border: "#c7d2fe", solid: "#4f46e5" },
-  contacted:        { bg: "#e0f2fe", fg: "#075985", border: "#bae6fd", solid: "#0284c7" },
-  proposal_needed:  { bg: "#fef3c7", fg: "#92400e", border: "#fde68a", solid: "#d97706" },
-  proposal_review:  { bg: "#ffedd5", fg: "#9a3412", border: "#fed7aa", solid: "#ea580c" },
-  proposal_sent:    { bg: "#f3e8ff", fg: "#6b21a8", border: "#e9d5ff", solid: "#9333ea" },
-  client_reviewing: { bg: "#ccfbf1", fg: "#115e59", border: "#99f6e4", solid: "#0d9488" },
-  contract_deposit: { bg: "#dcfce7", fg: "#166534", border: "#bbf7d0", solid: "#16a34a" },
-  won:              { bg: "#16a34a", fg: "#ffffff", border: "#15803d", solid: "#15803d" },
-  lost:             { bg: "#f5f5f4", fg: "#57534e", border: "#e7e5e4", solid: "#a8a29e" },
+  new_lead:          { bg: "var(--stage-new-lead-bg)", fg: "var(--stage-new-lead-fg)", border: "var(--stage-new-lead-line)", solid: "var(--stage-new-lead-solid)" },
+  contacted:         { bg: "var(--stage-contacted-bg)", fg: "var(--stage-contacted-fg)", border: "var(--stage-contacted-line)", solid: "var(--stage-contacted-solid)" },
+  proposal_needed:   { bg: "var(--stage-proposal-needed-bg)", fg: "var(--stage-proposal-needed-fg)", border: "var(--stage-proposal-needed-line)", solid: "var(--stage-proposal-needed-solid)" },
+  proposal_review:   { bg: "var(--stage-proposal-review-bg)", fg: "var(--stage-proposal-review-fg)", border: "var(--stage-proposal-review-line)", solid: "var(--stage-proposal-review-solid)" },
+  proposal_sent:     { bg: "var(--stage-proposal-sent-bg)", fg: "var(--stage-proposal-sent-fg)", border: "var(--stage-proposal-sent-line)", solid: "var(--stage-proposal-sent-solid)" },
+  client_reviewing:  { bg: "var(--stage-client-reviewing-bg)", fg: "var(--stage-client-reviewing-fg)", border: "var(--stage-client-reviewing-line)", solid: "var(--stage-client-reviewing-solid)" },
+  contract_deposit:  { bg: "var(--stage-contract-deposit-bg)", fg: "var(--stage-contract-deposit-fg)", border: "var(--stage-contract-deposit-line)", solid: "var(--stage-contract-deposit-solid)" },
+  won:               { bg: "var(--stage-won-bg)", fg: "var(--stage-won-fg)", border: "var(--stage-won-line)", solid: "var(--stage-won-solid)" },
+  lost:              { bg: "var(--stage-lost-bg)", fg: "var(--stage-lost-fg)", border: "var(--stage-lost-line)", solid: "var(--stage-lost-solid)" },
 };
 
 export function stageStyle(stage: string): Swatch {

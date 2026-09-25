@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { User } from "@/db/schema";
 import LogoutButton from "./LogoutButton";
+import ThemeToggle from "./ThemeToggle";
 
 // The team's four working screens come first, exactly as the brief lays them
 // out. Data and Exec are reporting surfaces; Exec is admin-only and simply
@@ -27,12 +28,13 @@ export default function SiteHeader({ active, user }: { active: NavKey; user: Use
 
   return (
     <>
-      <div style={{ height: 4, background: "var(--emrg-red)" }} />
-      <header style={{ background: "var(--emrg-black)" }} className="text-white px-5 md:px-8 py-4">
+      <div style={{ height: 4, background: "var(--accent)" }} />
+      <header style={{ background: "var(--header-bg)" }} className="text-white px-5 md:px-8 py-4">
         <div className="max-w-[1600px] mx-auto flex items-center gap-5">
           <Link href="/" className="flex items-baseline gap-2 flex-shrink-0">
             <span className="text-lg font-bold tracking-tight">EMRG</span>
-            <span className="text-lg font-light tracking-[0.18em] text-white/50 hidden sm:inline">MEDIA</span>
+            <span className="text-lg font-light tracking-[0.18em] hidden sm:inline"
+              style={{ color: "var(--header-muted)" }}>MEDIA</span>
           </Link>
 
           <nav className="flex items-center gap-5 lg:gap-7 overflow-x-auto flex-1 min-w-0 no-scrollbar">
@@ -42,7 +44,7 @@ export default function SiteHeader({ active, user }: { active: NavKey; user: Use
                 href={item.href}
                 className="text-[11px] tracking-[0.18em] uppercase pb-0.5 whitespace-nowrap transition-colors"
                 style={active === item.key
-                  ? { color: "#fff", borderBottom: "1px solid var(--emrg-red)" }
+                  ? { color: "var(--header-ink)", borderBottom: "1px solid var(--accent)" }
                   : { color: "rgba(255,255,255,0.45)" }}
               >
                 {item.label}
@@ -54,17 +56,19 @@ export default function SiteHeader({ active, user }: { active: NavKey; user: Use
             <Link
               href="/proposal"
               className="text-[11px] font-bold tracking-[0.16em] uppercase px-3 py-1.5 rounded whitespace-nowrap"
-              style={{ background: "var(--emrg-red)", color: "#fff" }}
+              style={{ background: "var(--accent)", color: "var(--accent-ink)" }}
             >
               + Proposal
             </Link>
             <Link
               href="/admin"
-              className="text-[11px] tracking-[0.12em] uppercase text-white/45 hover:text-white/80 transition-colors hidden md:inline"
+              className="text-[11px] tracking-[0.12em] uppercase transition-opacity hidden md:inline"
+              style={{ color: "var(--header-muted)" }}
               title={`Signed in as ${user.name}`}
             >
               {user.name.split(" ")[0]}
             </Link>
+            <ThemeToggle />
             <LogoutButton />
           </div>
         </div>

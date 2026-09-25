@@ -68,8 +68,8 @@ export default function LoginForm({ team }: { team: Member[] }) {
   const selected = team.find((m) => m.id === userId);
 
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-7 shadow-sm">
-      <label className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: "#111111" }}>
+    <div className="bg-raised border border-line rounded-lg p-7 shadow-sm">
+      <label className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: "var(--ink)" }}>
         Who are you?
       </label>
 
@@ -83,8 +83,8 @@ export default function LoginForm({ team }: { team: Member[] }) {
               onClick={() => { setPicked(m.id); setPin(""); setError(""); }}
               className="px-3 py-2.5 rounded-md text-[13px] font-medium border-2 transition-colors text-left truncate"
               style={active
-                ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.04)", color: "#111111" }
-                : { borderColor: "#d6d3d1", background: "#fff", color: "#57534e" }}
+                ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+                : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-2)" }}
             >
               {m.name}
             </button>
@@ -94,7 +94,7 @@ export default function LoginForm({ team }: { team: Member[] }) {
 
       <label
         className="block text-[11px] font-bold tracking-[0.22em] uppercase mb-2"
-        style={{ color: userId ? "#111111" : "#a8a29e" }}
+        style={{ color: userId ? "var(--ink)" : "var(--ink-3)" }}
       >
         {selected ? `${selected.name.split(" ")[0]}'s PIN` : "Your PIN"}
       </label>
@@ -107,13 +107,13 @@ export default function LoginForm({ team }: { team: Member[] }) {
         disabled={!userId || loading}
         onChange={(e) => onPinChange(e.target.value)}
         placeholder={userId ? "6 digits" : "Pick your name first"}
-        className="w-full border-2 border-stone-400 rounded-md px-4 py-3 text-[20px] tracking-[0.5em] text-center bg-white text-stone-900 placeholder:text-[14px] placeholder:tracking-normal placeholder-stone-400 disabled:bg-stone-50 disabled:border-stone-200"
+        className="w-full border-2 border-line-strong rounded-md px-4 py-3 text-[20px] tracking-[0.5em] text-center bg-raised text-ink placeholder:text-[14px] placeholder:tracking-normal placeholder-ink3 disabled:bg-sunken disabled:border-line"
       />
 
-      {error && <p className="text-[13px] font-semibold mt-3" style={{ color: "var(--emrg-red)" }}>{error}</p>}
-      {loading && <p className="text-[13px] text-stone-500 mt-3">Checking…</p>}
+      {error && <p className="text-[13px] font-semibold mt-3" style={{ color: "var(--accent)" }}>{error}</p>}
+      {loading && <p className="text-[13px] text-ink3 mt-3">Checking…</p>}
 
-      <p className="text-[11.5px] text-stone-400 mt-4 leading-relaxed">
+      <p className="text-[11.5px] text-ink3 mt-4 leading-relaxed">
         Forgotten your PIN? Ask Mario or Erica to reset it from the admin screen.
       </p>
     </div>

@@ -15,10 +15,10 @@ export default async function SampleDataBanner() {
   return (
     <div className="px-5 md:px-8 pt-4 max-w-[1600px] mx-auto">
       <div className="flex items-start gap-2.5 px-4 py-2.5 rounded-lg border"
-        style={{ background: "#fdf6e9", borderColor: "#e7d3a6" }}>
+        style={{ background: "var(--warn-bg)", borderColor: "var(--warn-line)" }}>
         <span className="inline-flex items-center justify-center w-[17px] h-[17px] rounded-full text-[11px] font-bold border flex-shrink-0 mt-[1px]"
-          style={{ color: "#92600a", borderColor: "#92600a" }}>i</span>
-        <p className="text-[12.5px]" style={{ color: "#7a5309" }}>
+          style={{ color: "var(--warn)", borderColor: "var(--warn)" }}>i</span>
+        <p className="text-[12.5px]" style={{ color: "var(--warn-ink)" }}>
           <span className="font-bold">{count} sample opportunit{count === 1 ? "y" : "ies"}</span>{" "}
           are loaded so the screens have something to show. Google, Goldman Sachs and the rest
           are made up, so none of this is real EMRG pipeline. Anything you create yourself is

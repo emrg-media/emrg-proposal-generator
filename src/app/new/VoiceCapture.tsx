@@ -104,24 +104,24 @@ export default function VoiceCapture({ value, onChange }: {
   return (
     <>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "#111111" }}>
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "var(--ink)" }}>
           Speak the details
         </p>
         {supported && (
           <button type="button" onClick={listening ? stop : start}
             className="flex items-center gap-2 text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded border-2 transition-colors"
             style={listening
-              ? { borderColor: "var(--emrg-red)", background: "var(--emrg-red)", color: "#fff" }
-              : { borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+              ? { borderColor: "var(--accent)", background: "var(--accent)", color: "var(--accent-ink)" }
+              : { borderColor: "var(--line-strong)", color: "var(--ink-2)", background: "var(--raised)" }}>
             <span className="w-[7px] h-[7px] rounded-full"
-              style={{ background: listening ? "#fff" : "var(--emrg-red)" }} />
+              style={{ background: listening ? "var(--raised)" : "var(--accent)" }} />
             {listening ? "Stop" : "Start talking"}
           </button>
         )}
       </div>
 
       {!supported && (
-        <p className="text-[12.5px] mb-2" style={{ color: "#7a5309" }}>
+        <p className="text-[12.5px] mb-2" style={{ color: "var(--warn-ink)" }}>
           This browser can&apos;t do speech recognition, so type or paste below instead. Chrome and Safari both work.
         </p>
       )}
@@ -132,14 +132,14 @@ export default function VoiceCapture({ value, onChange }: {
         placeholder={supported
           ? 'Tap "Start talking", then speak naturally: "Google holiday party, 200 people, Jane Doe is the planner, December 14th, they want entertainment, AV and staffing."'
           : "Type the details here."}
-        className="w-full h-40 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-stone-900 placeholder-stone-400" />
+        className="w-full h-40 text-[14px] resize-none bg-transparent outline-none leading-relaxed text-ink placeholder-ink3" />
 
       {listening && (
-        <p className="text-[12px] mt-1" style={{ color: "var(--emrg-red)" }}>
+        <p className="text-[12px] mt-1" style={{ color: "var(--accent)" }}>
           Listening… speak naturally, then press Stop.
         </p>
       )}
-      {error && <p className="text-[12.5px] mt-1" style={{ color: "var(--emrg-red)" }}>{error}</p>}
+      {error && <p className="text-[12.5px] mt-1" style={{ color: "var(--accent)" }}>{error}</p>}
     </>
   );
 }

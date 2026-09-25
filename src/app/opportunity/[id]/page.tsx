@@ -20,7 +20,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   if (!data) notFound();
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="pipeline" user={user} />
       <OpportunityDetail
         opportunity={data.opportunity}

@@ -90,38 +90,38 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
     <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
       <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "#111111" }}>Data</h1>
-          <p className="text-[13px] text-stone-500 mt-1">
+          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "var(--ink)" }}>Data</h1>
+          <p className="text-[13px] text-ink3 mt-1">
             {filtered.length} of {rows.length} opportunities
             {totalValue > 0 && <> · {fmtCents(totalValue)} total</>}
           </p>
         </div>
         <a href="/api/export" download
           className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded border-2"
-          style={{ borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+          style={{ borderColor: "var(--line-strong)", color: "var(--ink-2)", background: "var(--raised)" }}>
           Export CSV
         </a>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-lg p-3 mb-4 flex flex-wrap items-center gap-2">
+      <div className="bg-raised border border-line rounded-lg p-3 mb-4 flex flex-wrap items-center gap-2">
         <input value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Search company, contact, email, event, venue…"
-          className="flex-1 min-w-[220px] border-2 border-stone-300 rounded-md px-3 py-1.5 text-[13.5px] bg-white" />
+          className="flex-1 min-w-[220px] border-2 border-line-strong rounded-md px-3 py-1.5 text-[13.5px] bg-raised" />
 
         <select value={stage} onChange={(e) => setStage(e.target.value)}
-          className="border-2 border-stone-300 rounded-md px-2.5 py-1.5 text-[13px] bg-white">
+          className="border-2 border-line-strong rounded-md px-2.5 py-1.5 text-[13px] bg-raised">
           <option value="">All stages</option>
           {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
         </select>
 
         <select value={owner} onChange={(e) => setOwner(e.target.value)}
-          className="border-2 border-stone-300 rounded-md px-2.5 py-1.5 text-[13px] bg-white">
+          className="border-2 border-line-strong rounded-md px-2.5 py-1.5 text-[13px] bg-raised">
           <option value="">All owners</option>
           {owners.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
 
         <select value={period} onChange={(e) => setPeriod(e.target.value as Period)}
-          className="border-2 border-stone-300 rounded-md px-2.5 py-1.5 text-[13px] bg-white">
+          className="border-2 border-line-strong rounded-md px-2.5 py-1.5 text-[13px] bg-raised">
           <option value="all">All time</option>
           <option value="week">This week</option>
           <option value="month">This month</option>
@@ -132,9 +132,9 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
         {period === "custom" && (
           <>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[13px] bg-white" />
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[13px] bg-raised" />
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[13px] bg-white" />
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[13px] bg-raised" />
           </>
         )}
 
@@ -142,16 +142,16 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
           <button type="button"
             onClick={() => { setQuery(""); setStage(""); setOwner(""); setPeriod("all"); setFrom(""); setTo(""); }}
             className="text-[11px] font-bold tracking-[0.1em] uppercase px-2.5 py-1.5"
-            style={{ color: "var(--emrg-red)" }}>
+            style={{ color: "var(--accent)" }}>
             Clear
           </button>
         )}
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+      <div className="bg-raised border border-line rounded-lg overflow-x-auto">
         <table className="w-full text-[13px]" style={{ minWidth: 1100 }}>
           <thead>
-            <tr style={{ background: "var(--emrg-black)" }} className="text-white">
+            <tr style={{ background: "var(--header-bg)" }} className="text-white">
               {COLUMNS.map((c) => (
                 <th key={c.label}
                   onClick={() => c.key && toggleSort(c.key)}
@@ -164,13 +164,13 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-stone-400">
+              <tr><td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-ink3">
                 Nothing matches those filters.
               </td></tr>
             )}
             {filtered.map((r) => (
-              <tr key={r.id} className="border-t border-stone-100 hover:bg-stone-50">
-                <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDate(r.leadReceivedAt)}</td>
+              <tr key={r.id} className="border-t border-line hover:bg-sunken">
+                <td className="px-3 py-2.5 whitespace-nowrap text-ink3">{fmtDate(r.leadReceivedAt)}</td>
                 <td className="px-3 py-2.5 font-medium">
                   <Link href={`/opportunity/${r.id}`} className="hover:underline">
                     {r.company || "Untitled"}
@@ -178,18 +178,18 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">{r.contact || ""}</td>
                 <td className="px-3 py-2.5">{r.eventName || ""}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-stone-600">{r.eventDate || ""}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-ink2">{r.eventDate || ""}</td>
                 <td className="px-3 py-2.5"><StageChip stage={r.stage} label={STAGE_LABELS[r.stage as keyof typeof STAGE_LABELS] ?? r.stage} /></td>
                 <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
                   {r.valueCents === null ? (r.feeRaw || "") : (r.valueEstimated ? "≈ " : "") + fmtCents(r.valueCents)}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  {r.ownerName ?? <span style={{ color: "var(--emrg-red)" }}>Unassigned</span>}
+                  {r.ownerName ?? <span style={{ color: "var(--accent)" }}>Unassigned</span>}
                 </td>
-                <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-stone-600">
+                <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-ink2">
                   {r.speedMins === null ? "" : `${r.speedMins}m`}
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-stone-500">{fmtDate(r.lastActivityAt)}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-ink3">{fmtDate(r.lastActivityAt)}</td>
               </tr>
             ))}
           </tbody>

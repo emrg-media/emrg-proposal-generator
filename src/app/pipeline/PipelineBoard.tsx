@@ -60,8 +60,8 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
     <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "#111111" }}>Pipeline</h1>
-          <p className="text-[13px] text-stone-500 mt-1">
+          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "var(--ink)" }}>Pipeline</h1>
+          <p className="text-[13px] text-ink3 mt-1">
             {local.length} opportunit{local.length === 1 ? "y" : "ies"}. Drag a card to move it.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
 
       {error && (
         <div className="mb-4 px-4 py-2.5 rounded-lg border text-[13px]"
-          style={{ background: "#fef2f2", borderColor: "#fecaca", color: "#991b1b" }}>
+          style={{ background: "var(--danger-bg)", borderColor: "var(--danger-line)", color: "var(--danger-ink)" }}>
           {error}
         </div>
       )}
@@ -103,7 +103,7 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
                     {column.length}
                   </span>
                 </div>
-                <p className="text-[11.5px] text-stone-500 tabular-nums px-2.5 pt-1.5">
+                <p className="text-[11.5px] text-ink3 tabular-nums px-2.5 pt-1.5">
                   {total > 0 ? fmtCents(total) : ""}
                 </p>
               </div>
@@ -116,8 +116,8 @@ export default function PipelineBoard({ cards }: { cards: BoardCard[] }) {
                     onDragEnd={() => { setDragId(""); setOverStage(""); }} />
                 ))}
                 {column.length === 0 && (
-                  <div className="border border-dashed border-stone-300 rounded-lg h-[72px] flex items-center justify-center">
-                    <span className="text-[11.5px] text-stone-300">Drop here</span>
+                  <div className="border border-dashed border-line-strong rounded-lg h-[72px] flex items-center justify-center">
+                    <span className="text-[11.5px] text-ink3">Drop here</span>
                   </div>
                 )}
               </div>
@@ -143,10 +143,10 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="block bg-white border rounded-lg pl-3 pr-3 py-2.5 hover:border-stone-300 cursor-grab active:cursor-grabbing"
+      className="block bg-raised border rounded-lg pl-3 pr-3 py-2.5 hover:border-line-strong cursor-grab active:cursor-grabbing"
       style={{
         opacity: dragging ? 0.4 : 1,
-        borderColor: "#e7e5e4",
+        borderColor: "var(--line)",
         // The stage colour lives on the card itself, so dropping it in a new
         // column recolours it immediately rather than only moving it.
         borderLeft: `3px solid ${c.solid}`,
@@ -154,16 +154,16 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
-        <p className="text-[13.5px] font-semibold text-stone-900 leading-tight truncate">
+        <p className="text-[13.5px] font-semibold text-ink leading-tight truncate">
           {card.company || card.contact || "Untitled"}
         </p>
-        <span className="text-[12.5px] font-semibold text-stone-700 whitespace-nowrap tabular-nums">
+        <span className="text-[12.5px] font-semibold text-ink2 whitespace-nowrap tabular-nums">
           {card.valueCents ? (card.valueEstimated ? "≈ " : "") + fmtCents(card.valueCents) : ""}
         </span>
       </div>
 
       {(card.eventName || card.eventDate) && (
-        <p className="text-[11.5px] text-stone-500 truncate mb-1.5">
+        <p className="text-[11.5px] text-ink3 truncate mb-1.5">
           {[card.eventName, card.eventDate].filter(Boolean).join(" · ")}
         </p>
       )}
@@ -180,18 +180,18 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
         {!card.nextAction.trim() && !card.nextActionOverdue && <Tag tone="grey">No next action</Tag>}
       </div>
 
-      <div className="flex items-center justify-between gap-2 text-[11px] text-stone-400">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-ink3">
         <span className="truncate inline-flex items-center gap-1.5">
           {card.ownerName ? (
             <>
               <span className="w-[16px] h-[16px] rounded-full inline-flex items-center justify-center text-[8.5px] font-bold flex-shrink-0"
-                style={{ background: owner ?? "#57534e", color: readableInk(owner ?? "#57534e") }}>
+                style={{ background: owner ?? "var(--ink-2)", color: readableInk(owner ?? "var(--ink-2)") }}>
                 {card.ownerName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
               </span>
               <span className="truncate">{card.ownerName.split(" ")[0]}</span>
             </>
           ) : (
-            <span style={{ color: "var(--emrg-red)" }}>Unassigned</span>
+            <span style={{ color: "var(--accent)" }}>Unassigned</span>
           )}
           {card.collaboratorNames.length > 0 && ` +${card.collaboratorNames.length}`}
         </span>
@@ -202,10 +202,10 @@ function Card({ card, dragging, onDragStart, onDragEnd }: {
 }
 
 function Tag({ tone, children }: { tone: "red" | "amber" | "orange" | "grey"; children: React.ReactNode }) {
-  const s = tone === "red" ? { bg: "rgba(192,24,42,0.08)", fg: "var(--emrg-red)" }
-    : tone === "amber" ? { bg: "#fdf6e9", fg: "#92600a" }
-    : tone === "orange" ? { bg: "#fff7ed", fg: "#9a3412" }
-    : { bg: "#f5f5f4", fg: "#78716c" };
+  const s = tone === "red" ? { bg: "var(--danger-bg)", fg: "var(--danger-ink)" }
+    : tone === "amber" ? { bg: "var(--warn-bg)", fg: "var(--warn)" }
+    : tone === "orange" ? { bg: "var(--warn-bg)", fg: "var(--warn-ink)" }
+    : { bg: "var(--sunken)", fg: "var(--ink-3)" };
   return (
     <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold tracking-[0.04em] uppercase whitespace-nowrap"
       style={{ background: s.bg, color: s.fg }}>

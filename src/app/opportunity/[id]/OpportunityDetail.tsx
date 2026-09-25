@@ -74,22 +74,22 @@ export default function OpportunityDetail({
       <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div className="min-w-0">
           <div className="flex items-center gap-3 flex-wrap mb-1.5">
-            <h1 className="text-[24px] font-bold tracking-tight truncate" style={{ color: "#111111" }}>
+            <h1 className="text-[24px] font-bold tracking-tight truncate" style={{ color: "var(--ink)" }}>
               {opp.company || contactName || "Untitled opportunity"}
             </h1>
             <StageChip stage={opp.stage} label={STAGE_LABELS[opp.stage]} />
             {opp.approvalState === "waiting" && (
               <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-[0.08em] uppercase"
-                style={{ background: "#fff7ed", color: "#9a3412" }}>
+                style={{ background: "var(--warn-bg)", color: "var(--warn-ink)" }}>
                 Waiting for Erica
               </span>
             )}
           </div>
-          <p className="text-[13.5px] text-stone-500">
+          <p className="text-[13.5px] text-ink3">
             {[opp.eventName, opp.eventDate, opp.guestCount && `${opp.guestCount} guests`, opp.venue]
               .filter(Boolean).join("  ·  ") || "No event details yet"}
           </p>
-          <p className="text-[11.5px] font-mono text-stone-400 mt-1">{opp.code}</p>
+          <p className="text-[11.5px] font-mono text-ink3 mt-1">{opp.code}</p>
         </div>
 
         <div className="text-right">
@@ -97,7 +97,7 @@ export default function OpportunityDetail({
             {feeLabel(fee, opp.feeRaw)}
           </p>
           {fee.estimated && fee.basis && (
-            <p className="text-[11px] mt-1 max-w-[230px]" style={{ color: "#92600a" }}>{fee.basis}</p>
+            <p className="text-[11px] mt-1 max-w-[230px]" style={{ color: "var(--warn)" }}>{fee.basis}</p>
           )}
         </div>
       </div>
@@ -117,8 +117,9 @@ export default function OpportunityDetail({
       {/* ── Actions ── */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <Link href={`/opportunity/${opp.id}/proposal`}
-          className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded text-white"
-          style={{ background: "var(--emrg-red)" }}>
+          className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded"
+          
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
           {proposals.length ? "New proposal version" : "Generate proposal"}
         </Link>
 
@@ -142,12 +143,12 @@ export default function OpportunityDetail({
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500">Stage</label>
+          <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3">Stage</label>
           <select
             value={opp.stage}
             disabled={pending}
             onChange={(e) => run(() => changeStageAction(opp.id, e.target.value))}
-            className="border-2 border-stone-300 rounded-md px-3 py-1.5 text-[13px] bg-white"
+            className="border-2 border-line-strong rounded-md px-3 py-1.5 text-[13px] bg-raised"
           >
             {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
           </select>
@@ -170,7 +171,7 @@ export default function OpportunityDetail({
                 value={opp.ownerId ?? ""}
                 disabled={pending}
                 onChange={(e) => run(() => setOwnerAction(opp.id, e.target.value || null))}
-                className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white"
+                className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised"
               >
                 <option value="">Unassigned</option>
                 {team.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -193,8 +194,8 @@ export default function OpportunityDetail({
                       }}
                       className="px-2.5 py-1 rounded text-[12px] font-medium border transition-colors"
                       style={on
-                        ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.06)", color: "#111" }
-                        : { borderColor: "#d6d3d1", background: "#fff", color: "#78716c" }}
+                        ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+                        : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-3)" }}
                     >
                       {m.name.split(" ")[0]}
                     </button>
@@ -228,10 +229,10 @@ export default function OpportunityDetail({
             <Panel title={`Proposals (${proposals.length})`}>
               <div className="space-y-2">
                 {proposals.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between gap-3 py-2 border-b border-stone-100 last:border-0">
+                  <div key={p.id} className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-0">
                     <div className="min-w-0">
-                      <p className="text-[13.5px] font-medium text-stone-800">Version {p.version}</p>
-                      <p className="text-[11.5px] text-stone-400">
+                      <p className="text-[13.5px] font-medium text-ink">Version {p.version}</p>
+                      <p className="text-[11.5px] text-ink3">
                         Generated {fmtDateTime(p.generatedAt)}
                         {p.sentAt ? ` · Sent to ${p.sentTo}` : " · Not sent"}
                       </p>
@@ -253,24 +254,24 @@ export default function OpportunityDetail({
             onLog={(type, body) => run(() => logActivityAction(opp.id, type, body))} />
           <Panel title="Timeline">
             {timeline.length === 0 ? (
-              <p className="text-[13px] text-stone-400">Nothing recorded yet.</p>
+              <p className="text-[13px] text-ink3">Nothing recorded yet.</p>
             ) : (
               <ol className="relative">
                 {timeline.map((t, i) => (
                   <li key={t.id} className="flex gap-3 pb-4 last:pb-0">
                     <div className="flex flex-col items-center flex-shrink-0">
                       <span className="w-[9px] h-[9px] rounded-full mt-1.5"
-                        style={{ background: i === 0 ? "var(--emrg-red)" : "#d6d3d1" }} />
-                      {i < timeline.length - 1 && <span className="w-px flex-1 bg-stone-200 mt-1" />}
+                        style={{ background: i === 0 ? "var(--accent)" : "var(--line-strong)" }} />
+                      {i < timeline.length - 1 && <span className="w-px flex-1 bg-sunken mt-1" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13.5px] text-stone-800">
+                      <p className="text-[13.5px] text-ink">
                         <span className="font-semibold">
                           {ACTIVITY_LABELS[t.type as keyof typeof ACTIVITY_LABELS] ?? t.type}
                         </span>
-                        {t.body && <span className="text-stone-600">: {t.body}</span>}
+                        {t.body && <span className="text-ink2">: {t.body}</span>}
                       </p>
-                      <p className="text-[11.5px] text-stone-400 mt-0.5">
+                      <p className="text-[11.5px] text-ink3 mt-0.5">
                         {fmtDateTime(t.occurredAt)}{t.actorName ? ` · ${t.actorName}` : ""}
                       </p>
                     </div>
@@ -300,8 +301,8 @@ export default function OpportunityDetail({
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white border border-stone-200 rounded-lg p-5">
-      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
+    <section className="bg-raised border border-line rounded-lg p-5">
+      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "var(--ink)" }}>
         {title}
       </p>
       {children}
@@ -312,7 +313,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4 last:mb-0">
-      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1.5">
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1.5">
         {label}
       </label>
       {children}
@@ -321,11 +322,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "red" | "green" | "amber" }) {
-  const color = tone === "green" ? "#15803d" : tone === "red" ? "var(--emrg-red)"
-    : tone === "amber" ? "#92600a" : "#292524";
+  const color = tone === "green" ? "var(--good)" : tone === "red" ? "var(--accent)"
+    : tone === "amber" ? "var(--warn)" : "var(--ink)";
   return (
     <div>
-      <dt className="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500">{label}</dt>
+      <dt className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3">{label}</dt>
       <dd className="text-[13.5px] font-medium mt-0.5" style={{ color }}>{value}</dd>
     </div>
   );
@@ -338,8 +339,8 @@ function ActionButton({ children, onClick, disabled, tone }: {
     <button type="button" onClick={onClick} disabled={disabled}
       className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded border-2 transition-colors disabled:opacity-40"
       style={tone === "green"
-        ? { borderColor: "#15803d", color: "#15803d", background: "#fff" }
-        : { borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+        ? { borderColor: "var(--good)", color: "var(--good)", background: "var(--raised)" }
+        : { borderColor: "var(--line-strong)", color: "var(--ink-2)", background: "var(--raised)" }}>
       {children}
     </button>
   );
@@ -357,8 +358,8 @@ function MissingInfo({ completeness, opp, ownerName }: {
   const [drafting, setDrafting] = useState(false);
   const { blocking, important, optional } = completeness;
   const tone = blocking.length > 0
-    ? { bg: "#fef2f2", border: "#fecaca", fg: "#991b1b" }
-    : { bg: "#fdf6e9", border: "#e7d3a6", fg: "#7a5309" };
+    ? { bg: "var(--danger-bg)", border: "var(--danger-line)", fg: "var(--danger-ink)" }
+    : { bg: "var(--warn-bg)", border: "var(--warn-line)", fg: "var(--warn-ink)" };
 
   const draft = composeClarification({ ...opp, eventName: opp.eventName, ownerName });
 
@@ -390,7 +391,7 @@ function MissingInfo({ completeness, opp, ownerName }: {
         {draft.asking.length > 0 && (
           <button type="button" onClick={() => setDrafting(true)}
             className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
-            style={{ borderColor: tone.border, color: tone.fg, background: "#fff" }}>
+            style={{ borderColor: tone.border, color: tone.fg, background: "var(--raised)" }}>
             Draft the email asking for {draft.asking.length === 1 ? "it" : "these"}
           </button>
         )}
@@ -434,37 +435,37 @@ function ClarificationModal({ opp, ownerName, onClose }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-5 py-8"
       style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose}>
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
+      <div className="bg-raised rounded-lg w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-stone-200">
-          <p className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "#111111" }}>
+        <div className="px-6 py-4 border-b border-line">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: "var(--ink)" }}>
             Ask the client
           </p>
-          <p className="text-[13px] text-stone-500 mt-0.5">
+          <p className="text-[13px] text-ink3 mt-0.5">
             {draft.canSend
-              ? <>To <span className="font-semibold text-stone-800">{opp.email}</span>. Edit anything before it goes.</>
-              : <span style={{ color: "var(--emrg-red)" }}>{draft.blockedReason} Copy this and use it on a call, or add an address first.</span>}
+              ? <>To <span className="font-semibold text-ink">{opp.email}</span>. Edit anything before it goes.</>
+              : <span style={{ color: "var(--accent)" }}>{draft.blockedReason} Copy this and use it on a call, or add an address first.</span>}
           </p>
         </div>
 
         <div className="px-6 py-4 space-y-3 overflow-y-auto">
           <div>
-            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Subject</label>
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">Subject</label>
             <input value={subject} onChange={(e) => setSubject(e.target.value)}
-              className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white" />
+              className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised" />
           </div>
           <div>
-            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Message</label>
+            <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">Message</label>
             <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={14}
-              className="w-full border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] leading-relaxed bg-white resize-y" />
+              className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] leading-relaxed bg-raised resize-y" />
           </div>
-          {error && <p className="text-[13px] font-semibold" style={{ color: "var(--emrg-red)" }}>{error}</p>}
-          {sent && <p className="text-[13px] font-semibold" style={{ color: "#15803d" }}>Sent, and added to the timeline.</p>}
+          {error && <p className="text-[13px] font-semibold" style={{ color: "var(--accent)" }}>{error}</p>}
+          {sent && <p className="text-[13px] font-semibold" style={{ color: "var(--good)" }}>Sent, and added to the timeline.</p>}
         </div>
 
-        <div className="px-6 py-4 border-t border-stone-200 flex items-center justify-end gap-2">
+        <div className="px-6 py-4 border-t border-line flex items-center justify-end gap-2">
           <button type="button" onClick={onClose}
-            className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-stone-500">
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-ink3">
             Close
           </button>
           <button type="button"
@@ -474,12 +475,13 @@ function ClarificationModal({ opp, ownerName, onClose }: {
                 .catch(() => {});
             }}
             className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded border-2"
-            style={{ borderColor: "#d6d3d1", color: "#57534e", background: "#fff" }}>
+            style={{ borderColor: "var(--line-strong)", color: "var(--ink-2)", background: "var(--raised)" }}>
             {copied ? "Copied" : "Copy"}
           </button>
           <button type="button" disabled={pending || sent || !draft.canSend} onClick={send}
-            className="text-[11px] font-bold tracking-[0.14em] uppercase px-5 py-2 rounded text-white disabled:opacity-40"
-            style={{ background: "var(--emrg-red)" }}>
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-5 py-2 rounded  disabled:opacity-40"
+            
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
             {pending ? "Sending..." : "Send it"}
           </button>
         </div>
@@ -489,9 +491,9 @@ function ClarificationModal({ opp, ownerName, onClose }: {
 }
 
 function Banner({ tone, children }: { tone: "red" | "amber" | "grey"; children: React.ReactNode }) {
-  const s = tone === "red" ? { background: "#fef2f2", border: "#fecaca", color: "#991b1b" }
-    : tone === "amber" ? { background: "#fdf6e9", border: "#e7d3a6", color: "#7a5309" }
-    : { background: "#f5f5f4", border: "#e7e5e4", color: "#57534e" };
+  const s = tone === "red" ? { background: "var(--danger-bg)", border: "var(--danger-line)", color: "var(--danger-ink)" }
+    : tone === "amber" ? { background: "var(--warn-bg)", border: "var(--warn-line)", color: "var(--warn-ink)" }
+    : { background: "var(--sunken)", border: "var(--line)", color: "var(--ink-2)" };
   return (
     <div className="mb-4 px-4 py-2.5 rounded-lg border text-[13px]"
       style={{ background: s.background, borderColor: s.border, color: s.color }}>
@@ -507,37 +509,37 @@ function FollowupPaused({ reason, pending, onCommand }: {
   const [date, setDate] = useState("");
   return (
     <div className="mb-4 px-4 py-3 rounded-lg border"
-      style={{ background: "#fdf6e9", borderColor: "#e7d3a6" }}>
-      <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-1" style={{ color: "#7a5309" }}>
+      style={{ background: "var(--warn-bg)", borderColor: "var(--warn-line)" }}>
+      <p className="text-[12.5px] font-bold tracking-[0.06em] uppercase mb-1" style={{ color: "var(--warn-ink)" }}>
         Follow-up paused: {reason || "human conversation active"}
       </p>
-      <p className="text-[12.5px] mb-3" style={{ color: "#7a5309" }}>
+      <p className="text-[12.5px] mb-3" style={{ color: "var(--warn-ink)" }}>
         Automated follow-ups have stepped aside so they don&apos;t talk over a live conversation.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" disabled={pending} onClick={() => onCommand("resume_now")}
           className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
-          style={{ borderColor: "#c9a227", color: "#7a5309", background: "#fff" }}>
+          style={{ borderColor: "var(--warn-line)", color: "var(--warn-ink)", background: "var(--raised)" }}>
           Resume now
         </button>
         <div className="flex items-center gap-1.5">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-            className="border rounded px-2 py-1.5 text-[12.5px] bg-white" style={{ borderColor: "#e7d3a6" }} />
+            className="border rounded px-2 py-1.5 text-[12.5px] bg-raised" style={{ borderColor: "var(--warn-line)" }} />
           <button type="button" disabled={pending || !date}
             onClick={() => onCommand("resume_on", new Date(date).toISOString())}
             className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border disabled:opacity-40"
-            style={{ borderColor: "#c9a227", color: "#7a5309", background: "#fff" }}>
+            style={{ borderColor: "var(--warn-line)", color: "var(--warn-ink)", background: "var(--raised)" }}>
             Resume on date
           </button>
         </div>
         <button type="button" disabled={pending} onClick={() => onCommand("stay_paused")}
           className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
-          style={{ borderColor: "#e7d3a6", color: "#7a5309", background: "#fff" }}>
+          style={{ borderColor: "var(--warn-line)", color: "var(--warn-ink)", background: "var(--raised)" }}>
           Stay paused
         </button>
         <button type="button" disabled={pending} onClick={() => onCommand("stop")}
           className="text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1.5 rounded border"
-          style={{ borderColor: "#e7d3a6", color: "#7a5309", background: "#fff" }}>
+          style={{ borderColor: "var(--warn-line)", color: "var(--warn-ink)", background: "var(--raised)" }}>
           Stop follow-up
         </button>
       </div>
@@ -558,9 +560,9 @@ function NextAction({ opp, pending, onSave }: {
       <div className="flex flex-col sm:flex-row gap-2">
         <input value={text} onChange={(e) => setText(e.target.value)}
           placeholder="What happens next?"
-          className="flex-1 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white" />
+          className="flex-1 border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised" />
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-          className="border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white" />
+          className="border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised" />
       </div>
       {dirty && (
         <button type="button" disabled={pending}
@@ -568,8 +570,9 @@ function NextAction({ opp, pending, onSave }: {
             nextAction: text,
             nextActionDate: date ? new Date(`${date}T12:00:00`) : null,
           })}
-          className="mt-2 text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded text-white"
-          style={{ background: "var(--emrg-red)" }}>
+          className="mt-2 text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded"
+          
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
           Save next action
         </button>
       )}
@@ -594,25 +597,26 @@ function LogActivity({ opp, pending, onLog }: {
           <button key={o.v} type="button" onClick={() => setType(o.v)}
             className="px-2.5 py-1 rounded text-[12px] font-medium border transition-colors"
             style={type === o.v
-              ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.06)", color: "#111" }
-              : { borderColor: "#d6d3d1", background: "#fff", color: "#78716c" }}>
+              ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+              : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-3)" }}>
             {o.l}
           </button>
         ))}
       </div>
       <textarea value={body} onChange={(e) => setBody(e.target.value)}
         placeholder="A sentence is enough. It goes on the timeline."
-        className="w-full h-20 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white resize-none" />
+        className="w-full h-20 border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised resize-none" />
       <div className="flex items-center justify-between mt-2 gap-3">
-        <p className="text-[11.5px] text-stone-400">
+        <p className="text-[11.5px] text-ink3">
           {opp.followupState === "active"
             ? "Logging a conversation pauses automated follow-up."
             : "Recorded against you and added to the timeline."}
         </p>
         <button type="button" disabled={pending || !body.trim()}
           onClick={() => { onLog(type, body); setBody(""); }}
-          className="text-[10px] font-bold tracking-[0.14em] uppercase px-3.5 py-2 rounded text-white disabled:opacity-40 whitespace-nowrap"
-          style={{ background: "var(--emrg-red)" }}>
+          className="text-[10px] font-bold tracking-[0.14em] uppercase px-3.5 py-2 rounded  disabled:opacity-40 whitespace-nowrap"
+          
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
           Add to timeline
         </button>
       </div>
@@ -637,12 +641,12 @@ function DetailInput({ label, value, onChange, placeholder, type = "text", highl
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">
         {label}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full border-2 rounded-md px-3 py-1.5 text-[14px] bg-white"
-        style={{ borderColor: highlight ? "#e7d3a6" : "#d6d3d1" }} />
+        className="w-full border-2 rounded-md px-3 py-1.5 text-[14px] bg-raised"
+        style={{ borderColor: highlight ? "var(--warn-line)" : "var(--line-strong)" }} />
     </div>
   );
 }
@@ -668,9 +672,9 @@ function EditableDetails({ opp, pending, onSave }: {
       <div className="grid grid-cols-2 gap-3 mb-3">
         <DetailInput label="Company" value={form.company} onChange={set("company")} />
         <div>
-          <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Lead source</label>
+          <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">Lead source</label>
           <select value={form.leadSource} onChange={(e) => set("leadSource")(e.target.value)}
-            className="w-full border-2 border-stone-300 rounded-md px-3 py-1.5 text-[14px] bg-white">
+            className="w-full border-2 border-line-strong rounded-md px-3 py-1.5 text-[14px] bg-raised">
             <option value="">Not set</option>
             {LEAD_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
             {form.leadSource && !LEAD_SOURCES.includes(form.leadSource) &&
@@ -690,7 +694,7 @@ function EditableDetails({ opp, pending, onSave }: {
         <DetailInput label="ZIP" value={form.zip} onChange={set("zip")} />
       </div>
 
-      <div className="border-t border-stone-100 pt-3 grid grid-cols-2 gap-3 mb-3">
+      <div className="border-t border-line pt-3 grid grid-cols-2 gap-3 mb-3">
         <DetailInput label="Event name" value={form.eventName} onChange={set("eventName")} />
         <DetailInput label="Event date" value={form.eventDate} onChange={set("eventDate")}
           placeholder="December 14, 2026" />
@@ -705,20 +709,21 @@ function EditableDetails({ opp, pending, onSave }: {
       </div>
 
       <div>
-        <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500 mb-1">Notes</label>
+        <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">Notes</label>
         <textarea value={form.notes} onChange={(e) => set("notes")(e.target.value)}
-          className="w-full h-20 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] bg-white resize-none" />
+          className="w-full h-20 border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised resize-none" />
       </div>
 
       {dirty && (
         <div className="flex items-center gap-2 mt-3">
           <button type="button" disabled={pending} onClick={() => onSave(form)}
-            className="text-[10px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded text-white"
-            style={{ background: "var(--emrg-red)" }}>
+            className="text-[10px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded"
+            
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
             Save changes
           </button>
           <button type="button" onClick={() => setForm(initial)}
-            className="text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-stone-500">
+            className="text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-ink3">
             Discard
           </button>
         </div>
@@ -735,11 +740,11 @@ function LostModal({ pending, onClose, onConfirm }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-5"
       style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose}>
-      <div className="bg-white rounded-lg w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: "#111111" }}>
+      <div className="bg-raised rounded-lg w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: "var(--ink)" }}>
           Mark as lost
         </p>
-        <p className="text-[13px] text-stone-500 mb-4">
+        <p className="text-[13px] text-ink3 mb-4">
           Nothing is deleted. Recording why is what makes the reporting useful later.
         </p>
         <div className="grid grid-cols-2 gap-1.5 mb-4">
@@ -747,23 +752,24 @@ function LostModal({ pending, onClose, onConfirm }: {
             <button key={r} type="button" onClick={() => setReason(r)}
               className="px-3 py-2 rounded text-[12.5px] font-medium border text-left transition-colors"
               style={reason === r
-                ? { borderColor: "var(--emrg-red)", background: "rgba(192,24,42,0.06)", color: "#111" }
-                : { borderColor: "#d6d3d1", background: "#fff", color: "#57534e" }}>
+                ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--ink)" }
+                : { borderColor: "var(--line-strong)", background: "var(--raised)", color: "var(--ink-2)" }}>
               {LOST_REASON_LABELS[r]}
             </button>
           ))}
         </div>
         <textarea value={note} onChange={(e) => setNote(e.target.value)}
           placeholder="Anything worth remembering (optional)"
-          className="w-full h-20 border-2 border-stone-300 rounded-md px-3 py-2 text-[14px] resize-none mb-4" />
+          className="w-full h-20 border-2 border-line-strong rounded-md px-3 py-2 text-[14px] resize-none mb-4" />
         <div className="flex items-center justify-end gap-2">
           <button type="button" onClick={onClose}
-            className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-stone-500">
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-3 py-2 text-ink3">
             Cancel
           </button>
           <button type="button" disabled={pending || !reason} onClick={() => onConfirm(reason, note)}
-            className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded text-white disabled:opacity-40"
-            style={{ background: "var(--emrg-red)" }}>
+            className="text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded  disabled:opacity-40"
+            
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
             Mark lost
           </button>
         </div>

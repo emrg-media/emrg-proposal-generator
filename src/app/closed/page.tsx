@@ -34,13 +34,13 @@ export default async function ClosedPage() {
     .sort((a, b) => b.count - a.count);
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="closed" user={user} />
       <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
-        <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "#111111" }}>Won / Lost</h1>
-        <p className="text-[13px] text-stone-500 mb-5">
+        <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "var(--ink)" }}>Won / Lost</h1>
+        <p className="text-[13px] text-ink3 mb-5">
           The complete history. Nothing here is ever deleted.
         </p>
 
@@ -58,14 +58,14 @@ export default async function ClosedPage() {
         </div>
 
         {reasonCounts.length > 0 && (
-          <div className="bg-white border border-stone-200 rounded-lg p-4 mb-6">
-            <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: "#111111" }}>
+          <div className="bg-raised border border-line rounded-lg p-4 mb-6">
+            <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: "var(--ink)" }}>
               Why we lost
             </p>
             <div className="flex flex-wrap gap-2">
               {reasonCounts.map(({ reason, count }) => (
                 <span key={reason}
-                  className="px-3 py-1.5 rounded text-[12.5px] border border-stone-200 bg-stone-50 text-stone-700">
+                  className="px-3 py-1.5 rounded text-[12.5px] border border-line bg-sunken text-ink2">
                   {LOST_REASON_LABELS[reason]} <span className="font-bold ml-1">{count}</span>
                 </span>
               ))}
@@ -92,15 +92,15 @@ function Column({ title, tone, rows }: {
   rows: Awaited<ReturnType<typeof listOpportunities>>;
 }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-      <div className="px-5 py-3 border-b border-stone-100">
+    <div className="bg-raised border border-line rounded-lg overflow-hidden">
+      <div className="px-5 py-3 border-b border-line">
         <p className="text-[11px] font-bold tracking-[0.2em] uppercase"
-          style={{ color: tone === "green" ? "#15803d" : "#57534e" }}>
+          style={{ color: tone === "green" ? "var(--good)" : "var(--ink-2)" }}>
           {title}
         </p>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-[13px] text-stone-400 text-center">Nothing here.</p>
+        <p className="px-5 py-8 text-[13px] text-ink3 text-center">Nothing here.</p>
       ) : (
         <div>
           {rows.map((r) => {
@@ -108,24 +108,24 @@ function Column({ title, tone, rows }: {
             const cycleMs = closedAt ? closedAt.getTime() - r.leadReceivedAt.getTime() : null;
             return (
               <Link key={r.id} href={`/opportunity/${r.id}`}
-                className="flex items-center gap-3 px-5 py-3 border-t border-stone-100 first:border-t-0 hover:bg-stone-50 transition-colors">
+                className="flex items-center gap-3 px-5 py-3 border-t border-line first:border-t-0 hover:bg-sunken transition-colors">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13.5px] font-semibold text-stone-900 truncate">
+                  <p className="text-[13.5px] font-semibold text-ink truncate">
                     {r.company || "Untitled"}
                   </p>
-                  <p className="text-[11.5px] text-stone-500 truncate">
+                  <p className="text-[11.5px] text-ink3 truncate">
                     {[r.eventName, fmtDate(closedAt), cycleMs ? `${formatDuration(cycleMs)} cycle` : ""]
                       .filter(Boolean).join(" · ")}
                   </p>
                   {r.stage === "lost" && r.lostReason && (
-                    <p className="text-[11.5px] mt-0.5" style={{ color: "#92600a" }}>
+                    <p className="text-[11.5px] mt-0.5" style={{ color: "var(--warn)" }}>
                       {LOST_REASON_LABELS[r.lostReason]}
                       {r.lostNote ? `. ${r.lostNote}` : ""}
                     </p>
                   )}
                 </div>
                 <span className="text-[13px] font-semibold whitespace-nowrap tabular-nums"
-                  style={{ color: tone === "green" ? "#15803d" : "#57534e" }}>
+                  style={{ color: tone === "green" ? "var(--good)" : "var(--ink-2)" }}>
                   {r.proposalValueCents ? fmtCents(r.proposalValueCents) : ""}
                 </span>
                 <span className="hidden sm:block w-[100px] text-right">

@@ -11,7 +11,8 @@ export default function LogoutButton() {
         }).catch(() => {});
         window.location.href = "/login";
       }}
-      className="text-[11px] tracking-[0.12em] uppercase text-white/40 hover:text-white/80 transition-colors whitespace-nowrap"
+      className="text-[11px] tracking-[0.12em] uppercase transition-opacity hover:opacity-100 whitespace-nowrap"
+      style={{ color: "var(--header-muted)", opacity: 0.85 }}
     >
       Log out
     </button>

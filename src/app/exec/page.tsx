@@ -54,27 +54,27 @@ export default async function ExecPage({
   const qs = (p: PeriodKey) => `/exec?period=${p}${sp.from ? `&from=${sp.from}` : ""}${sp.to ? `&to=${sp.to}` : ""}`;
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="exec" user={user} />
       <SampleDataBanner />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "#111111" }}>
+            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "var(--ink)" }}>
               Executive dashboard
             </h1>
-            <p className="text-[13px] text-stone-500 mt-1">
+            <p className="text-[13px] text-ink3 mt-1">
               Only you can see this page.
             </p>
           </div>
-          <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-raised border border-line rounded-lg p-1">
             {PERIODS.map((p) => (
               <Link key={p.key} href={qs(p.key)}
                 className="px-3.5 py-1.5 text-[11px] font-bold tracking-[0.12em] uppercase rounded-md transition-colors"
                 style={period === p.key
-                  ? { background: "var(--emrg-black)", color: "#fff" }
-                  : { color: "#78716c" }}>
+                  ? { background: "var(--header-bg)", color: "var(--header-ink)" }
+                  : { color: "var(--ink-3)" }}>
                 {p.label}
               </Link>
             ))}
@@ -82,17 +82,18 @@ export default async function ExecPage({
         </div>
 
         {period === "custom" && (
-          <form method="get" action="/exec" className="bg-white border border-stone-200 rounded-lg p-3 mb-6 flex flex-wrap items-center gap-2">
+          <form method="get" action="/exec" className="bg-raised border border-line rounded-lg p-3 mb-6 flex flex-wrap items-center gap-2">
             <input type="hidden" name="period" value="custom" />
-            <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500">From</label>
+            <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3">From</label>
             <input type="date" name="from" defaultValue={sp.from}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[13px] bg-white" />
-            <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-500">To</label>
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[13px] bg-raised" />
+            <label className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3">To</label>
             <input type="date" name="to" defaultValue={sp.to}
-              className="border-2 border-stone-300 rounded-md px-2 py-1.5 text-[13px] bg-white" />
+              className="border-2 border-line-strong rounded-md px-2 py-1.5 text-[13px] bg-raised" />
             <button type="submit"
-              className="text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded text-white"
-              style={{ background: "var(--emrg-red)" }}>Apply</button>
+              className="text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded"
+              
+style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Apply</button>
           </form>
         )}
 
@@ -105,7 +106,10 @@ export default async function ExecPage({
             sub={`${k.openCount} open opportunit${k.openCount === 1 ? "y" : "ies"}`} />
           <StatCard label="Stalled pipeline" value={fmtCents(k.stalledPipelineCents)}
             accent={k.stalledPipelineCents > 0 ? "amber" : undefined}
-            sub="Proposals quiet 7+ days" />
+            trend={k.openPipelineCents > 0 ? k.stalledPipelineCents / k.openPipelineCents : 0}
+            sub={k.openPipelineCents > 0
+              ? `${Math.round((k.stalledPipelineCents / k.openPipelineCents) * 100)}% of open pipeline, quiet 7+ days`
+              : "Proposals quiet 7+ days"} />
           <StatCard label="Outside response target" value={String(k.leadsOutsideTarget)}
             accent={k.leadsOutsideTarget > 0 ? "red" : undefined}
             sub={`Target is ${appSettings.responseTargetMinutes} minutes`} />
@@ -130,10 +134,12 @@ export default async function ExecPage({
             sub={`${k.lostCount} deal${k.lostCount === 1 ? "" : "s"}`} />
           <StatCard label="Win rate" value={fmtPercent(k.winRate)}
             accent={k.winRate !== null && k.winRate >= 0.5 ? "green" : undefined}
-            sub="Of deals decided in the window" />
+            trend={k.winRate ?? 0}
+            sub={`${k.wonCount} won, ${k.lostCount} lost in the window`} />
           <StatCard label="Answered in target" value={fmtPercent(k.answeredWithinTargetRate)}
             accent={k.answeredWithinTargetRate !== null && k.answeredWithinTargetRate < 0.8 ? "amber" : "green"}
-            sub={`Within ${appSettings.responseTargetMinutes} minutes`} />
+            trend={k.answeredWithinTargetRate ?? 0}
+            sub={`Within ${appSettings.responseTargetMinutes} minutes of the lead arriving`} />
         </div>
 
         {/* ── Speed ── */}
@@ -163,15 +169,52 @@ export default async function ExecPage({
 
         {/* ── Aging ── */}
         <SectionHeading title="Proposal aging" note="Open proposals, by how long since they were sent." />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          <StatCard label="0 to 3 days" value={String(k.proposalAging.d0_3)} />
-          <StatCard label="4 to 7 days" value={String(k.proposalAging.d4_7)} />
-          <StatCard label="8 to 14 days" value={String(k.proposalAging.d8_14)}
-            accent={k.proposalAging.d8_14 > 0 ? "amber" : undefined} />
-          <StatCard label="15+ days" value={String(k.proposalAging.d15plus)}
-            accent={k.proposalAging.d15plus > 0 ? "red" : undefined} />
-        </div>
+        <AgingBar aging={k.proposalAging} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The aging buckets as one bar rather than four separate numbers.
+ *
+ * Four counts require holding them in your head to compare; a single bar shows
+ * at a glance whether the weight is sitting in the healthy end or the old end,
+ * which is the only question worth asking of this data.
+ */
+function AgingBar({ aging }: { aging: { d0_3: number; d4_7: number; d8_14: number; d15plus: number } }) {
+  const buckets = [
+    { label: "0 to 3 days", n: aging.d0_3, color: "var(--good)" },
+    { label: "4 to 7 days", n: aging.d4_7, color: "#0d9488" },
+    { label: "8 to 14 days", n: aging.d8_14, color: "var(--warn)" },
+    { label: "15+ days", n: aging.d15plus, color: "var(--accent)" },
+  ];
+  const total = buckets.reduce((s, b) => s + b.n, 0);
+
+  return (
+    <div className="bg-raised border border-line rounded-lg px-5 py-4 mb-10">
+      {total === 0 ? (
+        <p className="text-[13px] text-ink3">No proposals are currently waiting on a client.</p>
+      ) : (
+        <>
+          <div className="flex h-[10px] rounded-full overflow-hidden mb-3" style={{ background: "var(--sunken)" }}>
+            {buckets.map((b) => b.n > 0 && (
+              <div key={b.label} title={`${b.label}: ${b.n}`}
+                style={{ width: `${(b.n / total) * 100}%`, background: b.color }} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {buckets.map((b) => (
+              <div key={b.label} className="flex items-center gap-2">
+                <span className="w-[9px] h-[9px] rounded-sm flex-shrink-0" style={{ background: b.color }} />
+                <span className="text-[12.5px] text-ink2">{b.label}</span>
+                <span className="text-[13px] font-bold tabular-nums"
+                  style={{ color: b.n > 0 ? "var(--ink)" : "var(--ink-3)" }}>{b.n}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -179,10 +222,10 @@ export default async function ExecPage({
 function SectionHeading({ title, note }: { title: string; note: string }) {
   return (
     <div className="mb-3">
-      <h2 className="text-[13px] font-bold tracking-[0.18em] uppercase" style={{ color: "#111111" }}>
+      <h2 className="text-[13px] font-bold tracking-[0.18em] uppercase" style={{ color: "var(--ink)" }}>
         {title}
       </h2>
-      <p className="text-[12px] text-stone-400 mt-0.5">{note}</p>
+      <p className="text-[12px] text-ink3 mt-0.5">{note}</p>
     </div>
   );
 }
@@ -191,12 +234,12 @@ function Breakdown({ title, rows, total }: {
   title: string; rows: Array<{ label: string; count: number; cents: number }>; total: number;
 }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-5">
-      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "#111111" }}>
+    <div className="bg-raised border border-line rounded-lg p-5">
+      <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: "var(--ink)" }}>
         {title}
       </p>
       {rows.length === 0 ? (
-        <p className="text-[13px] text-stone-400">Nothing open.</p>
+        <p className="text-[13px] text-ink3">Nothing open.</p>
       ) : (
         <div className="space-y-2.5">
           {rows.map((r) => {
@@ -204,16 +247,16 @@ function Breakdown({ title, rows, total }: {
             return (
               <div key={r.label}>
                 <div className="flex items-baseline justify-between gap-3 mb-1">
-                  <span className="text-[13px] text-stone-700 truncate">
-                    {r.label} <span className="text-stone-400">({r.count})</span>
+                  <span className="text-[13px] text-ink2 truncate">
+                    {r.label} <span className="text-ink3">({r.count})</span>
                   </span>
                   <span className="text-[13px] font-semibold whitespace-nowrap tabular-nums">
                     {fmtCents(r.cents)}
                   </span>
                 </div>
-                <div className="h-[5px] rounded-full bg-stone-100 overflow-hidden">
+                <div className="h-[5px] rounded-full bg-sunken overflow-hidden">
                   <div className="h-full rounded-full"
-                    style={{ width: `${Math.max(pct, r.count > 0 ? 1.5 : 0)}%`, background: "var(--emrg-red)" }} />
+                    style={{ width: `${Math.max(pct, r.count > 0 ? 1.5 : 0)}%`, background: "var(--accent)" }} />
                 </div>
               </div>
             );

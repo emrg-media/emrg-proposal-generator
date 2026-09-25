@@ -39,7 +39,7 @@ export default async function PipelinePage() {
   }));
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="pipeline" user={user} />
       <SampleDataBanner />
       <PipelineBoard cards={cards} />

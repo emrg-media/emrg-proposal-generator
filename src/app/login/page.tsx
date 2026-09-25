@@ -23,22 +23,22 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f4f2" }}>
-      <div style={{ height: 4, background: "var(--emrg-red)" }} />
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--surface)" }}>
+      <div style={{ height: 4, background: "var(--accent)" }} />
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="flex items-baseline gap-2 justify-center mb-8">
-            <span className="text-2xl font-bold tracking-tight" style={{ color: "#111111" }}>EMRG</span>
-            <span className="text-2xl font-light tracking-[0.18em] text-stone-400">MEDIA</span>
+            <span className="text-2xl font-bold tracking-tight" style={{ color: "var(--ink)" }}>EMRG</span>
+            <span className="text-2xl font-light tracking-[0.18em] text-ink3">MEDIA</span>
           </div>
 
           {configError ? (
-            <div className="bg-white border border-stone-200 rounded-lg p-7 text-center">
-              <p className="text-[13px] text-stone-600">{configError}</p>
+            <div className="bg-raised border border-line rounded-lg p-7 text-center">
+              <p className="text-[13px] text-ink2">{configError}</p>
             </div>
           ) : team.length === 0 ? (
-            <div className="bg-white border border-stone-200 rounded-lg p-7 text-center">
-              <p className="text-[13px] text-stone-600">
+            <div className="bg-raised border border-line rounded-lg p-7 text-center">
+              <p className="text-[13px] text-ink2">
                 No team members yet. Run <code className="font-mono text-[12px]">npm run db:seed</code> to create them.
               </p>
             </div>
@@ -46,7 +46,7 @@ export default async function LoginPage() {
             <LoginForm team={team} />
           )}
 
-          <p className="text-[12px] text-stone-400 text-center mt-4">EMRG Events Revenue System</p>
+          <p className="text-[12px] text-ink3 text-center mt-4">EMRG Events Revenue System</p>
         </div>
       </div>
     </div>

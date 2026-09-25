@@ -10,7 +10,7 @@ export default async function NewOpportunityPage() {
   const team = await listUsers();
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="pipeline" user={user} />
       <NewOpportunityForm
         team={team.map((u) => ({ id: u.id, name: u.name }))}

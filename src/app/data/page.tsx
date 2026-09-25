@@ -38,7 +38,7 @@ export default async function DataPage() {
   const owners = [...new Set(rows.map((r) => r.ownerName).filter((n): n is string => !!n))].sort();
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4f2" }}>
+    <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="data" user={user} />
       <SampleDataBanner />
       <DataGrid rows={grid} owners={owners} />
