@@ -76,7 +76,45 @@ async function extract(subject: string, body: string): Promise<Extracted> {
   });
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const match = text.match(/\{[\s\S]*\}/);
-  return JSON.parse(match ? match[0] : text) as Extracted;
+  return normalizeExtracted(JSON.parse(match ? match[0] : text));
+}
+
+/**
+ * Force the model's output into the shape the rest of this file assumes.
+ *
+ * The schema asks for arrays and strings, but a model can return a bare string
+ * where a list was requested, and `data.event_types?.filter(...)` then throws a
+ * TypeError further down — outside extractOrFile's try/catch, so the webhook
+ * 500s. That failure is deterministic for a given email, so every Resend retry
+ * fails identically and the enquiry is lost, which is precisely what the
+ * fallback below exists to prevent. Coercing here keeps the guarantee.
+ */
+function normalizeExtracted(raw: unknown): Extracted {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+
+  const str = (v: unknown): string => {
+    if (typeof v === "string") return v;
+    if (typeof v === "number" || typeof v === "boolean") return String(v);
+    return "";
+  };
+  const list = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map(str).filter(Boolean);
+    const one = str(v).trim();
+    return one ? [one] : [];
+  };
+
+  return {
+    is_event_enquiry: typeof o.is_event_enquiry === "boolean" ? o.is_event_enquiry : undefined,
+    confidence: str(o.confidence),
+    company: str(o.company), first_name: str(o.first_name), last_name: str(o.last_name),
+    title: str(o.title), email: str(o.email), cell_phone: str(o.cell_phone),
+    website: str(o.website), lead_source: str(o.lead_source),
+    event_name: str(o.event_name), event_types: list(o.event_types),
+    event_date: str(o.event_date), guest_count: str(o.guest_count), venue: str(o.venue),
+    budget_low: str(o.budget_low), budget_high: str(o.budget_high),
+    service_fee: str(o.service_fee), requested_services: list(o.requested_services),
+    notes: str(o.notes),
+  };
 }
 
 /**

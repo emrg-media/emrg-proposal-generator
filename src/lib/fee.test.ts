@@ -127,3 +127,19 @@ test("a single percentage is unchanged", () => {
   assert.equal(computeFee("20%", "$200,000").value, 40000);
   assert.equal(computeFee("7.5%", "$200,000").value, 15000);
 });
+
+// These columns are bigint and are fed by free text from inbound email. A
+// value past the column's range throws on insert, which for email intake is a
+// deterministic retry loop and a lost lead.
+test("absurd amounts are clamped rather than overflowing the column", () => {
+  const huge = parseMoneyToCents("$99,999,999,999,999,999,999");
+  assert.ok(huge !== null && huge <= 100_000_000_000, String(huge));
+  assert.ok(Number.isSafeInteger(huge));
+  assert.equal(toCents(Infinity), null);
+  assert.equal(toCents(NaN), null);
+});
+
+test("ordinary amounts are untouched by the clamp", () => {
+  assert.equal(parseMoneyToCents("$85,000"), 8_500_000);
+  assert.equal(toCents(12000), 1_200_000);
+});

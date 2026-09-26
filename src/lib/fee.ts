@@ -89,8 +89,17 @@ export function feeLabel(fc: FeeCalc, rawFee: string): string {
 
 // ── Cents helpers (the DB stores integer cents, the UI speaks dollars) ───────
 
+// Postgres bigint tops out near 9.2e18, and these columns are fed by free text
+// from emails and typed fields. A number beyond this is a typo or a hostile
+// input, not a real event, and letting it through throws on insert — which for
+// inbound email means a deterministic retry loop and a lost lead.
+const MAX_CENTS = 100_000_000_000; // $1bn
+
 export function toCents(dollars: number | null): number | null {
-  return dollars === null ? null : Math.round(dollars * 100);
+  if (dollars === null) return null;
+  const cents = Math.round(dollars * 100);
+  if (!Number.isFinite(cents)) return null;
+  return Math.min(Math.max(cents, -MAX_CENTS), MAX_CENTS);
 }
 
 export function fromCents(cents: number | null | undefined): number | null {
@@ -105,7 +114,7 @@ export function fmtCents(cents: number | null | undefined): string {
 /** Parse a single free-text money field (a budget bound) into cents. */
 export function parseMoneyToCents(text: string): number | null {
   const vals = moneyValues(text || "");
-  return vals.length ? Math.round(vals[0] * 100) : null;
+  return vals.length ? toCents(vals[0]) : null;
 }
 
 /**
