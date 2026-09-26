@@ -121,3 +121,35 @@ test("a forwarded enquiry is attributed to the client, not the colleague", () =>
 test("a normal email has no forwarded sender", () => {
   assert.equal(findForwardedSender("Just a normal note.\nFrom: me"), null);
 });
+
+// findForwardedSender decides who a lead is attributed to, and the body it
+// reads is attacker-controlled: anyone can email the address that gets
+// forwarded into the system.
+test("a From: line above the marker cannot claim the lead", () => {
+  const body = "From: ceo@big.example\n\n"
+    + "---------- Forwarded message ----------\n"
+    + "From: real@client.example\n";
+  assert.equal(findForwardedSender(body)?.email, "real@client.example");
+});
+
+test("an inner From with no address is refused, not turned into garbage", () => {
+  const body = "FYI\n---------- Forwarded message ----------\nFrom: Accounts Payable\n";
+  // Previously yielded the truthy string "accounts payable", which then
+  // replaced a perfectly good envelope address on the record.
+  assert.equal(findForwardedSender(body), null);
+});
+
+test("a marker with no From after it yields nothing", () => {
+  assert.equal(findForwardedSender("---------- Forwarded message ----------\nhello"), null);
+});
+
+test("both forwarding markers are recognised", () => {
+  assert.equal(
+    findForwardedSender("Begin forwarded message:\nFrom: a@b.example\n")?.email,
+    "a@b.example",
+  );
+  assert.equal(
+    findForwardedSender("--- Forwarded message ---\nFrom: c@d.example\n")?.email,
+    "c@d.example",
+  );
+});

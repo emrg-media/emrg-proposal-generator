@@ -106,3 +106,24 @@ test("the same fee with the % stripped is a completely different number", () => 
 test("a percentage range still resolves against the budget", () => {
   assert.equal(computeFee("18-22%", "$70,000 to $90,000").value, 16000);
 });
+
+// A percentage fee must read only the numbers attached to the % sign. Taking
+// every number in the string read "15% of $50,000" as 15 and 50 averaged to
+// 32.5%, booking $65,000 against a $30,000 fee on a $200,000 event, and that
+// figure is the sole input to the executive dashboard's pipeline value.
+test("a percentage fee ignores dollar amounts written beside it", () => {
+  assert.equal(computeFee("15% of $50,000", "$200,000").value, 30000);
+  assert.equal(computeFee("20% (capped at $30,000)", "$200,000").value, 40000);
+  assert.equal(computeFee("management fee 10% of the $80,000 budget", "$200,000").value, 20000);
+});
+
+test("a percentage range still averages its two bounds", () => {
+  assert.equal(computeFee("18-22%", "$200,000").value, 40000);
+  assert.equal(computeFee("20% to 25%", "$200,000").value, 45000);
+  assert.equal(computeFee("18 – 22 %", "$200,000").value, 40000);
+});
+
+test("a single percentage is unchanged", () => {
+  assert.equal(computeFee("20%", "$200,000").value, 40000);
+  assert.equal(computeFee("7.5%", "$200,000").value, 15000);
+});

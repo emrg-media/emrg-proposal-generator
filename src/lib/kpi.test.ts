@@ -165,3 +165,19 @@ test("percentages format, and an unknown rate renders as nothing", () => {
   // without putting a stray mark in front of the reader.
   assert.equal(fmtPercent(null), "");
 });
+
+// An Invalid Date compares false against everything, so a bad custom range
+// used to turn the window filter into a no-op and report all-time figures
+// under a "custom" label on the executive dashboard.
+test("an unparseable custom range becomes no bound, not an Invalid Date", () => {
+  const w = periodWindow("custom", new Date(), "lastmonth", "soon");
+  assert.equal(w.start, null);
+  assert.equal(w.end, null);
+});
+
+test("a valid custom range is still honoured", () => {
+  const w = periodWindow("custom", new Date(), "2026-09-01", "2026-09-30");
+  assert.ok(w.start instanceof Date && !isNaN(w.start.getTime()));
+  assert.ok(w.end instanceof Date && !isNaN(w.end.getTime()));
+  assert.equal(w.start!.getMonth(), 8);
+});

@@ -127,10 +127,24 @@ export function normalizeSubject(subject: string): string {
  */
 export function findForwardedSender(body: string): ParsedAddress | null {
   const text = (body ?? "").replace(/\r\n/g, "\n");
-  if (!/-{2,}\s*Forwarded message\s*-{2,}|^\s*Begin forwarded message:/im.test(text)) return null;
+  const marker = text.match(/-{2,}\s*Forwarded message\s*-{2,}|^\s*Begin forwarded message:/im);
+  if (!marker || marker.index === undefined) return null;
 
-  const from = text.match(/^\s*From:\s*(.+)$/im);
+  // Search only AFTER the marker. Taking the first "From:" anywhere in the
+  // body let a line above the marker decide who the lead was, which is
+  // attacker-controlled: anyone can email the address that gets forwarded.
+  const after = text.slice(marker.index + marker[0].length);
+  const from = after.match(/^\s*From:\s*(.+)$/im);
   if (!from) return null;
+
   const parsed = parseAddress(from[1]);
-  return parsed.email ? parsed : null;
+  // Require something that is actually an address. "From: Accounts Payable"
+  // otherwise yields the truthy string "accounts payable", which then REPLACES
+  // a perfectly good envelope address with garbage.
+  return isEmailAddress(parsed.email) ? parsed : null;
+}
+
+/** Deliberately conservative: this decides who a lead is attributed to. */
+export function isEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(value.trim());
 }

@@ -185,6 +185,12 @@ export function computeKpis(
 
 export type PeriodKey = "today" | "week" | "month" | "ytd" | "custom";
 
+function validDate(value: string | null): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function periodWindow(
   period: PeriodKey, now: Date = new Date(), from?: string, to?: string,
 ): KpiWindow {
@@ -204,9 +210,12 @@ export function periodWindow(
     case "ytd":
       return { start: new Date(now.getFullYear(), 0, 1), end: null };
     case "custom":
+      // An unparseable date must become "no bound", never an Invalid Date.
+      // Every comparison against NaN is false, so inWindow would silently stop
+      // filtering and report all-time figures under a custom label.
       return {
-        start: from ? new Date(`${from}T00:00:00`) : null,
-        end: to ? new Date(`${to}T23:59:59.999`) : null,
+        start: validDate(from ? `${from}T00:00:00` : null),
+        end: validDate(to ? `${to}T23:59:59.999` : null),
       };
   }
 }

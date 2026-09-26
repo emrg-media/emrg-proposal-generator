@@ -39,12 +39,17 @@ export function computeFee(fee: string, budget: string): FeeCalc {
   if (!f) return { value: null, estimated: false, needsBudget: false, basis: "No fee entered yet." };
 
   // Percentage fee → always convert to dollars using the event budget.
-  // A range like "18-22%" has only the last number touching the %, so pull
-  // every number in the fee string (capped at 100) as the percent bound(s).
+  //
+  // Only numbers actually attached to the % sign count. Taking every number in
+  // the string instead reads "15% of $50,000" as 15 and 50 averaged to 32.5%,
+  // which on a $200,000 event books $65,000 against a $30,000 fee. A range is
+  // matched first, because "18-22%" has only the last number touching the %.
   if (f.includes("%")) {
-    const pctNums = [...f.matchAll(/([\d.]+)/g)]
-      .map((m) => parseFloat(m[1]))
-      .filter((n) => n > 0 && n <= 100);
+    const range = f.match(/(\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)\s*%/i);
+    const pctNums = (range
+      ? [parseFloat(range[1]), parseFloat(range[2])]
+      : [...f.matchAll(/(\d+(?:\.\d+)?)\s*%/g)].map((m) => parseFloat(m[1]))
+    ).filter((n) => n > 0 && n <= 100);
     if (pctNums.length === 0) {
       return { value: null, estimated: false, needsBudget: false, basis: "This fee could not be read as a number." };
     }

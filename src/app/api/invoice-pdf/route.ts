@@ -4,8 +4,16 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { buildInvoiceDocument } from "@/lib/InvoicePDF";
 import type { InvoiceData } from "@/lib/invoice";
+import { getSessionUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  // proxy.ts only checks that the cookie is signed; it deliberately does not
+  // re-read the user row. Without this, a deactivated employee's cookie keeps
+  // rendering invoices for the rest of its two-week life, while every other
+  // route correctly refuses them.
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const data = (await req.json()) as InvoiceData;
 
   const logoPath = join(process.cwd(), "public", "emrg-logo.png");

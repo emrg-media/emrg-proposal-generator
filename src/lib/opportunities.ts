@@ -239,6 +239,25 @@ export async function createOpportunity(input: CreateOpportunityInput, actor: Us
 }
 
 /** Fields a user may edit directly. */
+/**
+ * The only columns a planner may write through updateOpportunity.
+ *
+ * EditableFields below is a TypeScript type, so it is erased at runtime, and a
+ * Server Action is a plain POST endpoint that any signed-in user can call
+ * directly with any body. Spreading the patch into .set() therefore made every
+ * column writable: approvalState (bypassing canApprove), stage and wonAt
+ * (bypassing the won/lost bookkeeping the KPIs read), ownerId, and
+ * proposalValueCents, which is the single number the executive dashboard sums.
+ * This list is what makes the type real at runtime.
+ */
+export const EDITABLE_KEYS = [
+  "company", "firstName", "lastName", "title", "email", "cellPhone",
+  "address", "city", "state", "zip", "website", "leadSource",
+  "eventName", "eventTypes", "eventDate", "guestCount", "venue",
+  "requestedServices", "notes", "feeRaw", "budgetLowCents", "budgetHighCents",
+  "nextAction", "nextActionDate", "nextActionOwnerId",
+] as const;
+
 export type EditableFields = Partial<Pick<Opportunity,
   | "company" | "firstName" | "lastName" | "title" | "email" | "cellPhone"
   | "address" | "city" | "state" | "zip" | "website" | "leadSource"
@@ -247,8 +266,19 @@ export type EditableFields = Partial<Pick<Opportunity,
   | "nextAction" | "nextActionDate" | "nextActionOwnerId"
 >>;
 
-export async function updateOpportunity(id: string, patch: EditableFields, actor: User): Promise<void> {
+export async function updateOpportunity(id: string, incoming: EditableFields, actor: User): Promise<void> {
   const db = getDb();
+
+  // Drop anything not on the allowlist before it can reach .set(). Silent
+  // rather than throwing: the extra keys are never sent by our own UI, so
+  // anything else is either a stale client or someone poking the endpoint.
+  const allowed = new Set<string>(EDITABLE_KEYS);
+  const patch = Object.fromEntries(
+    Object.entries(incoming).filter(([k]) => allowed.has(k)),
+  ) as EditableFields;
+
+  if (Object.keys(patch).length === 0) return;
+
   await db.transaction(async (tx) => {
     const [before] = await tx.select().from(opportunities).where(eq(opportunities.id, id)).limit(1);
     if (!before) throw new Error("Opportunity not found.");
