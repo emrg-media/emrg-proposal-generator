@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import lineItems from "@/data/line-items.json";
+import { mapExtractionToProposal } from "@/lib/extractionMap";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -381,23 +382,30 @@ export default function ProposalBuilder({
       }
       const data = await res.json();
 
-      if (data.client_name) setClient((p) => ({ ...p, client_name: data.client_name }));
-      if (data.signer_name) setClient((p) => ({ ...p, signer_name: data.signer_name }));
-      if (data.signer_title) setClient((p) => ({ ...p, signer_title: data.signer_title }));
-      if (data.client_email) setClient((p) => ({ ...p, client_email: data.client_email }));
-      if (data.venue) setClient((p) => ({ ...p, venue: data.venue }));
-      if (data.budget_low) setClient((p) => ({ ...p, budget_low: formatCurrency(data.budget_low) }));
-      if (data.budget_high) setClient((p) => ({ ...p, budget_high: formatCurrency(data.budget_high) }));
-      if (data.service_fee) setClient((p) => ({ ...p, service_fee: data.service_fee.includes("%") ? data.service_fee : formatCurrency(data.service_fee) }));
+      const mapped = mapExtractionToProposal(data);
+      const { budget_low, budget_high, service_fee, ...plain } = mapped.client;
 
-      if (Array.isArray(data.events) && data.events.length > 0) {
-        setEvents(data.events.map((ev: { date?: string; eventTypes?: string[]; guestCount?: string }) => ({
+      setClient((p) => ({
+        ...p,
+        ...plain,
+        ...(budget_low ? { budget_low: formatCurrency(budget_low) } : {}),
+        ...(budget_high ? { budget_high: formatCurrency(budget_high) } : {}),
+        // A percentage must survive as typed; only a dollar figure is formatted.
+        ...(service_fee
+          ? { service_fee: service_fee.includes("%") ? service_fee : formatCurrency(service_fee) }
+          : {}),
+      }));
+
+      if (mapped.leadSource) setLeadSource(mapped.leadSource);
+
+      if (mapped.event) {
+        setEvents([{
           id: crypto.randomUUID(),
-          date: ev.date ?? "",
-          eventTypes: normalizeEventTypes(Array.isArray(ev.eventTypes) ? ev.eventTypes : []),
-          guestCount: ev.guestCount ?? "",
-          guestCountFormatted: ev.guestCount ? formatGuestCount(ev.guestCount) : "",
-        })));
+          date: mapped.event.date,
+          eventTypes: normalizeEventTypes(mapped.event.eventTypes),
+          guestCount: mapped.event.guestCount,
+          guestCountFormatted: mapped.event.guestCount ? formatGuestCount(mapped.event.guestCount) : "",
+        }]);
       }
       setImportNotes("");
     } catch (err) {
