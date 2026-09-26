@@ -21,7 +21,10 @@
     "verify:followups": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-followups.ts",
     "verify:routing": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-routing.ts",
     "verify:email": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-email-intake.ts",
-    "verify:contrast": "node scripts/verify-contrast.mjs"
+    "verify:contrast": "node scripts/verify-contrast.mjs",
+    "verify:authz": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-authz.ts",
+    "verify:scale": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-scale.ts",
+    "verify:resilience": "dotenv -e .env.local -- tsx --conditions=react-server scripts/verify-resilience.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",

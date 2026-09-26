@@ -33,7 +33,22 @@ export function getDb() {
       connectionString: url,
       ssl: isLocal ? undefined : { rejectUnauthorized: true },
       max: 10,
+      // A connection that never establishes must not hold the function open
+      // for its entire duration budget; fail fast and let the caller retry.
+      connectionTimeoutMillis: 10_000,
     });
+
+    // pg emits 'error' on the POOL when an idle client's connection dies, which
+    // Neon does routinely when it scales to zero or recycles a connection.
+    // Pool extends EventEmitter, so with no listener attached Node treats this
+    // as an unhandled 'error' event and takes the whole process down — turning
+    // a dropped idle socket into an outage. By the time this fires the pool has
+    // already removed and closed that client, so the correct response is to log
+    // it; the next query opens a fresh connection.
+    pool.on("error", (err) => {
+      console.error("Idle Postgres client dropped, pool recovered:", err.message);
+    });
+
     database = drizzle(pool, { schema });
   }
   return database;

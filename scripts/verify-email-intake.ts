@@ -12,6 +12,16 @@ const check = (label: string, ok: boolean, detail = "") => {
   if (!ok) failures++;
 };
 
+// ANTHROPIC_API_KEY is write-only on Vercel, so it is usually absent locally.
+// Everything except the model's own output still runs, and the intake now files
+// the lead regardless, so those checks are skipped rather than failed. A test
+// that is permanently red is a test everyone learns to ignore.
+const CAN_EXTRACT = !!process.env.ANTHROPIC_API_KEY;
+const extracted = (label: string, ok: boolean, detail = "") => {
+  if (!CAN_EXTRACT) { console.log(`  ~ ${label}  (skipped, no ANTHROPIC_API_KEY)`); return; }
+  check(label, ok, detail);
+};
+
 async function main() {
   const db = getDb();
   const made: string[] = [];
@@ -53,8 +63,8 @@ async function main() {
   const [opp] = await db.select().from(opportunities).where(eq(opportunities.id, r1.opportunityId));
   check("sender address captured from the envelope", opp.email === "priya.raman@northwind-intake.invalid");
   check("contact name captured", opp.lastName.includes("Raman"), `${opp.firstName} ${opp.lastName}`);
-  check("guest count extracted", opp.guestCount.includes("450"), opp.guestCount);
-  check("event date extracted", /2027/.test(opp.eventDate), opp.eventDate);
+  extracted("guest count extracted", opp.guestCount.includes("450"), opp.guestCount);
+  extracted("event date extracted", /2027/.test(opp.eventDate), opp.eventDate);
   check("lead source recorded as email", /email/i.test(opp.leadSource), opp.leadSource);
   check("an owner was chosen with no human present", !!opp.ownerId);
   check("the clock starts when the MAIL arrived, not now",

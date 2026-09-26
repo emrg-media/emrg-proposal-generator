@@ -79,6 +79,39 @@ async function extract(subject: string, body: string): Promise<Extracted> {
   return JSON.parse(match ? match[0] : text) as Extracted;
 }
 
+/**
+ * Extraction, but never fatal.
+ *
+ * If Claude is unreachable, rate limited, or returns something that is not
+ * JSON, the enquiry must still be filed. A parse failure is deterministic, so
+ * retrying the webhook would fail identically and the lead would be lost for
+ * good — the exact outcome this whole system exists to prevent. We already know
+ * who sent it and what they wrote, so that becomes a low-confidence record and
+ * Needs Attention puts a human on it.
+ */
+async function extractOrFile(
+  subject: string,
+  body: string,
+): Promise<{ data: Extracted; failure: string | null }> {
+  try {
+    return { data: await extract(subject, body), failure: null };
+  } catch (err) {
+    const failure = err instanceof Error ? err.message : "extraction failed";
+    console.error("Email extraction failed, filing the lead anyway:", failure);
+    return {
+      failure,
+      data: {
+        is_event_enquiry: true,
+        confidence: "low",
+        notes:
+          "Details could not be read from this email automatically, so they still "
+          + "need filling in by hand. The original message is below.\n\n"
+          + `Subject: ${subject}\n\n${body.slice(0, 4000)}`,
+      },
+    };
+  }
+}
+
 /** An open opportunity already belonging to this sender, if there is one. */
 async function findOpenThread(email: string) {
   if (!email) return null;
@@ -129,7 +162,7 @@ export async function processInboundEmail(mail: InboundEmail): Promise<IntakeRes
     return { action: "reply_logged", opportunityId: existing.id, code: existing.code };
   }
 
-  const data = await extract(mail.subject, body);
+  const { data, failure: extractionFailure } = await extractOrFile(mail.subject, body);
   if (data.is_event_enquiry === false) {
     return { action: "ignored", reason: "Not an event enquiry" };
   }
@@ -178,6 +211,7 @@ export async function processInboundEmail(mail: InboundEmail): Promise<IntakeRes
         forwarded: !!forwarded,
         messageId: mail.messageId,
         confidence: data.confidence ?? "",
+        ...(extractionFailure ? { extractionFailed: extractionFailure } : {}),
         body: mail.body.slice(0, 20_000),
       },
       eventName: data.event_name ?? "",
@@ -205,9 +239,21 @@ export async function processInboundEmail(mail: InboundEmail): Promise<IntakeRes
     await logActivity({
       opportunityId: opp.id, type: "lead_received", actorId: null,
       body: `Lead received by email: ${normalizeSubject(mail.subject) || "(no subject)"}`,
-      meta: { via: "email", from: sender.email, messageId: mail.messageId },
+      meta: {
+        via: "email", from: sender.email, messageId: mail.messageId,
+        ...(extractionFailure ? { extractionFailed: extractionFailure } : {}),
+      },
       occurredAt: leadReceivedAt,
     }, tx);
+
+    if (extractionFailure) {
+      await logActivity({
+        opportunityId: opp.id, type: "note", actorId: null,
+        body: "Filed without automatic extraction, so the details need checking by hand.",
+        meta: { extractionFailed: extractionFailure },
+        occurredAt: leadReceivedAt,
+      }, tx);
+    }
 
     if (routed.userId) {
       await logActivity({
