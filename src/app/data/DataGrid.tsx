@@ -91,7 +91,12 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
       <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "var(--ink)" }}>Data</h1>
+          {/* Mirrors the line on /proposals on purpose. The two screens share
+              four columns, so without stating the grain they read as duplicates. */}
           <p className="text-[13px] text-ink3 mt-1">
+            One row per opportunity, however many proposals it has taken.
+          </p>
+          <p className="text-[12.5px] text-ink3 mt-0.5">
             {filtered.length} of {rows.length} opportunities
             {totalValue > 0 && <> · {fmtCents(totalValue)} total</>}
           </p>

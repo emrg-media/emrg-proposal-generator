@@ -25,7 +25,8 @@ export default async function ProposalsPage() {
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
         <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: "var(--ink)" }}>Proposals</h1>
         <p className="text-[13px] text-ink3 mb-5">
-          Every proposal ever generated, kept permanently whether it was won, lost or never answered.
+          One row per proposal, including every version. Kept permanently whether the
+          deal was won, lost or never answered.
         </p>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
