@@ -223,7 +223,7 @@ stone-400 and stone-500 for small print, at 2.35:1 and 4.36:1 against the page, 
 under the 4.5:1 that size needs. That is what made the KPI sub-labels hard to read.
 
 ```bash
-npm run verify:contrast    # every screen, both themes, fails under WCAG AA
+TEST_PIN=###### npm run verify:contrast   # every screen, both themes, fails under WCAG AA
 ```
 
 It drives a real browser, composites translucent layers properly, and checks each text

@@ -4,7 +4,13 @@
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
-const PIN = process.env.TEST_PIN || "379659";
+// Never hardcode a real PIN here: this file is committed, so a default would
+// publish an admin credential to anyone with repo access.
+const PIN = process.env.TEST_PIN;
+if (!PIN) {
+  console.error("Set TEST_PIN to an admin PIN, e.g. TEST_PIN=###### npm run verify:contrast");
+  process.exit(1);
+}
 const PAGES = ["/", "/?scope=all", "/pipeline", "/proposals", "/closed", "/data", "/exec", "/admin", "/new", "/proposal"];
 
 const AUDIT = `(() => {
