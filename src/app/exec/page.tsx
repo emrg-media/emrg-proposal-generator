@@ -97,6 +97,17 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Apply</butto
           </form>
         )}
 
+        {rows.length === 0 && (
+          <div className="bg-raised border border-line rounded-lg px-5 py-4 mb-6">
+            <p className="text-[13px] text-ink2">
+              Every figure below reads zero because there is no data yet, not because the business stalled.
+            </p>
+            <p className="text-[12.5px] text-ink3 mt-1">
+              The dashboard fills in on its own as the team generates proposals and moves deals through the pipeline.
+            </p>
+          </div>
+        )}
+
         {/* ── Right now ── */}
         <SectionHeading
           title="Right now"

@@ -165,7 +165,9 @@ export default function DataGrid({ rows, owners }: { rows: GridRow[]; owners: st
           <tbody>
             {filtered.length === 0 && (
               <tr><td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-ink3">
-                Nothing matches those filters.
+                {rows.length === 0
+                  ? "No opportunities yet. They appear here as soon as the first proposal is generated."
+                  : "Nothing matches those filters."}
               </td></tr>
             )}
             {filtered.map((r) => (

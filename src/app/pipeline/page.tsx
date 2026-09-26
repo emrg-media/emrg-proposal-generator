@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listOpportunities } from "@/lib/opportunities";
 import { getSettings } from "@/lib/settings";
@@ -5,6 +6,7 @@ import { responseStatus } from "@/lib/attention";
 import { checkCompleteness, missingSummary } from "@/lib/completeness";
 import SiteHeader from "@/components/SiteHeader";
 import SampleDataBanner from "@/components/SampleDataBanner";
+import { EmptyState } from "@/components/ui";
 import PipelineBoard, { type BoardCard } from "./PipelineBoard";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +44,19 @@ export default async function PipelinePage() {
     <div className="min-h-screen" style={{ background: "var(--surface)" }}>
       <SiteHeader active="pipeline" user={user} />
       <SampleDataBanner />
-      <PipelineBoard cards={cards} />
+      {cards.length === 0 ? (
+        <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto">
+          <EmptyState
+            title="The pipeline is empty."
+            hint="Opportunities land here automatically the moment a proposal is generated. Nothing has come through yet."
+            action={<Link href="/proposal"
+              className="inline-block text-[11px] font-bold tracking-[0.16em] uppercase px-4 py-2 rounded"
+              style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>+ New Proposal</Link>}
+          />
+        </div>
+      ) : (
+        <PipelineBoard cards={cards} />
+      )}
     </div>
   );
 }

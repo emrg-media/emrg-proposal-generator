@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // The PDF renderers use @react-pdf/renderer's <Image>, not an HTML <img>.
+  // It has no alt prop, so jsx-a11y's check is a false positive here.
+  {
+    files: ["src/lib/ProposalPDF.tsx", "src/lib/InvoicePDF.tsx"],
+    rules: { "jsx-a11y/alt-text": "off" },
+  },
 ]);
 
 export default eslintConfig;

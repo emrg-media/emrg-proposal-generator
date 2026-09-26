@@ -129,7 +129,9 @@ export default async function NeedsAttentionPage({
         {groups.length === 0 ? (
           <EmptyState
             title="Nothing needs your attention."
-            hint={mineOnly && allGroups.length > 0
+            hint={rows.length === 0
+              ? "Nothing has come through yet. The first proposal generated lands here automatically."
+              : mineOnly && allGroups.length > 0
               ? `${allGroups.length} opportunit${allGroups.length === 1 ? "y" : "ies"} on the wider team. Switch to Everyone to see them.`
               : "Every lead has been answered and every deal has a next action."}
             action={<Link href="/proposal"

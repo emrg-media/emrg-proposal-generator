@@ -1,5 +1,5 @@
 import {
-  Document, Page, Text, View, Image, StyleSheet, Font,
+  Document, Page, Text, View, Image, StyleSheet,
 } from "@react-pdf/renderer";
 import { createElement } from "react";
 
