@@ -208,6 +208,21 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Failed login attempts, per client address.
+ *
+ * The account lockout stops a PIN being guessed, but on its own it is also a
+ * weapon: /login lists every user's id so people can tap their own name, so
+ * anyone reaching the page can lock all five accounts with 25 wrong PINs and
+ * keep the team out indefinitely. Throttling the source address first means
+ * an attacker is stopped before any real account's counter moves.
+ */
+export const loginAttempts = pgTable("login_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ip: text("ip").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("login_attempts_ip_time").on(t.ip, t.occurredAt)]);
+
 // ── Inferred types ───────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;

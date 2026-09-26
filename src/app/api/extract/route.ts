@@ -9,7 +9,11 @@ import { EVENT_TYPES, LEAD_SOURCES } from "@/lib/constants";
 
 const client = new Anthropic();
 
-const SYSTEM = `You are an assistant that extracts structured event-opportunity data from discovery call notes, transcripts, dictated voice notes, or inbound enquiry emails.
+// Built per call, not once at module load. These prompts tell the model what
+// "today" is, and a warm serverless instance can live for hours or days — long
+// enough for "next Friday" to be resolved against a stale date.
+function systemPrompt(): string {
+  return `You are an assistant that extracts structured event-opportunity data from discovery call notes, transcripts, dictated voice notes, or inbound enquiry emails.
 Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} — resolve relative dates ("next year", "this December", "in Q2") against it, and never produce a date in the past.
 Return ONLY valid JSON matching the schema below. If a field is not mentioned, use an empty string for strings or an empty array for arrays.
 Never invent data that isn't in the source. Do not guess an email address from a person's name.
@@ -41,6 +45,7 @@ Schema:
   "requested_services": ["array of strings — services the client asked about, e.g. 'Entertainment', 'AV', 'Staffing', 'Catering'. Title Case."],
   "notes": "string — anything else worth keeping: constraints, preferences, decision process, deadlines. A few sentences at most."
 }`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest) {
     const message = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 2048,
-      system: SYSTEM,
+      system: systemPrompt(),
       messages: [{ role: "user", content: `Extract opportunity data from this:\n\n${source}` }],
     });
 

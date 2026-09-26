@@ -23,6 +23,7 @@ const KIND_LABELS: Record<AttentionKind, string> = {
   awaiting_approval: "Waiting for approval",
   next_action_overdue: "Overdue next actions",
   followup_overdue: "Overdue follow-ups",
+  followup_stalled: "Paused and gone quiet",
   proposal_silent: "Silent proposals",
   no_next_action: "No next action",
 };
@@ -35,6 +36,7 @@ const KIND_TONE: Record<AttentionKind, "red" | "amber" | "grey"> = {
   awaiting_approval: "amber",
   next_action_overdue: "amber",
   followup_overdue: "amber",
+  followup_stalled: "amber",
   proposal_silent: "amber",
   no_next_action: "grey",
 };

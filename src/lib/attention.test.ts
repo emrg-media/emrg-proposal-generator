@@ -230,3 +230,58 @@ test("a closed deal with gaps is left alone", () => {
   assert.deepEqual(kinds(opp({ stage: "won", blockingGaps: ["Email address"] })), []);
   assert.deepEqual(kinds(opp({ stage: "lost", blockingGaps: ["Email address"] })), []);
 });
+
+// The blind spot this rule exists to close.
+//
+// Proposal goes out and the sequence arms. The client replies, which pauses
+// it (correct: the brief requires a human conversation to stop the robot).
+// The planner replies, which clears "client waiting". From that moment the
+// deal matched no rule at all: followup_overdue needs an ACTIVE sequence,
+// proposal_silent needs no inbound to have ever arrived, and no_next_action
+// clears the moment anyone types anything. A live deal went quiet and nobody
+// was told.
+test("a paused follow-up that has gone quiet is surfaced", () => {
+  const stalled = opp({
+    stage: "proposal_sent",
+    proposalSentAt: ago(20 * DAY),
+    followupState: "paused",
+    followupDueAt: null,
+    lastInboundAt: ago(14 * DAY),
+    lastOutboundAt: ago(13 * DAY),   // we replied last, so client_waiting is clear
+    nextAction: "Chase the contract", // and a next action exists, so that rule is clear
+    nextActionDate: new Date(NOW.getTime() + DAY),
+  });
+  assert.ok(kinds(stalled).includes("followup_stalled"), `got ${JSON.stringify(kinds(stalled))}`);
+});
+
+test("a paused follow-up that is still warm is left alone", () => {
+  const warm = opp({
+    stage: "proposal_sent",
+    proposalSentAt: ago(20 * DAY),
+    followupState: "paused",
+    lastInboundAt: ago(2 * DAY),
+    lastOutboundAt: ago(1 * DAY),
+    nextAction: "Chase the contract",
+    nextActionDate: new Date(NOW.getTime() + DAY),
+  });
+  assert.ok(!kinds(warm).includes("followup_stalled"), `got ${JSON.stringify(kinds(warm))}`);
+});
+
+test("an active or stopped sequence is not reported as stalled", () => {
+  for (const state of ["active", "stopped", "inactive"] as const) {
+    const o = opp({
+      stage: "proposal_sent", proposalSentAt: ago(20 * DAY), followupState: state,
+      lastInboundAt: ago(14 * DAY), lastOutboundAt: ago(13 * DAY),
+      nextAction: "x", nextActionDate: new Date(NOW.getTime() + DAY),
+    });
+    assert.ok(!kinds(o).includes("followup_stalled"), `${state} -> ${JSON.stringify(kinds(o))}`);
+  }
+});
+
+test("a won or lost deal is never reported as stalled", () => {
+  const won = opp({
+    stage: "won", followupState: "paused",
+    lastInboundAt: ago(60 * DAY), lastOutboundAt: ago(59 * DAY),
+  });
+  assert.deepEqual(kinds(won), []);
+});

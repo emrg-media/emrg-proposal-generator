@@ -10,6 +10,7 @@ import { users } from "../src/db/schema";
 import { checkLogin } from "../src/lib/login";
 import { hashPin } from "../src/lib/pin";
 import { signSession, verifySession } from "../src/lib/session";
+import { isThrottled, recordFailure, clearAddress, THROTTLE } from "../src/lib/loginThrottle";
 
 let failures = 0;
 const check = (label: string, ok: boolean, detail = "") => {
@@ -134,8 +135,45 @@ async function main() {
     check("but the user row is now inactive, which getSessionUser checks",
       stillThere.active === false);
 
-    // ── E. Roles ─────────────────────────────────────────────────────────────
-    console.log("\nE. Roles are what they claim to be");
+    // ── E. The lockout cannot be turned against the team ─────────────────────
+    console.log("\nE. One attacker cannot lock all five people out");
+
+    const attacker = `203.0.113.${Math.floor(Math.random() * 200) + 1}`;
+    const innocent = "198.51.100.7";
+    await clearAddress(attacker);
+    await clearAddress(innocent);
+
+    check("a fresh address is allowed through", (await isThrottled(attacker)) === false);
+
+    // One short of the limit: still allowed, because five people behind one
+    // office address must not throttle each other by fumbling a PIN.
+    for (let i = 0; i < THROTTLE.MAX_FAILURES - 1; i++) await recordFailure(attacker);
+    check(`${THROTTLE.MAX_FAILURES - 1} failures is still allowed`,
+      (await isThrottled(attacker)) === false);
+
+    await recordFailure(attacker);
+    check(`${THROTTLE.MAX_FAILURES} failures throttles that address`,
+      (await isThrottled(attacker)) === true);
+
+    check("a different address is unaffected", (await isThrottled(innocent)) === false);
+
+    // 25 wrong PINs is what it takes to lock all five accounts. The cap is
+    // below that on purpose, so the attack cannot complete.
+    check("the cap is below the 25 attempts needed to lock five accounts",
+      THROTTLE.MAX_FAILURES < 25, String(THROTTLE.MAX_FAILURES));
+
+    await clearAddress(attacker);
+    check("a successful login clears the address", (await isThrottled(attacker)) === false);
+
+    // Failures older than the window must fall out of it.
+    const old = new Date(Date.now() - (THROTTLE.WINDOW_MINUTES + 5) * 60_000);
+    for (let i = 0; i < THROTTLE.MAX_FAILURES + 5; i++) await recordFailure(attacker, old);
+    check("failures outside the window no longer count", (await isThrottled(attacker)) === false);
+    await clearAddress(attacker);
+    await clearAddress(innocent);
+
+    // ── F. Roles ─────────────────────────────────────────────────────────────
+    console.log("\nF. Roles are what they claim to be");
     const [p2] = await db.select().from(users).where(eq(users.id, planner.id));
     check("a planner is not an admin", p2.role !== "admin");
     check("PIN hashes are never stored in the clear",

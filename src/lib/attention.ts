@@ -15,6 +15,7 @@ export type AttentionKind =
   | "awaiting_approval"
   | "next_action_overdue"
   | "followup_overdue"
+  | "followup_stalled"
   | "proposal_silent"
   | "no_next_action";
 
@@ -64,6 +65,8 @@ export interface AttentionOptions {
   responseTargetMinutes: number;
   /** Days of silence after sending before a proposal is chased. */
   proposalSilentDays?: number;
+  /** Days of silence before a follow-up paused by a conversation is raised. */
+  pausedQuietDays?: number;
 }
 
 const MINUTE = 60_000;
@@ -79,6 +82,10 @@ const BASE: Record<AttentionKind, number> = {
   missing_info: 700,
   awaiting_approval: 600,
   next_action_overdue: 400,
+  // Above followup_overdue on purpose: an overdue sequence is still armed and
+  // will fire on its own, whereas a stalled one will not move until a person
+  // moves it.
+  followup_stalled: 350,
   followup_overdue: 300,
   proposal_silent: 200,
   no_next_action: 100,
@@ -116,6 +123,7 @@ export function responseStatus(
 export function attentionFor(o: AttentionInput, opts: AttentionOptions): AttentionItem[] {
   const { now, responseTargetMinutes } = opts;
   const silentDays = opts.proposalSilentDays ?? 3;
+  const pausedQuietDays = opts.pausedQuietDays ?? 7;
   const items: AttentionItem[] = [];
   const t = now.getTime();
 
@@ -184,7 +192,31 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
     add("followup_overdue", overdue, `Follow-up overdue by ${ageLabel(overdue)}`);
   }
 
-  // 7. A proposal that went out and went quiet.
+  // 7. A follow-up paused by a real conversation that has since gone quiet.
+  //
+  //    Pausing on human contact is required by the brief and is correct: the
+  //    robot must never talk over a live conversation. But nothing ever
+  //    un-pauses it, and the rules that would otherwise catch this all stop
+  //    applying. Rule 6 needs an ACTIVE sequence. Rule 8 needs no inbound ever
+  //    to have arrived. Rule 2 clears the moment we reply. So the normal
+  //    sequence — proposal out, client replies, planner replies — left a live
+  //    deal matching nothing at all, which is the quiet way deals die.
+  if (o.followupState === "paused") {
+    const lastTouch = Math.max(
+      o.lastInboundAt?.getTime() ?? 0,
+      o.lastOutboundAt?.getTime() ?? 0,
+      o.proposalSentAt?.getTime() ?? 0,
+    );
+    if (lastTouch > 0) {
+      const quiet = t - lastTouch;
+      if (quiet >= pausedQuietDays * DAY) {
+        add("followup_stalled", quiet,
+          `Follow-up paused and nothing has happened for ${ageLabel(quiet)}`);
+      }
+    }
+  }
+
+  // 8. A proposal that went out and went quiet.
   if (o.proposalSentAt && !o.lastInboundAt) {
     const silent = t - o.proposalSentAt.getTime();
     if (silent >= silentDays * DAY) {
@@ -192,7 +224,7 @@ export function attentionFor(o: AttentionInput, opts: AttentionOptions): Attenti
     }
   }
 
-  // 8. Nothing scheduled, which is the quiet way deals die.
+  // 9. Nothing scheduled at all.
   if (!o.nextAction.trim() && !o.nextActionDate) {
     add("no_next_action", 0, "No next action assigned");
   }

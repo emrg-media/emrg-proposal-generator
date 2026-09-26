@@ -50,7 +50,11 @@ interface Extracted {
   requested_services?: string[]; notes?: string;
 }
 
-const SYSTEM = `You read inbound email sent to an event production company and decide whether it is a new event enquiry, then pull out whatever event detail is present.
+// Built per call, not once at module load. These prompts tell the model what
+// "today" is, and a warm serverless instance can live for hours or days — long
+// enough for "next Friday" to be resolved against a stale date.
+function systemPrompt(): string {
+  return `You read inbound email sent to an event production company and decide whether it is a new event enquiry, then pull out whatever event detail is present.
 Today is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}. Resolve relative dates against it and never return a date in the past.
 Return ONLY valid JSON. Use "" for absent strings and [] for absent arrays. Never invent anything, and never guess an email address.
 
@@ -66,12 +70,13 @@ Return ONLY valid JSON. Use "" for absent strings and [] for absent arrays. Neve
   "service_fee": "exactly as stated, a dollar amount or a percentage. Never convert one into the other.",
   "requested_services": [], "notes": "anything else worth keeping, a few sentences at most"
 }`;
+}
 
 async function extract(subject: string, body: string): Promise<Extracted> {
   const message = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 2048,
-    system: SYSTEM,
+    system: systemPrompt(),
     messages: [{ role: "user", content: `Subject: ${subject}\n\n${body.slice(0, 40_000)}` }],
   });
   const text = message.content[0].type === "text" ? message.content[0].text : "";
