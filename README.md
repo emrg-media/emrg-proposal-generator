@@ -112,12 +112,32 @@ npx dotenv -e .env.local -- npx tsx scripts/check-sheet.ts        # read-only cr
 
 ## Migrating the old tracker
 
-The original Google Sheet is read but never modified. Dry run first:
+The original tracker is read but never modified. Dry run first, and read the summary
+before committing.
+
+**From a CSV export** (no Google credentials needed). In the Sheet choose
+File > Download > Comma-separated values, then:
 
 ```bash
-npx dotenv -e .env.local -- npx tsx --conditions=react-server scripts/import-sheet.ts
-npx dotenv -e .env.local -- npx tsx --conditions=react-server scripts/import-sheet.ts --commit
+npm run db:import -- --csv ~/Downloads/Proposals.csv
+npm run db:import -- --csv ~/Downloads/Proposals.csv --commit
 ```
+
+**Straight from the Sheet**, if `GOOGLE_SERVICE_ACCOUNT_KEY` and `PROPOSAL_LOG_SHEET_ID`
+are set:
+
+```bash
+npm run db:import
+npm run db:import -- --commit
+```
+
+Columns are matched by header name rather than position, so inserting or reordering a
+column cannot shift every value one to the left. The dry run names any column it could not
+place and any it expected but did not find, so nothing is dropped silently. The whole
+original row is stored on the opportunity as `rawIntake`, including columns the importer
+does not understand.
+
+Re-running is safe: a proposal code already in the database is skipped, not duplicated.
 
 Rows are matched to owners by first name; anything unmatched is left unassigned. The old
 sheet never recorded a first-response time, so speed-to-lead is left blank on imported rows
