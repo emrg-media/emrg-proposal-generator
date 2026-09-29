@@ -13,7 +13,7 @@ import { DEFAULT_RESPONSE_TARGET_MINUTES, DEFAULT_FOLLOWUP_CADENCE_DAYS } from "
 const TEAM = [
   { name: "Mario Stewart", email: "mario@emrgmedia.com", role: "admin" as const },
   { name: "Erica", email: "erica@emrgmedia.com", role: "manager" as const },
-  { name: "Victoria", email: "victoria@emrgmedia.com", role: "planner" as const },
+  { name: "Olivia", email: "olivia@emrgmedia.com", role: "planner" as const },
   { name: "Amanda", email: "amanda@emrgmedia.com", role: "planner" as const },
   { name: "Mary Jane", email: "maryjane@emrgmedia.com", role: "planner" as const },
 ];
