@@ -239,6 +239,53 @@ export async function createOpportunity(input: CreateOpportunityInput, actor: Us
 }
 
 /** Fields a user may edit directly. */
+/** Field names as the team would say them, not as the columns are spelled. */
+const FIELD_LABELS: Record<string, string> = {
+  company: "company", firstName: "first name", lastName: "last name",
+  title: "title", email: "email", cellPhone: "phone", address: "address",
+  city: "city", state: "state", zip: "zip", website: "website",
+  leadSource: "lead source", eventName: "event name", eventTypes: "event type",
+  eventDate: "event date", guestCount: "guest count", venue: "venue",
+  requestedServices: "services", notes: "notes", feeRaw: "fee",
+  budgetLowCents: "budget", budgetHighCents: "budget",
+  nextAction: "next action", nextActionDate: "next action date",
+  nextActionOwnerId: "next action owner",
+};
+
+const label = (k: string) => FIELD_LABELS[k] ?? k;
+
+/**
+ * What the timeline actually says about an edit.
+ *
+ * "Updated nextAction, nextActionDate" tells a reader nothing, which is the
+ * whole complaint: the next action is the one field people scan the timeline
+ * for, so the entry has to carry the text itself.
+ */
+function describeEdit(
+  changed: string[],
+  merged: Record<string, unknown>,
+): string {
+  const touchedNextAction = changed.includes("nextAction") || changed.includes("nextActionDate");
+  if (!touchedNextAction) {
+    return `Updated ${[...new Set(changed.map(label))].join(", ")}`;
+  }
+
+  const text = String(merged.nextAction ?? "").trim();
+  const due = merged.nextActionDate instanceof Date && !isNaN(merged.nextActionDate.getTime())
+    ? merged.nextActionDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : "";
+
+  let body = text
+    ? `Next action: ${text}${due ? ` (due ${due})` : ""}`
+    : "Next action cleared";
+
+  const others = [...new Set(
+    changed.filter((c) => c !== "nextAction" && c !== "nextActionDate").map(label),
+  )];
+  if (others.length) body += `. Also updated ${others.join(", ")}`;
+  return body;
+}
+
 /**
  * The only columns a planner may write through updateOpportunity.
  *
@@ -306,7 +353,7 @@ export async function updateOpportunity(id: string, incoming: EditableFields, ac
     await tx.update(opportunities).set(next).where(eq(opportunities.id, id));
     await logActivity({
       opportunityId: id, type: "field_change", actorId: actor.id,
-      body: `Updated ${changed.join(", ")}`,
+      body: describeEdit(changed, { ...before, ...next }),
       meta: { fields: changed },
     }, tx);
   });

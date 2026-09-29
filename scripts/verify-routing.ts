@@ -17,7 +17,8 @@ const check = (label: string, ok: boolean, detail = "") => {
 async function main() {
   const db = getDb();
   const team = await db.select().from(users).orderBy(users.createdAt, users.id);
-  const victoria = team.find((u) => u.email === "victoria@emrgmedia.com")!;
+  // Any planner; naming one makes the suite break when they are renamed.
+  const planner = team.find((u) => u.role === "planner")!;
   const amanda = team.find((u) => u.email === "amanda@emrgmedia.com")!;
   const erica = team.find((u) => u.email === "erica@emrgmedia.com")!;
   const original = await getRoutingSettings();
@@ -27,7 +28,7 @@ async function main() {
   const [prior] = await db.insert(opportunities).values({
     code: `ROUTE-PRIOR-${Date.now().toString(36)}`,
     company: "Relationship Ltd", email: "kim@relationship.invalid",
-    ownerId: victoria.id, createdById: victoria.id, stage: "won",
+    ownerId: planner.id, createdById: planner.id, stage: "won",
   }).returning();
   ids.push(prior.id);
 
@@ -36,7 +37,7 @@ async function main() {
     company: "Relationship Ltd", email: "kim@relationship.invalid",
     eventTypes: ["Holiday Party"], leadSource: "Referral", valueCents: 2_000_000,
   }, amanda.id);
-  check("routed to Victoria, not the person entering it", d.userId === victoria.id);
+  check("routed to the relationship owner, not the person entering it", d.userId === planner.id);
   check("Amanda kept on as a collaborator", d.collaboratorIds.includes(amanda.id));
   check("and it explains itself", /existing client/i.test(d.reason), d.reason);
 
@@ -45,7 +46,7 @@ async function main() {
     company: "Relationship Ltd", email: "someone.else@relationship.invalid",
     eventTypes: [], leadSource: "", valueCents: null,
   }, amanda.id);
-  check("matched on company name", d.userId === victoria.id);
+  check("matched on company name", d.userId === planner.id);
 
   console.log("\nC. A genuinely new client falls to whoever is entering it");
   d = await decideOwner({
@@ -84,7 +85,7 @@ async function main() {
   }, amanda);
   ids.push(rec!.opportunityId);
   const [made] = await db.select().from(opportunities).where(eq(opportunities.id, rec!.opportunityId));
-  check("the new opportunity is owned by Victoria", made.ownerId === victoria.id, String(made.ownerId));
+  check("the new opportunity is owned by the relationship owner", made.ownerId === planner.id, String(made.ownerId));
   check("but Amanda created it", made.createdById === amanda.id);
   const collabs = await db.select().from(opportunityCollaborators)
     .where(eq(opportunityCollaborators.opportunityId, made.id));

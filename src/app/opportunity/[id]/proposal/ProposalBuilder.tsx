@@ -171,6 +171,33 @@ function buildInitialServices(): ServiceState {
   return s;
 }
 
+/**
+ * Turn the labels stored on a previous version back into ticked boxes.
+ *
+ * Starts from everything OFF rather than from the defaults, so a new version
+ * is exactly what was quoted last time instead of that plus whatever happens
+ * to be a default. Anything that no longer matches a known line item is kept
+ * as a custom service rather than silently dropped.
+ */
+function servicesFromLabels(labels: string[]): { state: ServiceState; custom: string[] } {
+  const all = [
+    ...(lineItems.core_services as ServiceItem[]),
+    ...(lineItems.addon_services as ServiceItem[]),
+  ];
+  const state: ServiceState = {};
+  for (const item of all) state[item.id] = false;
+
+  const custom: string[] = [];
+  for (const raw of labels) {
+    const value = (raw ?? "").trim();
+    if (!value) continue;
+    const hit = all.find((s) => s.label.toLowerCase() === value.toLowerCase());
+    if (hit) state[hit.id] = true;
+    else custom.push(value);
+  }
+  return { state, custom };
+}
+
 const initialClient: ClientFields = {
   client_name: "", signer_name: "", signer_title: "", client_email: "",
   venue: "", prepared_by: "",
@@ -240,13 +267,17 @@ export interface ProposalSeed {
   events: Array<{ date: string; eventTypes: string[]; guestCount: string }>;
   /** Next version number for this opportunity. */
   version: number;
+  /** Services ticked on the previous version, so a new one starts where it left off. */
+  selectedServices?: string[];
 }
 
 export default function ProposalBuilder({
-  opportunityId, opportunityCode, seed, backHref, leadSources,
+  opportunityId, opportunityCode, seed, backHref, leadSources, restoredFrom,
 }: {
   /** Absent when starting fresh — the opportunity is created on generate/send. */
   opportunityId?: string;
+  /** Set when an earlier version was opened, so the page says what it is showing. */
+  restoredFrom?: number;
   opportunityCode?: string;
   seed: ProposalSeed;
   backHref: string;
@@ -264,14 +295,26 @@ export default function ProposalBuilder({
         }))
       : [newEvent()],
   );
-  const [services, setServices] = useState<ServiceState>(buildInitialServices);
-  const [customServices, setCustomServices] = useState<string[]>([]);
+  // A new version must open with what was quoted last time already ticked.
+  const seededServices = seed.selectedServices?.length
+    ? servicesFromLabels(seed.selectedServices)
+    : null;
+  const [services, setServices] = useState<ServiceState>(
+    () => seededServices?.state ?? buildInitialServices(),
+  );
+  const [customServices, setCustomServices] = useState<string[]>(
+    () => seededServices?.custom ?? [],
+  );
   const [customInput, setCustomInput] = useState("");
   const [importNotes, setImportNotes] = useState("");
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [sending, setSending] = useState(false);
+  // Mario asked for this directly: the staff must not be able to email a
+  // client with one click. The review modal alone was not enough, because the
+  // send button sits exactly where "close this" muscle memory expects one.
+  const [confirmSend, setConfirmSend] = useState(false);
   const [sendError, setSendError] = useState("");
   const [sentAt, setSentAt] = useState("");
   const proposalId = opportunityCode ?? "";
@@ -525,6 +568,14 @@ export default function ProposalBuilder({
   return (
     <div className="min-h-screen flex flex-col">
       <div style={{ height: 4, background: "var(--accent)" }} />
+
+      {restoredFrom !== undefined && (
+        <div className="px-6 md:px-8 py-2.5 text-[13px]"
+          style={{ background: "var(--warn-bg)", color: "var(--warn-ink)" }}>
+          Showing <strong>version {restoredFrom}</strong> exactly as it was generated. Nothing is
+          overwritten: saving or sending from here creates version {seed.version}.
+        </div>
+      )}
 
       <header style={{ background: "var(--header-bg)" }} className="text-white px-6 md:px-8 py-4 flex items-center gap-4">
         <a href={createdId ? `/opportunity/${createdId}` : backHref}
@@ -1113,17 +1164,46 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
                 <p className="text-[13px] font-semibold" style={{ color: "var(--accent)" }}>{sendError}</p>
               )}
             </div>
+            {confirmSend && (
+              <div className="px-7 pb-4">
+                <div className="rounded-md border-2 px-4 py-3"
+                  style={{ borderColor: "var(--accent)", background: "var(--danger-bg)" }}>
+                  <p className="text-[13.5px] font-semibold" style={{ color: "var(--danger-ink)" }}>
+                    This goes straight to the client now.
+                  </p>
+                  <p className="text-[13px] mt-1" style={{ color: "var(--danger-ink)" }}>
+                    The proposal will be emailed to{" "}
+                    <strong>{client.client_email || "the address above"}</strong>. It cannot be
+                    unsent.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="px-7 py-4 border-t border-line flex justify-end gap-3">
-              <button onClick={() => setEmailModalOpen(false)}
+              <button onClick={() => { setConfirmSend(false); setEmailModalOpen(false); }}
                 className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-line-strong text-ink2">
                 Cancel
               </button>
-              <button onClick={handleSendToClient} disabled={sending || !emailSubject.trim() || !emailBody.trim()}
-                className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md  disabled:opacity-40"
-                
-style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
-                {sending ? "Sending…" : "Send Email"}
-              </button>
+              {confirmSend ? (
+                <>
+                  <button onClick={() => setConfirmSend(false)} disabled={sending}
+                    className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-line-strong text-ink2 disabled:opacity-40">
+                    Go back
+                  </button>
+                  <button onClick={handleSendToClient} disabled={sending}
+                    className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md disabled:opacity-40"
+                    style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                    {sending ? "Sending…" : "Yes, send to client"}
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setConfirmSend(true)}
+                  disabled={sending || !emailSubject.trim() || !emailBody.trim()}
+                  className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md  disabled:opacity-40"
+                  style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                  Send Email
+                </button>
+              )}
             </div>
           </div>
         </div>

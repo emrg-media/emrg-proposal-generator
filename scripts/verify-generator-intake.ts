@@ -93,6 +93,57 @@ async function main() {
     !!sentOpp.followupDueAt && Math.round((sentOpp.followupDueAt.getTime() - Date.now()) / 86_400_000) === 1);
   check("the proposal email counts as first response", sentOpp.firstResponseAt !== null);
 
+  // ── The bug the team hit on the demo call ────────────────────────────────
+  //
+  // Everyone tests with their OWN email so nothing reaches a real client, so
+  // every test proposal shared one address. Matching on email alone quietly
+  // merged them all onto one record, which looked exactly like the generator
+  // overwriting the previous lead.
+  console.log("\nE. One address used for several different clients");
+
+  const mine = "tester@emrgmedia.test";
+
+  const a = await recordGenerated(payload({
+    client_name: "Alpha Industries", client_email: mine, signer_name: "Ann Alpha",
+  }), actor);
+  const b = await recordGenerated(payload({
+    client_name: "Beta Holdings", client_email: mine, signer_name: "Ben Beta",
+  }), actor);
+  created.push(a!.opportunityId, b!.opportunityId);
+
+  check("two different companies do NOT merge onto one lead",
+    a!.opportunityId !== b!.opportunityId, "same opportunity returned for both");
+
+  const [oppA] = await db.select().from(opportunities).where(eq(opportunities.id, a!.opportunityId));
+  const [oppB] = await db.select().from(opportunities).where(eq(opportunities.id, b!.opportunityId));
+  check("each keeps its own company", oppA.company === "Alpha Industries" && oppB.company === "Beta Holdings",
+    `${oppA.company} / ${oppB.company}`);
+  check("each keeps its own contact", oppA.lastName === "Alpha" && oppB.lastName === "Beta",
+    `${oppA.lastName} / ${oppB.lastName}`);
+
+  // The same client quoted again must still land on the existing deal.
+  const a2 = await recordGenerated(payload({
+    client_name: "  ALPHA   Industries ", client_email: mine.toUpperCase(), signer_name: "Ann Alpha",
+  }), actor);
+  check("the SAME company and address still merges, whatever the casing",
+    a2!.opportunityId === a!.opportunityId, "forked a duplicate instead");
+  check("and it lands as version 2", a2!.version === 2, String(a2!.version));
+
+  // A different person at the same company is a different deal.
+  const c = await recordGenerated(payload({
+    client_name: "Alpha Industries", client_email: "someone.else@alpha.test", signer_name: "Carl Alpha",
+  }), actor);
+  created.push(c!.opportunityId);
+  check("a different address at the same company opens its own deal",
+    c!.opportunityId !== a!.opportunityId);
+
+  // Nothing safe to match on: never merge on a guess.
+  const d1 = await recordGenerated(payload({ client_name: "", client_email: mine, signer_name: "No Co" }), actor);
+  const d2 = await recordGenerated(payload({ client_name: "", client_email: mine, signer_name: "No Co" }), actor);
+  created.push(d1!.opportunityId, d2!.opportunityId);
+  check("with no company there is nothing safe to match on, so neither merges",
+    d1!.opportunityId !== d2!.opportunityId);
+
   await db.delete(opportunities).where(inArray(opportunities.id, created));
   console.log(failures === 0 ? "\nAll generator-intake checks passed.\n" : `\n${failures} check(s) FAILED.\n`);
   process.exit(failures === 0 ? 0 : 1);

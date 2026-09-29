@@ -229,9 +229,13 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
             <Panel title={`Proposals (${proposals.length})`}>
               <div className="space-y-2">
                 {proposals.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-0">
+                  <Link key={p.id} href={`/opportunity/${opp.id}/proposal?version=${p.version}`}
+                    className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-0 hover:bg-sunken rounded px-1 -mx-1 transition-colors">
                     <div className="min-w-0">
-                      <p className="text-[13.5px] font-medium text-ink">Version {p.version}</p>
+                      <p className="text-[13.5px] font-medium text-ink">
+                        Version {p.version}
+                        <span className="text-[11.5px] font-normal text-ink3"> · open</span>
+                      </p>
                       <p className="text-[11.5px] text-ink3">
                         Generated {fmtDateTime(p.generatedAt)}
                         {p.sentAt ? ` · Sent to ${p.sentTo}` : " · Not sent"}
@@ -241,7 +245,7 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
                       style={{ fontVariantNumeric: "tabular-nums" }}>
                       {p.feeCents !== null ? fmtCents(p.feeCents) : p.feeRaw || "Not set"}
                     </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </Panel>

@@ -35,27 +35,46 @@ export interface ProposalPayload {
   body?: string;
 }
 
+/** Lowercased, trimmed, inner whitespace collapsed. Matches the SQL side. */
+export function normalizeCompany(name: string): string {
+  return (name ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 /**
  * The proposal generator is the team's real front door: a client calls, a
  * planner fills the form, the proposal goes out. That IS the lead entering the
  * funnel, so generating a proposal must not require someone to have created a
  * record first — this finds the matching opportunity or opens one.
  *
- * Matching is by contact email against a still-open opportunity, so a second
- * or third version lands on the same deal instead of forking a duplicate.
- * Without an email there is nothing safe to match on, so a new record is made.
+ * Matching requires BOTH the contact email and the company to match a
+ * still-open opportunity, so a second or third version lands on the same deal
+ * instead of forking a duplicate.
+ *
+ * Email alone is not enough. One address can front several different pieces of
+ * business (an agency, a PA booking for two brands, or simply the same person
+ * asking about an unrelated event), and matching on it alone silently merged
+ * them into one record. Merging two real deals is far worse than creating a
+ * duplicate, because the duplicate is obvious and fixable while the merge
+ * quietly loses a lead. So when either side is missing a company, or they
+ * disagree, a new record is opened.
+ *
+ * Note this only applies to proposals raised from the front door. A new
+ * version created from inside an opportunity already carries its id and never
+ * reaches this function.
  */
 export async function findOrCreateOpportunity(
   payload: ProposalPayload, actor: User,
 ): Promise<string> {
   const db = getDb();
   const email = (payload.client_email ?? "").trim().toLowerCase();
+  const company = normalizeCompany(payload.client_name ?? "");
 
-  if (email) {
+  if (email && company) {
     const [existing] = await db.select({ id: opportunities.id })
       .from(opportunities)
       .where(and(
         sql`lower(${opportunities.email}) = ${email}`,
+        sql`lower(regexp_replace(${opportunities.company}, '\\s+', ' ', 'g')) = ${company}`,
         inArray(opportunities.stage, OPEN_STAGES),
       ))
       .orderBy(desc(opportunities.lastActivityAt))

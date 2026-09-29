@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "../src/db";
 import { opportunities, users } from "../src/db/schema";
-import { createOpportunity, listOpportunities, getOpportunity, changeStage, markLost } from "../src/lib/opportunities";
+import { createOpportunity, listOpportunities, getOpportunity, changeStage, markLost, updateOpportunity } from "../src/lib/opportunities";
 import { logActivity, speedToLeadMs, formatDuration } from "../src/lib/activity";
 
 let failures = 0;
@@ -14,7 +14,9 @@ function check(label: string, cond: boolean, detail = "") {
 
 async function main() {
   const db = getDb();
-  const [actor] = await db.select().from(users).where(eq(users.email, "victoria@emrgmedia.com")).limit(1);
+  // Any planner will do. Naming one person here means renaming them breaks the
+  // suite, which is exactly what happened when Victoria became Olivia.
+  const [actor] = await db.select().from(users).where(eq(users.role, "planner")).limit(1);
   if (!actor) throw new Error("Seed the database first: npm run db:seed");
 
   const leadAt = new Date(Date.now() - 60 * 60 * 1000); // one hour ago
@@ -81,6 +83,48 @@ async function main() {
 
   // Clean up (cascades to activities and collaborators).
   await db.delete(opportunities).where(eq(opportunities.id, opp.id));
+  // ── What the timeline actually says about an edit ─────────────────────────
+  //
+  // "Updated nextAction, nextActionDate" tells a reader nothing. The next
+  // action is the one field people scan the timeline for, so the entry has to
+  // carry the text, and the field names must read like English.
+  console.log("\nTimeline wording");
+
+  const w = await createOpportunity({
+    company: "Wording Test Co", email: "wording@test.invalid",
+    rawIntake: { wordingTest: true },
+  }, actor);
+
+  // Newest first, and timestamps can tie, so pick the newest field_change.
+  const lastBody = async () => {
+    const full = await getOpportunity(w.id);
+    return full!.timeline.find((t) => t.activity.type === "field_change")?.activity.body ?? "";
+  };
+
+  await updateOpportunity(w.id, {
+    nextAction: "Call Dana to review the proposal",
+    nextActionDate: new Date("2027-01-15T12:00:00Z"),
+  }, actor);
+  const b1 = await lastBody();
+  check("the timeline carries the next action text", b1.includes("Call Dana to review the proposal"), b1);
+  check("and the date it is due", /Jan 15/.test(b1), b1);
+  check("no column names leak into it", !/nextAction|nextActionDate/.test(b1), b1);
+
+  await updateOpportunity(w.id, { venue: "The Glasshouse" }, actor);
+  const b2 = await lastBody();
+  check("an ordinary edit reads in plain English", b2 === "Updated venue", b2);
+
+  await updateOpportunity(w.id, { nextAction: "", nextActionDate: null }, actor);
+  const b3 = await lastBody();
+  check("clearing it says so", /cleared/i.test(b3), b3);
+
+  await updateOpportunity(w.id, { nextAction: "Chase the contract", venue: "Cipriani" }, actor);
+  const b4 = await lastBody();
+  check("a mixed edit leads with the next action", b4.startsWith("Next action: Chase the contract"), b4);
+  check("and still mentions the rest", /venue/.test(b4), b4);
+
+  await db.delete(opportunities).where(eq(opportunities.id, w.id));
+
   const gone = await getOpportunity(opp.id);
   check("cleanup removed the test record", gone === null);
 
