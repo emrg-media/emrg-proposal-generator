@@ -4,6 +4,8 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import nodemailer from "nodemailer";
 import { buildProposalDocument } from "@/lib/ProposalPDF";
+import { AgreementPDF, type AgreementData } from "@/lib/AgreementPDF";
+import { createElement } from "react";
 import { getSessionUser } from "@/lib/auth";
 import { recordSent } from "@/lib/recordProposal";
 import { getSettings } from "@/lib/settings";
@@ -49,11 +51,43 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Build the PDF (cover + letter + agreement)
+  // Erica sends the scope and the planning agreement together sometimes, and
+  // separately other times, depending on whether the client wants to approve
+  // the scope first. The planner chooses; nothing is attached by assumption.
+  const attach: "proposal" | "agreement" | "both" = data.attach ?? "proposal";
+  const wantsProposal = attach === "proposal" || attach === "both";
+  const wantsAgreement = attach === "agreement" || attach === "both";
+
+  if (wantsAgreement && !data.agreement) {
+    return NextResponse.json(
+      { error: "The agreement details are missing, so it cannot be attached." },
+      { status: 400 },
+    );
+  }
+
   const logoPath = join(process.cwd(), "public", "emrg-logo.png");
   const logoBase64 = readFileSync(logoPath).toString("base64");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfBuffer = await renderToBuffer(buildProposalDocument({ ...data, logoBase64 }) as any);
+
+  const safeName = (client_name || "proposal").replace(/[^a-z0-9]/gi, "-").toLowerCase();
+  const attachments: Array<{ filename: string; content: Buffer; contentType: string }> = [];
+
+  if (wantsProposal) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buf = await renderToBuffer(buildProposalDocument({ ...data, logoBase64 }) as any);
+    attachments.push({
+      filename: `${safeName}-proposal.pdf`, content: buf, contentType: "application/pdf",
+    });
+  }
+
+  if (wantsAgreement) {
+    const agreementData = { ...(data.agreement as AgreementData), logoBase64 };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buf = await renderToBuffer(createElement(AgreementPDF, { data: agreementData }) as any);
+    attachments.push({
+      filename: `${safeName}-event-planning-agreement.pdf`,
+      content: buf, contentType: "application/pdf",
+    });
+  }
 
   const nameWords = (signer_name || "").trim().split(/\s+/).filter(Boolean);
   const isHonorific = (w: string) => /^(dr|mr|mrs|ms|miss|prof|rev)\.?$/i.test(w);
@@ -101,8 +135,6 @@ export async function POST(req: NextRequest) {
     auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
 
-  const filename = `${(client_name || "proposal").replace(/[^a-z0-9]/gi, "-").toLowerCase()}-proposal.pdf`;
-
   try {
     await transporter.sendMail({
       from: SMTP_FROM || SMTP_USER,
@@ -112,7 +144,7 @@ export async function POST(req: NextRequest) {
       subject,
       text: bodyText,
       html: bodyHtml,
-      attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
+      attachments,
     });
     // Await rather than fire-and-forget: Vercel freezes the function once the
     // response is returned, which would kill an un-awaited write.

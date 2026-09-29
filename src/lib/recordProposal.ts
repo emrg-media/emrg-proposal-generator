@@ -7,6 +7,7 @@ import { computeFee, toCents, budgetText, parseMoneyToCents } from "./fee";
 import { newOpportunityCode } from "./opportunities";
 import { OPEN_STAGES } from "./constants";
 import { decideOwner } from "./routingService";
+import type { AgreementData } from "./AgreementPDF";
 import { opportunityCollaborators } from "@/db/schema";
 
 // Writing a proposal into the permanent record (brief §6). Every generated
@@ -14,9 +15,16 @@ import { opportunityCollaborators } from "@/db/schema";
 // the exact payload the PDF was rendered from — so any past proposal can be
 // reproduced byte-for-byte later.
 
+/** Which documents the planner chose to attach to the email. */
+export type AttachChoice = "proposal" | "agreement" | "both";
+
 export interface ProposalPayload {
   /** Absent when the planner started from the generator rather than a record. */
   opportunity_id?: string;
+  /** What actually went to the client, so the timeline can say so. */
+  attach?: AttachChoice;
+  /** Only needed when the agreement is being attached. */
+  agreement?: AgreementData;
   /** When the enquiry actually arrived, so speed-to-lead stays honest. */
   enquiry_received_at?: string;
   lead_source?: string;
@@ -261,16 +269,25 @@ export async function recordSent(
     //
     // Logged as proposal_sent AND as an outbound touch, so it counts as a human
     // response for speed-to-lead if nothing earlier did.
+    // Say what actually went out. The planner can send the scope, the planning
+    // agreement, or both, and "Proposal sent" would be untrue for two of those.
+    const attach: AttachChoice = payload.attach ?? "proposal";
+    const versionLabel = latest ? ` version ${latest.version}` : "";
+    const what =
+      attach === "agreement" ? "Planning agreement"
+      : attach === "both" ? `Proposal${versionLabel} and the planning agreement`
+      : `Proposal${versionLabel}`;
+
     await logActivity({
       opportunityId, type: "proposal_sent", actorId: actor.id,
-      body: `Proposal${latest ? ` version ${latest.version}` : ""} sent to ${sentTo}`,
-      meta: { version: latest?.version, sentTo },
+      body: `${what} sent to ${sentTo}`,
+      meta: { version: latest?.version, sentTo, attach },
       occurredAt: now,
     }, tx);
     await logActivity({
       opportunityId, type: "email_out", actorId: actor.id,
-      body: `Proposal emailed to ${sentTo}`,
-      meta: { proposal: true },
+      body: `${what} emailed to ${sentTo}`,
+      meta: { proposal: true, attach },
       occurredAt: now,
     }, tx);
 

@@ -333,6 +333,9 @@ export default function ProposalBuilder({
   // client with one click. The review modal alone was not enough, because the
   // send button sits exactly where "close this" muscle memory expects one.
   const [confirmSend, setConfirmSend] = useState(false);
+  // Proposal only by default. Erica sends the agreement alongside the scope
+  // sometimes and on its own other times, so nothing is attached by assumption.
+  const [attach, setAttach] = useState<"proposal" | "agreement" | "both">("proposal");
   // Overrides only. The defaults keep following the form as it is filled in,
   // and stop following a field the moment someone types their own value, so a
   // wrong guess is a five second fix rather than something to work around.
@@ -551,7 +554,7 @@ export default function ProposalBuilder({
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, lead_source: leadSource, enquiry_received_at: enquiryAt ? new Date(enquiryAt).toISOString() : undefined, events, selectedServices, subject: emailSubject, body: emailBody }),
+        body: JSON.stringify({ ...client, proposal_id: proposalId, opportunity_id: opportunityId, lead_source: leadSource, enquiry_received_at: enquiryAt ? new Date(enquiryAt).toISOString() : undefined, events, selectedServices, subject: emailSubject, body: emailBody, attach, agreement }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? "Send failed");
@@ -1299,6 +1302,32 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
                 <p className="text-[13px] font-semibold" style={{ color: "var(--accent)" }}>{sendError}</p>
               )}
             </div>
+            <div className="px-7 pb-4">
+              <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-2">
+                Attach
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  ["proposal", "Proposal only"],
+                  ["agreement", "Agreement only"],
+                  ["both", "Both"],
+                ] as const).map(([value, label]) => (
+                  <button key={value} onClick={() => { setAttach(value); setConfirmSend(false); }}
+                    className="px-4 py-2 text-[12px] font-bold tracking-[0.1em] uppercase rounded-md border-2 transition-colors"
+                    style={attach === value
+                      ? { borderColor: "var(--accent)", background: "var(--accent)", color: "var(--accent-ink)" }
+                      : { borderColor: "var(--line-strong)", color: "var(--ink-2)" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {attach !== "proposal" && !client.client_name && (
+                <p className="text-[12.5px] mt-2" style={{ color: "var(--accent)" }}>
+                  Add a company name before attaching the agreement.
+                </p>
+              )}
+            </div>
+
             {confirmSend && (
               <div className="px-7 pb-4">
                 <div className="rounded-md border-2 px-4 py-3"
@@ -1307,7 +1336,10 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
                     This goes straight to the client now.
                   </p>
                   <p className="text-[13px] mt-1" style={{ color: "var(--danger-ink)" }}>
-                    The proposal will be emailed to{" "}
+                    {attach === "both" ? "The proposal and the planning agreement"
+                      : attach === "agreement" ? "The planning agreement"
+                      : "The proposal"}{" "}
+                    will be emailed to{" "}
                     <strong>{client.client_email || "the address above"}</strong>. It cannot be
                     unsent.
                   </p>
@@ -1325,7 +1357,8 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
                     className="px-5 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md border-2 border-line-strong text-ink2 disabled:opacity-40">
                     Go back
                   </button>
-                  <button onClick={handleSendToClient} disabled={sending}
+                  <button onClick={handleSendToClient}
+                    disabled={sending || (attach !== "proposal" && !client.client_name)}
                     className="px-6 py-2.5 text-[13px] font-bold tracking-wider uppercase rounded-md disabled:opacity-40"
                     style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
                     {sending ? "Sending…" : "Yes, send to client"}

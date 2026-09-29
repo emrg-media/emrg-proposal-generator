@@ -144,6 +144,33 @@ async function main() {
   check("with no company there is nothing safe to match on, so neither merges",
     d1!.opportunityId !== d2!.opportunityId);
 
+  // ── The timeline has to say which documents actually went ────────────────
+  //
+  // Erica sends the scope and the planning agreement together sometimes and
+  // separately other times. "Proposal sent" is untrue for two of the three.
+  console.log("\nF. What was attached is what the timeline reports");
+
+  const sentBodies = async (id: string) => {
+    const rows = await db.select().from(activities).where(eq(activities.opportunityId, id));
+    return rows.filter((r) => r.type === "proposal_sent").map((r) => r.body);
+  };
+
+  for (const [choice, expect] of [
+    ["proposal", /^Proposal( version \d+)? sent to /],
+    ["both", /^Proposal( version \d+)? and the planning agreement sent to /],
+    ["agreement", /^Planning agreement sent to /],
+  ] as const) {
+    const id = await recordSent(payload({
+      client_name: `Attach ${choice} Co`,
+      client_email: `attach-${choice}@test.invalid`,
+      attach: choice,
+    }), actor, `attach-${choice}@test.invalid`, [1, 3, 7]);
+    created.push(id!);
+    const bodies = await sentBodies(id!);
+    check(`"${choice}" reads as ${expect.source.slice(1, 34)}…`,
+      bodies.some((b) => expect.test(b)), bodies.join(" | "));
+  }
+
   await db.delete(opportunities).where(inArray(opportunities.id, created));
   console.log(failures === 0 ? "\nAll generator-intake checks passed.\n" : `\n${failures} check(s) FAILED.\n`);
   process.exit(failures === 0 ? 0 : 1);
