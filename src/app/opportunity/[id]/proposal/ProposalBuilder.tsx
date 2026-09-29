@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import lineItems from "@/data/line-items.json";
 import { mapExtractionToProposal } from "@/lib/extractionMap";
+import { computeFee, fmtMoney } from "@/lib/fee";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -545,6 +546,15 @@ export default function ProposalBuilder({
 
   // ── Derived values ────────────────────────────────────────────────────────
 
+  // The preview must say exactly what the PDF will say. Erica's own scope reads
+  // "EMRG Media Service Fee: $21,500", so a fee typed as a percentage is shown
+  // resolved against the budget rather than as a rate.
+  const previewFee = (() => {
+    const budgetText = [client.budget_low, client.budget_high].filter(Boolean).join(" to ");
+    const r = computeFee(client.service_fee, budgetText);
+    return r.value !== null ? fmtMoney(r.value) : (client.service_fee || "");
+  })();
+
   const selectedServices = [
     ...(lineItems.core_services as ServiceItem[]).filter((s) => services[s.id]).map((s) => s.label),
     ...(lineItems.addon_services as ServiceItem[]).filter((s) => services[s.id]).map((s) => s.label),
@@ -961,7 +971,7 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
 
                 <p className="text-[14.5px] leading-7 text-ink mb-6">
                   EMRG Media, LLC will be paid an event management and planning fee of{" "}
-                  <span className="font-semibold">{client.service_fee || "$________"}</span>{" "}
+                  <span className="font-semibold">{previewFee || "$________"}</span>{" "}
                   for the services outlined below in: Event Planner, Event Management and Production Responsibilities.
                 </p>
 
@@ -1066,7 +1076,7 @@ style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
 
                 {/* Service fee */}
                 <p className="text-[14.5px] font-bold text-ink mb-6">
-                  EMRG Media Service Fee: {client.service_fee || "$__________"}
+                  EMRG Media Service Fee: {previewFee || "$__________"}
                 </p>
 
                 {/* Assistance clause */}

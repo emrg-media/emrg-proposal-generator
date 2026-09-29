@@ -2,6 +2,7 @@ import {
   Document, Page, Text, View, Image, StyleSheet,
 } from "@react-pdf/renderer";
 import { createElement } from "react";
+import { computeFee, fmtMoney } from "@/lib/fee";
 
 // Use built-in PDF fonts — no network dependency
 
@@ -146,6 +147,16 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
     ? [budget_low, budget_high].filter(Boolean).join(" to ")
     : "$_______ _______";
 
+  // The signed document has to state a figure, not a rate. Erica's own scope
+  // reads "EMRG Media Service Fee: $21,500", and she was explicit that a
+  // percentage on the agreement was a one-off. A fee typed as a percentage is
+  // resolved against the budget here; with no budget to resolve it against the
+  // raw entry is left rather than inventing a number.
+  const resolvedFee = computeFee(service_fee, budgetText);
+  const feeText = resolvedFee.value !== null
+    ? fmtMoney(resolvedFee.value)
+    : (service_fee || "$________");
+
   const firstEvent = events[0];
   const eventTypeLabel = allEventTypes.join(" / ") || "event";
   // Greeting name: skip honorifics ("Dr. Lisa Park" → "Lisa"), keep "Dr. Park" style intact if only two words
@@ -227,7 +238,7 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
 
         <Text style={s.para}>
           {"EMRG Media, LLC will be paid an event management and planning fee of "}
-          <Text style={s.bold}>{service_fee || "$________"}</Text>
+          <Text style={s.bold}>{feeText}</Text>
           {" for the services outlined below in: Event Planner, Event Management and Production Responsibilities."}
         </Text>
 
@@ -315,7 +326,7 @@ export function ProposalPDF({ data }: { data: ProposalData }) {
 
         {/* Service fee */}
         <Text style={[s.sectionTitle, { marginTop: 4 }]}>
-          EMRG Media Service Fee: {service_fee || "$__________"}
+          EMRG Media Service Fee: {feeText}
         </Text>
 
         {/* Assistance clause */}
