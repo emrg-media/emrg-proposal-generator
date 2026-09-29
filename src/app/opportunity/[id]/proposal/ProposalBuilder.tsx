@@ -5,6 +5,8 @@ import Image from "next/image";
 import lineItems from "@/data/line-items.json";
 import { mapExtractionToProposal } from "@/lib/extractionMap";
 import { computeFee, fmtMoney } from "@/lib/fee";
+import { agreementDefaults } from "@/lib/agreement";
+import type { AgreementData } from "@/lib/AgreementPDF";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -199,6 +201,21 @@ function servicesFromLabels(labels: string[]): { state: ServiceState; custom: st
   return { state, custom };
 }
 
+function AgreementField({ label, value, onChange, hint }: {
+  label: string; value: string; onChange: (v: string) => void; hint?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] font-bold tracking-[0.14em] uppercase text-ink3 mb-1">
+        {label}
+      </label>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
+        className="w-full border-2 border-line-strong rounded-md px-3 py-2 text-[14px] bg-raised text-ink outline-none" />
+      {hint && <p className="text-[11.5px] text-ink3 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
 const initialClient: ClientFields = {
   client_name: "", signer_name: "", signer_title: "", client_email: "",
   venue: "", prepared_by: "",
@@ -316,6 +333,12 @@ export default function ProposalBuilder({
   // client with one click. The review modal alone was not enough, because the
   // send button sits exactly where "close this" muscle memory expects one.
   const [confirmSend, setConfirmSend] = useState(false);
+  // Overrides only. The defaults keep following the form as it is filled in,
+  // and stop following a field the moment someone types their own value, so a
+  // wrong guess is a five second fix rather than something to work around.
+  const [agreementEdits, setAgreementEdits] = useState<Partial<AgreementData>>({});
+  const [agreementOpen, setAgreementOpen] = useState(false);
+  const [buildingAgreement, setBuildingAgreement] = useState(false);
   const [sendError, setSendError] = useState("");
   const [sentAt, setSentAt] = useState("");
   const proposalId = opportunityCode ?? "";
@@ -554,6 +577,43 @@ export default function ProposalBuilder({
     const r = computeFee(client.service_fee, budgetText);
     return r.value !== null ? fmtMoney(r.value) : (client.service_fee || "");
   })();
+
+  const agreement: AgreementData = {
+    ...agreementDefaults({
+      client_name: client.client_name,
+      signer_name: client.signer_name,
+      signer_title: client.signer_title,
+      venue: client.venue,
+      eventTypes: events.flatMap((e) => e.eventTypes),
+      eventDate: events[0]?.date,
+      service_fee: client.service_fee,
+      budget_low: client.budget_low,
+      budget_high: client.budget_high,
+    }),
+    ...agreementEdits,
+  };
+
+  async function handleDownloadAgreement() {
+    if (buildingAgreement) return;
+    setBuildingAgreement(true);
+    try {
+      const res = await fetch("/api/agreement-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(agreement),
+      });
+      if (!res.ok) throw new Error("Could not build the agreement");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(client.client_name || "agreement").replace(/[^a-z0-9]/gi, "-").toLowerCase()}-event-planning-agreement.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBuildingAgreement(false);
+    }
+  }
 
   const selectedServices = [
     ...(lineItems.core_services as ServiceItem[]).filter((s) => services[s.id]).map((s) => s.label),
@@ -821,6 +881,71 @@ export default function ProposalBuilder({
                 className="px-5 py-2.5  text-[16px] font-semibold rounded-md hover:opacity-90 transition-opacity"
                 
 style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>Add</button>
+            </div>
+
+            {/* ── Event Planning Agreement ── */}
+            <div className="border-2 border-line-strong rounded-lg mb-5">
+              <button onClick={() => setAgreementOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left">
+                <span className="text-[11px] font-bold tracking-[0.16em] uppercase text-ink">
+                  Event Planning Agreement
+                </span>
+                <span className="text-[13px] text-ink3">{agreementOpen ? "Hide" : "Show"}</span>
+              </button>
+
+              {agreementOpen && (
+                <div className="px-4 pb-4 space-y-3 border-t border-line pt-3">
+                  <p className="text-[12.5px] text-ink3">
+                    Filled in from the proposal above. Change anything here and it stops following
+                    the form; leave it and it keeps up to date.
+                  </p>
+
+                  <AgreementField label="Referred to as"
+                    hint={`Used through the contract, e.g. "${agreement.short_name || "Carbon"} agrees to execute such contracts"`}
+                    value={agreement.short_name}
+                    onChange={(v) => setAgreementEdits((p) => ({ ...p, short_name: v }))} />
+
+                  <AgreementField label="Client address"
+                    hint="Reads mid-sentence, e.g. 17 State Street New York NY 10004"
+                    value={agreement.client_address}
+                    onChange={(v) => setAgreementEdits((p) => ({ ...p, client_address: v }))} />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <AgreementField label="Event reads as" value={agreement.event_descriptor}
+                      onChange={(v) => setAgreementEdits((p) => ({ ...p, event_descriptor: v }))} />
+                    <AgreementField label="Taking place at" value={agreement.location}
+                      onChange={(v) => setAgreementEdits((p) => ({ ...p, location: v }))} />
+                  </div>
+
+                  <AgreementField label="Timing"
+                    hint={'e.g. "on March 12, 2027" or "in 2027, exact date TBD"'}
+                    value={agreement.timing}
+                    onChange={(v) => setAgreementEdits((p) => ({ ...p, timing: v }))} />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <AgreementField label="Deposit on signing" value={agreement.deposit_first}
+                      onChange={(v) => setAgreementEdits((p) => ({ ...p, deposit_first: v }))} />
+                    <AgreementField label="Paid 14 days before" value={agreement.deposit_second}
+                      onChange={(v) => setAgreementEdits((p) => ({ ...p, deposit_second: v }))} />
+                  </div>
+                  <p className="text-[12px] text-ink3">
+                    Defaults to half the fee each. Change either if the terms differ.
+                  </p>
+
+                  <div className="flex items-center gap-3 pt-1">
+                    <button onClick={handleDownloadAgreement} disabled={buildingAgreement || !client.client_name}
+                      className="px-5 py-2.5 text-[12px] font-bold tracking-[0.16em] uppercase rounded-md border-2 border-line-strong text-ink2 disabled:opacity-40">
+                      {buildingAgreement ? "Building…" : "Download agreement"}
+                    </button>
+                    {Object.keys(agreementEdits).length > 0 && (
+                      <button onClick={() => setAgreementEdits({})}
+                        className="text-[12px] text-ink3 underline">
+                        Reset to defaults
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {budgetInvalid && (
